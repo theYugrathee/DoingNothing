@@ -28,7 +28,7 @@
     <div class="hd">
       <a class="logo" href="#home">doingnothing<span>.lol</span></a>
 
-      <!-- Desktop Navigation -->
+      <!-- Desktop Navigation (Admin removed from public nav) -->
       <nav class="desktop-nav" id="desktopNav">
         <a href="#home" class="on">Home</a>
         <a href="#red">Don’t press</a>
@@ -37,7 +37,6 @@
         <a href="#challenge">Challenge</a>
         <a href="#excuses">Excuses</a>
         <a href="#about">About</a>
-        <a href="#admin">Admin</a>
       </nav>
 
       <!-- Action Buttons -->
@@ -55,7 +54,7 @@
     </div>
   </header>
 
-  <!-- Mobile Drawer Menu -->
+  <!-- Mobile Drawer Menu (Admin removed from public drawer) -->
   <div class="mobile-drawer" id="mobileDrawer">
     <div class="mobile-drawer-content">
       <div class="mobile-drawer-header">
@@ -70,7 +69,6 @@
         <a href="#challenge">Challenge</a>
         <a href="#excuses">Excuses</a>
         <a href="#about">About</a>
-        <a href="#admin">Admin</a>
       </div>
     </div>
   </div>
@@ -78,7 +76,7 @@
   <!-- Main Container -->
   <main class="wrap">
 
-    <!-- 1. HOME VIEW (Restored original aesthetic matching images 1 & 2) -->
+    <!-- 1. HOME VIEW -->
     <section class="pg on" id="home">
       <div class="hero">
         <span class="tag" id="heroTag">Unemployed since 2026. Proud of it.</span>
@@ -111,7 +109,7 @@
           </div>
           <div>
             <div class="k">Top today</div>
-            <div class="v" id="topSupporterName" style="font-size:24px;word-break:break-word">Nobody</div>
+            <div class="v" id="topSupporterName" style="word-break:break-word">Nobody</div>
           </div>
           <div>
             <div class="k">Board resets in</div>
@@ -120,11 +118,12 @@
         </div>
 
         <div class="sec">
-          <h2>Today’s board</h2>
-          <p style="margin:0 0 16px;color:var(--mut)">Switch between the newest supporters and the biggest ones. Pay any amount you like. The board resets every day. <b>Tap any card for details.</b></p>
-          <div class="chips" id="boardModeChips" style="margin:0 0 12px">
-            <button class="chip on" data-board-mode="recent">Recent</button>
-            <button class="chip" data-board-mode="top">Top</button>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            <h2>Today’s board</h2>
+            <div class="chips" id="boardModeChips">
+              <button class="chip on" data-board-mode="recent">Recent</button>
+              <button class="chip" data-board-mode="top">Top</button>
+            </div>
           </div>
           <div id="boardContainer"></div>
         </div>
@@ -157,7 +156,7 @@
             <button class="btn" id="generateRoastBtn">Roast me</button>
           </div>
 
-          <div class="disp" id="roastOutput" style="font-size:clamp(22px,3.4vw,34px);line-height:1.15;margin-top:18px;min-height:3em">
+          <div class="disp" id="roastOutput" style="font-size:clamp(20px,3vw,30px);line-height:1.15;margin-top:18px;min-height:3em">
             Type your name above to get roasted.
           </div>
 
@@ -200,7 +199,7 @@
         <p style="color:var(--mut)">For when you have to explain why it isn’t done.</p>
 
         <div class="panel">
-          <div class="disp" id="excuseOutput" style="font-size:clamp(30px,5vw,54px);line-height:1.05;min-height:3.2em">
+          <div class="disp" id="excuseOutput" style="font-size:clamp(26px,4.5vw,46px);line-height:1.05;min-height:3.2em">
             Press the button. I won’t.
           </div>
           <p style="margin-top:16px">
@@ -215,9 +214,9 @@
     <section class="pg" id="about">
       <div class="pgx">
         <h1>About <span class="hl">nothing.</span></h1>
-        <p style="max-width:34em;font-size:20px">I do nothing and I’m honest about it. If that makes you smile, buy me a meal. If you have a product, a page or a profile, put it on today’s board while you’re at it.</p>
+        <p style="max-width:34em;font-size:18px">I do nothing and I’m honest about it. If that makes you smile, buy me a meal. If you have a product, a page or a profile, put it on today’s board while you’re at it.</p>
 
-        <h3 style="font-size:28px;margin-top:26px">The rules</h3>
+        <h3 style="font-size:24px;margin-top:24px">The rules</h3>
         <ol style="max-width:36em;line-height:1.8">
           <li>Payments are voluntary and go to the founder personally. It isn’t charity.</li>
           <li>Pay any amount you like. The board ranks by amount, highest first.</li>
@@ -228,7 +227,7 @@
       </div>
     </section>
 
-    <!-- 8. ADMIN CONSOLE -->
+    <!-- 8. HIDDEN ADMIN CONSOLE (Accessible by navigating directly to #admin) -->
     <section class="pg" id="admin">
       <div class="pgx">
         <h1>Admin <span class="hl">Console.</span></h1>
@@ -238,9 +237,9 @@
 
   </main>
 
-  <!-- Global Footer -->
+  <!-- Global Footer (Clean, no admin link) -->
   <footer>
-    doingnothing.lol · built while doing nothing · <a href="#admin">admin</a>
+    doingnothing.lol · built while doing nothing
   </footer>
 
   <!-- Modal Dialog -->

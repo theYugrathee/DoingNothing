@@ -9,6 +9,7 @@ import { StorageService } from './services/storage';
 import { AnalyticsService } from './services/analytics';
 import { PaymentService } from './services/payments';
 import { SupabaseService } from './services/supabase';
+import { resolveAvatarUrl } from './services/avatar';
 import { sound } from './services/sound';
 import {
   ROTATING_LINES,
@@ -282,14 +283,12 @@ function flee(): void {
   let best: [number, number] | null = null;
   let bd = -1;
 
-  // Moves across the horizontal section on the same row band (Image 2)
   for (let i = 0; i < 90; i++) {
     const x = Math.random() * Math.max(0, h.width - W);
     const y = Math.min(Math.max(0, hy - 14 + (Math.random() * 32 - 16)), Math.max(0, h.height - H));
     const L = h.left + x;
     const T = h.top + y;
 
-    // Guard: Never overlap the main button or title!
     if (R.some((r) => L < r.right + pad && L + W > r.left - pad && T < r.bottom + pad && T + H > r.top - pad)) {
       continue;
     }
@@ -370,22 +369,27 @@ function setupDodgingButton(): void {
 }
 
 // ==========================================================================
-// Leaderboard & Today's Board Rendering
+// Leaderboard & Today's Board Rendering (with Auto-Fetched Logos/Avatars)
 // ==========================================================================
-const CROWN_SVG = '<svg class="crown" viewBox="0 0 24 24" width="34" height="34" aria-hidden="true"><path d="M3 18h18l1-10-5 4-5-8-5 8-5-4z" fill="#FFD23F" stroke="#101010" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+const CROWN_SVG = '<svg class="crown" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M3 18h18l1-10-5 4-5-8-5 8-5-4z" fill="#FFD23F" stroke="#101010" stroke-width="1.6" stroke-linejoin="round"/></svg>';
 
 function renderAvatar(item: LeaderboardEntry): string {
-  if (item.img) {
-    return `<div class="av"><img src="${AnalyticsService.escapeHtml(item.img)}" alt=""></div>`;
-  }
   if (item.anon) {
     return `<div class="av" style="background:#8a877d">?</div>`;
   }
+
+  // Automatically fetch logo / favicon / profile picture if image or url exists!
+  const avatarUrl = resolveAvatarUrl(item.url, item.img);
   const colors = ['#2F4BFF', '#E8412C', '#0E9F6E', '#8B3DFF', '#F08A00', '#101010', '#D6246E'];
   let hash = 0;
   for (let i = 0; i < item.name.length; i++) hash += item.name.charCodeAt(i);
   const bg = colors[hash % colors.length];
   const initial = (item.name[0] || '?').toUpperCase();
+
+  if (avatarUrl) {
+    return `<div class="av" style="background:${bg}"><img src="${AnalyticsService.escapeHtml(avatarUrl)}" alt="" onerror="this.style.display='none';this.parentElement.textContent='${AnalyticsService.escapeHtml(initial)}'"></div>`;
+  }
+
   return `<div class="av" style="background:${bg}">${AnalyticsService.escapeHtml(initial)}</div>`;
 }
 
@@ -408,7 +412,7 @@ function renderLeaderboard(): void {
     boardEl.innerHTML = `
       <div class="empty">
         Nobody has bought me a meal today.<br>
-        <span style="font:500 16px 'DM Sans'">Be the first name on the board. I’m very hungry.</span>
+        <span style="font:500 15px 'DM Sans'">Be the first name on the board. I’m very hungry.</span>
       </div>
     `;
     return;
@@ -416,7 +420,7 @@ function renderLeaderboard(): void {
 
   let html = '';
 
-  // Render top 3 podium in Top mode (matches original layout)
+  // Render top 3 podium in Top mode
   if (currentBoardMode === 'top' && displayList.length >= 2) {
     const podiums = [
       { item: displayList[1], rank: 2, cls: 'p2' },
@@ -501,7 +505,7 @@ function renderHallOfFame(): void {
     hofContainer.innerHTML = `
       <div class="empty">
         Nobody in the hall of fame yet.<br>
-        <span style="font:500 16px 'DM Sans'">The biggest payers of all time will live here.</span>
+        <span style="font:500 15px 'DM Sans'">The biggest payers of all time will live here.</span>
       </div>
     `;
     return;
@@ -564,14 +568,14 @@ function showDetailModal(item: LeaderboardEntry): void {
   const host = AnalyticsService.getHost(item.url);
 
   modalContent.innerHTML = `
-    <div style="display:flex;gap:14px;align-items:center">
+    <div style="display:flex;gap:12px;align-items:center">
       ${renderAvatar(item)}
       <div>
-        <h2 style="font-size:28px">${AnalyticsService.escapeHtml(item.name)}</h2>
+        <h2 style="font-size:24px">${AnalyticsService.escapeHtml(item.name)}</h2>
         <b>${AnalyticsService.formatMoney(item.amt)}</b>
       </div>
     </div>
-    <p style="white-space:pre-wrap;margin:14px 0">${AnalyticsService.escapeHtml(item.desc || 'No description.')}</p>
+    <p style="white-space:pre-wrap;margin:12px 0;font-size:14.5px">${AnalyticsService.escapeHtml(item.desc || 'No description.')}</p>
     ${
       url
         ? `<p><a class="btn sm" href="${AnalyticsService.escapeHtml(url)}" target="_blank" rel="nofollow noopener ugc">Visit ${AnalyticsService.escapeHtml(host)}</a></p>`
@@ -597,24 +601,26 @@ function openFundModal(): void {
 
   modalContent.innerHTML = `
     <h2>${AnalyticsService.escapeHtml(config.buttonText)} ${AnalyticsService.escapeHtml(meal)}</h2>
-    <p style="margin:0;color:var(--mut)">Put your name or product on today’s board, or stay anonymous.</p>
+    <p style="margin:0;color:var(--mut);font-size:14px">Put your name or product on today’s board, or stay anonymous.</p>
 
-    <label style="display:flex;align-items:center;margin-top:16px;cursor:pointer">
+    <label style="display:flex;align-items:center;margin-top:14px;cursor:pointer">
       <input type="checkbox" id="fundAnon">
       Pay anonymously (no name, no link, no logo)
     </label>
 
     <div id="fundNamedFields">
       <label for="fundName">Your name or product name</label>
-      <input type="text" id="fundName" maxlength="60" placeholder="Acme Analytics">
+      <input type="text" id="fundName" maxlength="60" placeholder="e.g. Acme Analytics">
 
-      <label for="fundUrl">One link (website or social profile)</label>
-      <input type="text" id="fundUrl" maxlength="140" placeholder="https://yourproduct.com or https://x.com/you">
-      <p class="hint">Social links get their platform badge. Websites get a letter avatar unless you upload a logo.</p>
+      <label for="fundUrl">One link (website, X, or GitHub profile)</label>
+      <input type="text" id="fundUrl" maxlength="140" placeholder="https://yourproduct.com or https://x.com/username">
+      <div id="avatarAutoPreview" style="display:flex;align-items:center;gap:10px;margin-top:8px">
+        <div id="fundLogoPreview"></div>
+        <p class="hint" id="avatarHint" style="margin:0">Logo & favicon will be automatically fetched from your link.</p>
+      </div>
 
-      <label for="fundLogo">Logo or profile picture (optional)</label>
+      <label for="fundLogo" style="margin-top:10px">Custom logo upload (optional)</label>
       <input type="file" id="fundLogo" accept="image/*">
-      <div id="fundLogoPreview" style="margin-top:6px;display:none"></div>
     </div>
 
     <label for="fundAmount">How much do you want to pay? (USD)</label>
@@ -634,7 +640,7 @@ function openFundModal(): void {
     ${
       config.payUrl
         ? `<div class="note">You’ll continue to the payment page. You appear on the board once the payment is verified.</div>`
-        : `<div class="note"><b>Live Supabase sync active:</b> Your contribution connects directly with Supabase and renders on the board immediately!</div>`
+        : `<div class="note"><b>Live mode:</b> Your contribution connects with Supabase and renders on the board immediately!</div>`
     }
 
     <p style="display:flex;gap:10px;margin-top:16px">
@@ -656,6 +662,29 @@ function openFundModal(): void {
     anonCheckbox.onchange = () => {
       namedFields.style.display = anonCheckbox.checked ? 'none' : 'block';
     };
+  }
+
+  // Auto-fetch logo in real-time as user types link
+  const urlInput = $('#fundUrl') as HTMLInputElement | null;
+  const previewDiv = $('#fundLogoPreview');
+  const avatarHint = $('#avatarHint');
+
+  const updateAutoAvatar = (): void => {
+    if (uploadedLogo) return; // Custom upload takes precedence
+    const raw = urlInput?.value.trim() || '';
+    const autoUrl = resolveAvatarUrl(raw);
+    if (autoUrl && previewDiv) {
+      previewDiv.innerHTML = `<img src="${AnalyticsService.escapeHtml(autoUrl)}" style="width:36px;height:36px;border-radius:9px;border:2px solid var(--ink);object-fit:cover" onerror="this.parentElement.innerHTML=''">`;
+      if (avatarHint) avatarHint.textContent = 'Auto-detected logo / profile image!';
+    } else if (previewDiv) {
+      previewDiv.innerHTML = '';
+      if (avatarHint) avatarHint.textContent = 'Logo & favicon will be automatically fetched from your link.';
+    }
+  };
+
+  if (urlInput) {
+    urlInput.oninput = updateAutoAvatar;
+    urlInput.onblur = updateAutoAvatar;
   }
 
   const amountInput = $('#fundAmount') as HTMLInputElement | null;
@@ -695,10 +724,9 @@ function openFundModal(): void {
             ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 96, 96);
             uploadedLogo = canvas.toDataURL('image/jpeg', 0.8);
 
-            const previewEl = $('#fundLogoPreview');
-            if (previewEl) {
-              previewEl.style.display = 'block';
-              previewEl.innerHTML = `<img src="${uploadedLogo}" style="width:40px;height:40px;border-radius:10px;border:2px solid var(--ink);object-fit:cover">`;
+            if (previewDiv) {
+              previewDiv.innerHTML = `<img src="${uploadedLogo}" style="width:36px;height:36px;border-radius:9px;border:2px solid var(--ink);object-fit:cover">`;
+              if (avatarHint) avatarHint.textContent = 'Custom logo loaded.';
             }
           }
         };
@@ -713,7 +741,6 @@ function openFundModal(): void {
     submitBtn.onclick = async () => {
       const isAnon = anonCheckbox?.checked ?? false;
       const nameInput = $('#fundName') as HTMLInputElement | null;
-      const urlInput = $('#fundUrl') as HTMLInputElement | null;
       const name = isAnon ? 'Anonymous legend' : (nameInput?.value.trim() || '');
       const rawUrl = isAnon ? '' : (urlInput?.value.trim() || '');
       const amt = parseFloat(amountInput?.value || '0');
@@ -735,12 +762,15 @@ function openFundModal(): void {
         return;
       }
 
+      // If user didn't upload a custom file, auto-resolve their logo from their link!
+      const finalAvatar = isAnon ? '' : (uploadedLogo || resolveAvatarUrl(rawUrl));
+
       const result = await PaymentService.processPayment({
         name,
         url: rawUrl,
         amount: amt,
         desc,
-        img: uploadedLogo,
+        img: finalAvatar,
         anon: isAnon,
         gateway: 'stripe'
       });
@@ -1036,7 +1066,7 @@ function setupExcuseMachine(): void {
 }
 
 // ==========================================================================
-// Full Control Admin Command Center
+// Hidden Admin Command Center (Accessible directly via #admin)
 // ==========================================================================
 let adminUnlocked = false;
 type AdminTab = 'entries' | 'hero' | 'dodge' | 'roasts' | 'pricing' | 'database' | 'backup';
@@ -1048,10 +1078,10 @@ function renderAdmin(): void {
 
   if (!adminUnlocked) {
     adminEl.innerHTML = `
-      <div class="panel" style="max-width:420px">
+      <div class="panel" style="max-width:400px">
         <label for="adminPass">Passcode</label>
         <input type="password" id="adminPass" placeholder="Enter admin passcode">
-        <p style="margin-top:14px"><button class="btn sm" id="adminUnlockBtn">Unlock</button></p>
+        <p style="margin-top:12px"><button class="btn sm" id="adminUnlockBtn">Unlock</button></p>
         <p class="hint">Passcode: <code>admin123</code></p>
       </div>
     `;
@@ -1074,7 +1104,7 @@ function renderAdmin(): void {
   }
 
   adminEl.innerHTML = `
-    <div class="chips" style="margin-bottom:14px">
+    <div class="chips" style="margin-bottom:12px">
       <button class="chip ${adminTab === 'entries' ? 'on' : ''}" data-at="entries">Entries (${entries.length})</button>
       <button class="chip ${adminTab === 'hero' ? 'on' : ''}" data-at="hero">Hero Lines</button>
       <button class="chip ${adminTab === 'dodge' ? 'on' : ''}" data-at="dodge">Dodge Quotes</button>
@@ -1089,7 +1119,7 @@ function renderAdmin(): void {
         ? `
         <div class="panel">
           <h3>Record an entry</h3>
-          <p class="hint">Use this to record payments you actually received outside the site (UPI, PayPal, cash).</p>
+          <p class="hint">Record payments received outside the site (UPI, PayPal, cash).</p>
           <label>Name or product</label>
           <input type="text" id="mName" placeholder="Acme Inc">
           <label>Link</label>
@@ -1098,25 +1128,25 @@ function renderAdmin(): void {
           <input type="number" id="mAmt" step="0.01" value="25">
           <label>Description</label>
           <textarea id="mDesc" placeholder="Note"></textarea>
-          <p style="margin-top:14px"><button class="btn sm" id="mSaveBtn">Add entry</button></p>
+          <p style="margin-top:12px"><button class="btn sm" id="mSaveBtn">Add entry</button></p>
         </div>
 
-        <div class="chips" style="margin:14px 0">
+        <div class="chips" style="margin:12px 0">
           <button class="chip" id="adminExportCsv">Show CSV</button>
           <button class="chip" id="adminResetSample">Reset to sample</button>
           <button class="chip" id="adminClearAll">Delete all entries</button>
         </div>
         <div id="adminCsvOutput"></div>
 
-        <h3 style="margin-top:20px">${entries.length} entries</h3>
+        <h3 style="margin-top:16px">${entries.length} entries</h3>
         ${entries
           .map(
             (item) => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1.5px solid var(--line);gap:10px;flex-wrap:wrap">
-            <span><b>${AnalyticsService.escapeHtml(item.name)}</b> · ${AnalyticsService.formatMoney(item.amt)} · ${new Date(item.t).toLocaleDateString()}</span>
-            <div style="display:flex;gap:6px">
-              <button class="chip" data-edit="${item.id}" style="padding:4px 10px;font-size:12px">Edit</button>
-              <button class="chip" data-del="${item.id}" style="padding:4px 10px;font-size:12px">Delete</button>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1.5px solid var(--line);gap:8px;flex-wrap:wrap">
+            <span style="font-size:13.5px"><b>${AnalyticsService.escapeHtml(item.name)}</b> · ${AnalyticsService.formatMoney(item.amt)} · ${new Date(item.t).toLocaleDateString()}</span>
+            <div style="display:flex;gap:4px">
+              <button class="chip" data-edit="${item.id}" style="padding:3px 8px;font-size:11.5px">Edit</button>
+              <button class="chip" data-del="${item.id}" style="padding:3px 8px;font-size:11.5px">Delete</button>
             </div>
           </div>
         `
@@ -1133,26 +1163,26 @@ function renderAdmin(): void {
           <label>Small Subtitle Under Main Button</label>
           <input type="text" id="cfgSub" value="${AnalyticsService.escapeHtml(config.subText)}">
           <label>Rotating Hero Lines (one per line)</label>
-          <textarea id="cfgLines" style="min-height:220px">${AnalyticsService.escapeHtml((config.lines || ROTATING_LINES).join('\n'))}</textarea>
-          <p style="margin-top:14px"><button class="btn sm" id="cfgSaveHeroBtn">Save Hero Lines</button></p>
+          <textarea id="cfgLines" style="min-height:180px">${AnalyticsService.escapeHtml((config.lines || ROTATING_LINES).join('\n'))}</textarea>
+          <p style="margin-top:12px"><button class="btn sm" id="cfgSaveHeroBtn">Save Hero Lines</button></p>
         </div>
       `
         : adminTab === 'dodge'
         ? `
         <div class="panel">
           <label>“Go get a job” button texts (one per line)</label>
-          <textarea id="cfgDodgeQuotes" style="min-height:260px">${AnalyticsService.escapeHtml((config.dodgeQuotes || DODGE_QUOTES).join('\n'))}</textarea>
-          <p style="margin-top:14px"><button class="btn sm" id="cfgSaveDodgeBtn">Save Dodge Quotes</button></p>
+          <textarea id="cfgDodgeQuotes" style="min-height:220px">${AnalyticsService.escapeHtml((config.dodgeQuotes || DODGE_QUOTES).join('\n'))}</textarea>
+          <p style="margin-top:12px"><button class="btn sm" id="cfgSaveDodgeBtn">Save Dodge Quotes</button></p>
         </div>
       `
         : adminTab === 'roasts'
         ? `
         <div class="panel">
           <label>Roast templates (use {n} for name, one per line)</label>
-          <textarea id="cfgRoasts" style="min-height:180px">${AnalyticsService.escapeHtml((config.roastTemplates || ROAST_TEMPLATES).join('\n'))}</textarea>
-          <label style="margin-top:14px">Excuses (one per line)</label>
-          <textarea id="cfgExcuses" style="min-height:180px">${AnalyticsService.escapeHtml((config.excusesList || EXCUSES_LIST).join('\n'))}</textarea>
-          <p style="margin-top:14px"><button class="btn sm" id="cfgSaveRoastsBtn">Save Roasts & Excuses</button></p>
+          <textarea id="cfgRoasts" style="min-height:160px">${AnalyticsService.escapeHtml((config.roastTemplates || ROAST_TEMPLATES).join('\n'))}</textarea>
+          <label style="margin-top:12px">Excuses (one per line)</label>
+          <textarea id="cfgExcuses" style="min-height:160px">${AnalyticsService.escapeHtml((config.excusesList || EXCUSES_LIST).join('\n'))}</textarea>
+          <p style="margin-top:12px"><button class="btn sm" id="cfgSaveRoastsBtn">Save Roasts & Excuses</button></p>
         </div>
       `
         : adminTab === 'pricing'
@@ -1164,7 +1194,7 @@ function renderAdmin(): void {
           <input type="text" id="cfgPresets" value="${(config.presets || [5, 10, 25, 50, 100]).join(', ')}">
           <label>Admin passcode</label>
           <input type="text" id="cfgPass" value="${AnalyticsService.escapeHtml(config.adminPasscode)}">
-          <p style="margin-top:14px"><button class="btn sm" id="cfgSavePricingBtn">Save settings</button></p>
+          <p style="margin-top:12px"><button class="btn sm" id="cfgSavePricingBtn">Save settings</button></p>
         </div>
       `
         : adminTab === 'database'
@@ -1172,31 +1202,30 @@ function renderAdmin(): void {
         <div class="panel">
           <h3>Supabase Database</h3>
           <p class="hint">URL: <code>https://upnbvommgourlstrilsa.supabase.co</code></p>
-          <div class="chips" style="margin:12px 0">
+          <div class="chips" style="margin:10px 0">
             <button class="chip" id="btnTestSupabase">Test Connection</button>
             <button class="chip" id="btnPushSupabase">Push Local to Supabase</button>
             <button class="chip" id="btnPullSupabase">Pull from Supabase</button>
           </div>
-          <div id="supabaseTestResult" style="margin-top:8px"></div>
+          <div id="supabaseTestResult" style="margin-top:6px"></div>
 
-          <label style="margin-top:16px">SQL Schema for Supabase Editor</label>
-          <textarea style="min-height:140px;font-family:monospace;font-size:12px" readonly>${AnalyticsService.escapeHtml(SupabaseService.getCreateSqlSchema())}</textarea>
-          <p style="margin-top:10px"><button class="chip" id="btnCopySql">Copy SQL</button></p>
+          <label style="margin-top:14px">SQL Schema for Supabase Editor</label>
+          <textarea style="min-height:120px;font-family:monospace;font-size:11.5px" readonly>${AnalyticsService.escapeHtml(SupabaseService.getCreateSqlSchema())}</textarea>
+          <p style="margin-top:8px"><button class="chip" id="btnCopySql">Copy SQL</button></p>
         </div>
       `
         : `
         <div class="panel">
           <label>Export (copy this)</label>
-          <textarea style="min-height:140px;font-family:monospace" readonly>${AnalyticsService.escapeHtml(JSON.stringify({ config, entries }))}</textarea>
-          <label style="margin-top:14px">Import (paste here)</label>
-          <textarea id="importJsonBox" style="min-height:120px;font-family:monospace"></textarea>
-          <p style="margin-top:10px"><button class="btn sm" id="importJsonBtn">Import</button></p>
+          <textarea style="min-height:120px;font-family:monospace;font-size:11.5px" readonly>${AnalyticsService.escapeHtml(JSON.stringify({ config, entries }))}</textarea>
+          <label style="margin-top:12px">Import (paste here)</label>
+          <textarea id="importJsonBox" style="min-height:100px;font-family:monospace;font-size:11.5px"></textarea>
+          <p style="margin-top:8px"><button class="btn sm" id="importJsonBtn">Import</button></p>
         </div>
       `
     }
   `;
 
-  // Tab switching
   adminEl.querySelectorAll<HTMLElement>('[data-at]').forEach((b) => {
     b.onclick = () => {
       adminTab = (b.getAttribute('data-at') as AdminTab) || 'entries';
@@ -1214,13 +1243,14 @@ function renderAdmin(): void {
           showToast('Name and a positive amount are required.');
           return;
         }
+        const rawUrl = ($('#mUrl') as HTMLInputElement | null)?.value || '';
         const newManual: LeaderboardEntry = {
           id: 'm-' + Date.now(),
           name,
-          url: AnalyticsService.safeUrl(($('#mUrl') as HTMLInputElement | null)?.value),
+          url: AnalyticsService.safeUrl(rawUrl),
           amt: Math.round(amt * 100) / 100,
           desc: ($('#mDesc') as HTMLTextAreaElement | null)?.value.trim() || '',
-          img: '',
+          img: resolveAvatarUrl(rawUrl),
           anon: false,
           t: Date.now(),
           src: 'manual'
@@ -1259,7 +1289,7 @@ function renderAdmin(): void {
           <input type="text" id="edUrl" value="${AnalyticsService.escapeHtml(item.url)}">
           <label>Description</label>
           <textarea id="edDesc">${AnalyticsService.escapeHtml(item.desc)}</textarea>
-          <p style="display:flex;gap:10px;margin-top:16px">
+          <p style="display:flex;gap:10px;margin-top:14px">
             <button class="btn sm" id="edSaveBtn">Save changes</button>
             <button class="btn sm w" id="edCancelBtn">Cancel</button>
           </p>
@@ -1276,7 +1306,8 @@ function renderAdmin(): void {
             name: updName,
             amt: updAmt,
             url: AnalyticsService.safeUrl(updUrl),
-            desc: updDesc
+            desc: updDesc,
+            img: resolveAvatarUrl(updUrl, item.img)
           });
           closeModal();
           renderAdmin();
@@ -1296,7 +1327,7 @@ function renderAdmin(): void {
         const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
         const csvOut = $('#adminCsvOutput');
         if (csvOut) {
-          csvOut.innerHTML = `<textarea style="min-height:140px;margin-top:10px">${AnalyticsService.escapeHtml(csv)}</textarea>`;
+          csvOut.innerHTML = `<textarea style="min-height:120px;margin-top:10px">${AnalyticsService.escapeHtml(csv)}</textarea>`;
         }
       };
     }
@@ -1491,7 +1522,7 @@ async function initApp(): Promise<void> {
     if (rstEl) rstEl.textContent = stats.resetCountdownFormatted;
   }, 1000);
 
-  // Supabase background sync
+  // Supabase background sync and realtime subscription
   try {
     const remoteEntries = await StorageService.syncFromSupabase();
     if (remoteEntries && remoteEntries.length > 0) {
