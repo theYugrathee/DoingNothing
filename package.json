@@ -1,0 +1,22 @@
+{
+  "name": "doing-nothing",
+  "version": "1.0.0",
+  "description": "Doing Nothing: A Full-Time Career — Viral micro-SaaS",
+  "scripts": {
+    "dev": "npx serve .",
+    "start": "npx serve .",
+    "build": "echo 'Static build ready'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theYugrathee/DoingNothing.git"
+  },
+  "keywords": [
+    "saas",
+    "viral",
+    "leaderboard",
+    "micro-saas"
+  ],
+  "author": "theYugrathee",
+  "license": "MIT"
+}

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Doing Nothing: A Full-Time Career | The Viral Micro-SaaS</title>
+  <meta name="description" content="I do nothing for a living. Buy me a meal and feature your startup, profile, or link on today's board.">
+  <meta property="og:title" content="Doing Nothing: A Full-Time Career">
+  <meta property="og:description" content="I do nothing for a living. Buy me a meal and put your name or product on today’s board.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#F6F4EE">
+
+  <!-- Google Fonts: Bricolage Grotesque & DM Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,400..800;1,9..40,400..800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Confetti Canvas for Celebratory Donations -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Sticky Header -->
+  <header>
+    <div class="hd">
+      <div class="logo-group">
+        <a class="logo" href="#home">doingnothing<span>.lol</span></a>
+        <span class="badge-live">Live</span>
+      </div>
+
+      <!-- Desktop Navigation -->
+      <nav class="desktop-nav" id="desktopNav">
+        <a href="#home" class="on">Home</a>
+        <a href="#red">Don’t Press</a>
+        <a href="#roast">Get Roasted</a>
+        <a href="#hall-of-fame">Hall of Fame</a>
+        <a href="#challenge">Challenge</a>
+        <a href="#excuses">Excuses</a>
+        <a href="#about">About</a>
+      </nav>
+
+      <!-- Action Buttons -->
+      <div class="header-actions">
+        <button class="btn-sound" id="soundToggleBtn" aria-label="Toggle sound effects">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <span>Sound: on</span>
+        </button>
+
+        <button class="mobile-toggle" id="mobileToggle" aria-label="Open mobile menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Drawer Menu -->
+  <div class="mobile-drawer" id="mobileDrawer">
+    <div class="mobile-drawer-content">
+      <div class="mobile-drawer-header">
+        <a class="logo" href="#home" onclick="location.hash='home'">doingnothing<span>.lol</span></a>
+        <button class="modal-close-x" id="closeDrawer">&times;</button>
+      </div>
+      <div class="mobile-nav-links">
+        <a href="#home">🏠 Home</a>
+        <a href="#red">🚨 Don’t Press</a>
+        <a href="#roast">🔥 Get Roasted</a>
+        <a href="#hall-of-fame">👑 Hall of Fame</a>
+        <a href="#challenge">⏱️ Challenge</a>
+        <a href="#excuses">💬 Excuses</a>
+        <a href="#about">📖 About Nothing</a>
+        <a href="#admin">⚙️ Admin Console</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <main class="wrap">
+
+    <!-- 1. HOME VIEW -->
+    <section class="pg on" id="home">
+      <!-- Hero Section -->
+      <div class="hero">
+        <div class="tag-banner" id="heroTag">Unemployed since 2026. Proud of it.</div>
+        <h1 class="hero-title">I do<br><span class="hl">nothing.</span></h1>
+        <div class="hero-subtitle" id="heroSubtitle">Today I ate: nothing. Yesterday: instant noodles. Progress.</div>
+
+        <div class="hero-cta-area" id="heroCtaArea">
+          <button class="btn" id="fundHeroBtn">
+            Buy me lunch
+            <small>and get on today’s board</small>
+          </button>
+          <button class="btn w" id="run">Go get a job</button>
+        </div>
+      </div>
+
+      <!-- Today's Live Metrics Strip -->
+      <div class="metrics-strip">
+        <div class="metric-cell">
+          <div class="metric-label">
+            <span>💰 Collected Today</span>
+          </div>
+          <div class="metric-value highlight" id="totalToday">$0</div>
+        </div>
+
+        <div class="metric-cell">
+          <div class="metric-label">
+            <span>🍜 Feeders Today</span>
+          </div>
+          <div class="metric-value" id="countToday">0</div>
+        </div>
+
+        <div class="metric-cell">
+          <div class="metric-label">
+            <span>👑 Top Patron</span>
+          </div>
+          <div class="metric-value" id="topSupporterName" style="font-size:22px;word-break:break-word">Nobody</div>
+        </div>
+
+        <div class="metric-cell">
+          <div class="metric-label">
+            <span>⏳ Board Resets In</span>
+          </div>
+          <div class="metric-value" id="resetCountdown">--:--:--</div>
+        </div>
+      </div>
+
+      <!-- Today's Leaderboard Box -->
+      <div class="board-container">
+        <div class="board-header">
+          <div class="board-intro">
+            <h2>Today’s Live Board</h2>
+            <p>Every contribution puts you or your startup in the spotlight. Tap any card for full details.</p>
+          </div>
+          <div class="chips-container">
+            <button class="chip on" data-board-mode="recent">⚡ Recent</button>
+            <button class="chip" data-board-mode="top">🔥 Top Patrons</button>
+          </div>
+        </div>
+
+        <div id="boardContainer"></div>
+      </div>
+
+      <!-- Architecture & Tech Stack Card for Future Expansion -->
+      <div class="panel" style="background:var(--paper);border:2px dashed var(--ink);margin-bottom:40px">
+        <h3 style="font-size:22px;margin-bottom:8px">🛠️ Ready for Live Payments, Auth & Real-Time Stats</h3>
+        <p style="font-size:15px;margin-bottom:14px;color:var(--mut)">
+          This application is architected to seamlessly plug into production services whenever you are ready:
+        </p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:14px">
+          <div style="background:var(--card);border:2px solid var(--ink);border-radius:var(--radius-sm);padding:14px">
+            <b>💳 Live Payments</b>
+            <p style="font-size:13.5px;margin-top:4px">Stripe Payment Links, Checkout API, or Razorpay for instant card/UPI collections.</p>
+          </div>
+          <div style="background:var(--card);border:2px solid var(--ink);border-radius:var(--radius-sm);padding:14px">
+            <b>🔐 Authentication</b>
+            <p style="font-size:13.5px;margin-top:4px">Clerk, Supabase Auth, or NextAuth for passwordless login and founder dashboard.</p>
+          </div>
+          <div style="background:var(--card);border:2px solid var(--ink);border-radius:var(--radius-sm);padding:14px">
+            <b>📊 Real-Time Analytics</b>
+            <p style="font-size:13.5px;margin-top:4px">PostgreSQL database + Redis cache for instantaneous multi-device leaderboard synchronization.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. DON'T PRESS THE RED BUTTON -->
+    <section class="pg" id="red">
+      <div class="pgx">
+        <h1>Don’t press <span class="hl">it.</span></h1>
+        <p style="color:var(--mut);max-width:32em">Seriously. Nothing constructive happens. I’m only giving you one singular warning.</p>
+
+        <div class="panel" style="text-align:center;padding:44px 20px">
+          <button class="big-red-btn" id="bigRedBtn">DO NOT PRESS</button>
+          <p id="redMessage" style="font-weight:700;font-size:18px;min-height:2em;margin-top:20px"></p>
+          <p class="hint-text" id="redPressCounter">Total button presses: 0</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. GET ROASTED -->
+    <section class="pg" id="roast">
+      <div class="pgx">
+        <h1>Get <span class="hl">roasted.</span></h1>
+        <p style="color:var(--mut);max-width:32em">Enter your startup, product, or name. I will evaluate your existence with zero filter.</p>
+
+        <div class="panel" style="max-width:680px">
+          <label for="roastInput">Your Name, Startup, or Twitter Handle</label>
+          <input id="roastInput" maxlength="50" placeholder="e.g. MySaaS, Elon, Uber for Cats">
+
+          <button class="btn" id="generateRoastBtn" style="margin-top:14px">
+            Roast Me 🔥
+          </button>
+
+          <div class="disp" id="roastOutput" style="font-size:clamp(22px, 3.5vw, 32px);line-height:1.2;margin-top:24px;min-height:3em">
+            Type your startup above to receive an unvarnished reality check.
+          </div>
+
+          <div id="roastActions" style="display:none;gap:10px;margin-top:16px;flex-wrap:wrap">
+            <button class="btn y sm" id="copyRoastBtn">📋 Copy Roast</button>
+            <button class="btn w sm" id="tweetRoastBtn">🐦 Share on X / Twitter</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. HALL OF FAME -->
+    <section class="pg" id="hall-of-fame">
+      <div class="pgx">
+        <h1>Hall of <span class="hl">Fame.</span></h1>
+        <p style="color:var(--mut);max-width:34em">The greatest patrons in the history of Doing Nothing, ranked by all-time generosity.</p>
+        <div id="hofContainer" style="margin-top:20px"></div>
+      </div>
+    </section>
+
+    <!-- 5. THE DO-NOTHING CHALLENGE -->
+    <section class="pg" id="challenge">
+      <div class="pgx">
+        <h1>The Do-Nothing <span class="hl">Challenge.</span></h1>
+        <p style="max-width:34em;color:var(--mut)">Press start, then do literally nothing. No mouse movements, no touch, no scrolling, no keyboard strokes. The moment you twitch, you lose.</p>
+
+        <div class="panel" style="text-align:center;padding:44px 20px;max-width:640px;margin:24px auto">
+          <div class="challenge-timer" id="challengeTimer">0.0s</div>
+          <p id="challengeMessage" style="font-weight:700;font-size:18px;min-height:2em">Ready to test your supreme lack of productivity?</p>
+          <button class="btn" id="startChallengeBtn" style="margin:0 auto">
+            Begin Doing Absolutely Nothing
+          </button>
+          <p class="hint-text" id="challengeBest" style="margin-top:16px"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. THE EXCUSE MACHINE -->
+    <section class="pg" id="excuses">
+      <div class="pgx">
+        <h1>The Excuse <span class="hl">Machine.</span></h1>
+        <p style="color:var(--mut)">When you need an ironclad reason why the project isn't finished yet.</p>
+
+        <div class="panel" style="max-width:680px">
+          <div class="disp" id="excuseOutput" style="font-size:clamp(26px, 4.5vw, 44px);line-height:1.1;min-height:3em">
+            Click the button below. I would, but I’m conserving glucose.
+          </div>
+          <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap">
+            <button class="btn" id="generateExcuseBtn">Generate Bulletproof Excuse</button>
+            <button class="btn w" id="copyExcuseBtn">📋 Copy</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. ABOUT -->
+    <section class="pg" id="about">
+      <div class="pgx">
+        <h1>About <span class="hl">Nothing.</span></h1>
+        <p style="max-width:36em;font-size:20px;line-height:1.5;margin-bottom:20px">
+          I do nothing all day and I am delightfully transparent about it. If that brings a smile to your face, buy me a meal. If you are building something cool, claim your spot on today's leaderboard.
+        </p>
+
+        <h3 style="font-size:28px;margin-top:32px">The Official Rules of Doing Nothing</h3>
+        <ol style="max-width:36em;padding-left:20px;margin-top:14px;line-height:1.8;font-size:16px">
+          <li>Contributions are voluntary appreciations for non-productivity.</li>
+          <li>Contribute any amount you like ($1+). Rankings on the board reflect support levels.</li>
+          <li>Today's board resets every midnight. Daily victors enter the Hall of Fame.</li>
+          <li>Placement is public recognition. Zero unsolicited spam or malicious links permitted.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 8. ADMIN CONSOLE -->
+    <section class="pg" id="admin">
+      <div class="pgx">
+        <h1>Admin <span class="hl">Console.</span></h1>
+        <p style="color:var(--mut);margin-bottom:16px">Manage board entries, configure donation targets, or export backup JSON.</p>
+        <div id="adminDashboard"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Global Footer -->
+  <footer>
+    <div class="footer-inner">
+      <div>
+        doingnothing.lol · built with supreme dedication to doing nothing
+      </div>
+      <div class="footer-links">
+        <a href="#about">About</a>
+        <a href="#hall-of-fame">Hall of Fame</a>
+        <a href="#admin">Admin</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modal Dialog -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal-sheet" id="modalContent"></div>
+  </div>
+
+  <!-- Global Toast -->
+  <div id="toast"></div>
+
+  <!-- Application Logic -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
