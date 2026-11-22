@@ -1,14 +1,101 @@
 import { AppConfig, LeaderboardEntry, ContributionTier } from '../types';
 
+export const ROTATING_LINES: string[] = [
+  "bro i literally just woke up",
+  "my mom thinks i'm applying for jobs right now",
+  "can't work today, vibe is completely off",
+  "eating maggi for dinner for the 4th day in a row",
+  "my bank account has like $1.40 in it",
+  "i sent 1 job application in 2024 and i'm still recovering",
+  "opened linkedin for 2 mins and got an existential crisis",
+  "interview? nah i'd get nervous and cry",
+  "bro leave me alone i'm tired",
+  "i'm not broke, i just have zero money",
+  "pls don't tell my dad you saw this website",
+  "who even came up with the idea of working 40 hours a week anyway",
+  "currently busy staring at my ceiling thinking about life",
+  "my bed was literally begging me not to get up",
+  "i was gonna be productive today but then lunch happened",
+  "salary: zero. stress: also zero.",
+  "my alarm went off at 8am and i just laughed",
+  "just 5 more mins (said 5 hours ago)",
+  "i have big plans for life, just not today",
+  "someone please buy me food i'm too lazy to cook",
+  "my back hurts from lying down all day",
+  "thinking about working made me need a nap"
+];
+
+export const DODGE_QUOTES: string[] = [
+  "nah i'm good",
+  "bro chill",
+  "in this economy?!",
+  "leave me alone",
+  "i'm sleepy",
+  "ask me tomorrow",
+  "too much work",
+  "i'm busy doing nothing",
+  "my mom already told me that",
+  "no thanks",
+  "can't, vibe is off",
+  "who's gonna hire me anyway",
+  "try again lol",
+  "missed me",
+  "nice try though",
+  "i'm comfortable here",
+  "working is overrated",
+  "pay me to stop",
+  "don't look at me",
+  "shh i'm napping",
+  "bro please stop clicking",
+  "not happening today"
+];
+
+export const ROAST_TEMPLATES: string[] = [
+  "{n} sounds like something you made at 3am and regretted the next morning.",
+  "i looked at {n} and honestly? even your close friends haven't visited it.",
+  "{n} has 2 active users: you and your other test gmail account.",
+  "the founder of {n} definitely talks about AI on twitter all day but has zero paying customers.",
+  "bro named it {n} and genuinely thought he did something revolutionary.",
+  "if {n} was a person, it would still be living in its parents' basement.",
+  "{n} is the kind of project that stays 'launching next month' until 2035.",
+  "i asked my cat about {n} and it literally just walked away to sleep.",
+  "{n} sounds like a startup that raised zero dollars and somehow still lost all of it.",
+  "bro {n} has more buttons and dropdowns than actual active users.",
+  "i showed {n} to my mom and she asked if it was a virus.",
+  "the roadmap for {n} is definitely just 3 bullet points in Apple Notes."
+];
+
+export const EXCUSES_LIST: string[] = [
+  "bro my internet was acting weird",
+  "i was about to start and then my friend called",
+  "can't right now, my head hurts a little",
+  "i'll do it tonight after dinner i swear",
+  "i got distracted by a 3-hour youtube video about medieval castles",
+  "my laptop was updating",
+  "i need to clean my room first before i can focus",
+  "tomorrow 100% no cap",
+  "i had to walk my neighbor's dog",
+  "it's too late in the day to start something new anyway",
+  "my coffee was too hot to drink, so i paused everything",
+  "i'm waiting for the right mood to kick in"
+];
+
 export const DEFAULT_CONFIG: AppConfig = {
   payUrl: '',
   timezone: 'Asia/Kolkata',
   adminPasscode: 'admin123',
   tagline: 'Unemployed since 2026. Proud of it.',
+  heroTitle: 'I do nothing.',
   buttonText: 'Buy me',
   subText: 'and get on today’s board',
   targetGoal: 100,
+  minAmount: 1,
+  presets: [5, 10, 25, 50, 100],
   currency: 'USD',
+  lines: [...ROTATING_LINES],
+  dodgeQuotes: [...DODGE_QUOTES],
+  roastTemplates: [...ROAST_TEMPLATES],
+  excusesList: [...EXCUSES_LIST],
   socials: {
     twitter: 'https://x.com',
     github: 'https://github.com/theYugrathee/DoingNothing'
@@ -20,97 +107,6 @@ export const CONTRIBUTION_TIERS: ContributionTier[] = [
   { name: 'Big Spender', color: '#8B3DFF', minAmount: 25 },
   { name: 'Supporter', color: '#0E9F6E', minAmount: 5 },
   { name: 'Noodle Fan', color: '#6C6A64', minAmount: 1 }
-];
-
-export const ROTATING_LINES: readonly string[] = [
-  'Today I ate: nothing. Yesterday: instant noodles. Progress.',
-  'Employee of the month at my own couch.',
-  'Unemployed, undefeated, underfed.',
-  'My diet is 80% noodles, 20% excuses.',
-  'Current net worth: one cup of spicy ramen.',
-  'Last meal: spaghetti with ketchup. Michelin-adjacent.',
-  'I’m not unemployed. I’m pre-productive.',
-  'The cheapest meal in town? I’m the honorary mayor there.',
-  'My LinkedIn headline says: "Open to Nap Opportunities".',
-  'I once tried working. It was a Saturday, so I stopped.',
-  'Hustle culture called. I let it go straight to voicemail.',
-  'I’m the reason ergonomic couches were invented.',
-  'Dinner tonight: cup noodles. Dessert: ice water.',
-  'The worst employee you will happily never hire.',
-  'Professional bed comfort evaluator (self-assigned, unpaid).',
-  'Hunger status: high noodle priority alert.',
-  'My fridge light is the hardest working component in this house.',
-  'I have a 10-year masterplan. It involves sleeping in.',
-  'Day 1 of my startup. Day 4,000 of resting my eyes.',
-  'My bank account is an inspiring minimalist art piece.',
-  'I’m self-employed. Salary: pure positive vibes.',
-  'Lunch is a social construct. My stomach is a void.',
-  'Currently accepting angel investment in the form of hot pizza.',
-  'Not lazy. Simply maintaining extreme energy conservation.',
-  'Recruiters keep searching for 10x engineers; I’m a 0.01x master.'
-];
-
-export const DODGE_QUOTES: readonly string[] = [
-  'Nice try, HR!',
-  'Resume: 1 line ("Can sleep 12 hrs").',
-  'I\'m overqualified for employment.',
-  'My hands are allergic to spreadsheets.',
-  'Can this job be done horizontally?',
-  'Error 404: Motivation not found.',
-  'I’m disruption-resistant.',
-  'LinkedIn blocked me for excessive chill.',
-  'I’d work, but Mercury is in retrograde.',
-  'My couch needs emotional support.',
-  'Interview question: "Where do you see yourself in 5 years?" Me: "Right here."',
-  'Even my shadow decided to take the day off.',
-  'Working 9 to 5? I wake up at 5 PM.',
-  'I don’t suffer from insanity, I enjoy every minute of doing nothing.',
-  'I’m quiet-quitting life’s hustle.',
-  'Will trade software advice for hot samosas.',
-  'Synergy? I don\'t even have standard energy.',
-  'Circle back with me in 2030.',
-  'Out of office: Permanently booked by bed.',
-  'Please pay me to stay away from your codebase.',
-  'I tested positive for lack of enthusiasm.',
-  'I have an allergy to Monday mornings.',
-  'Don\'t tell my parents you found this site.',
-  'My alarm clock surrendered 3 weeks ago.',
-  'Every meeting could have been a nap.'
-];
-
-export const ROAST_TEMPLATES: readonly string[] = [
-  '{n} sounds like a SaaS with 3 active users. And two of them are your test accounts.',
-  'I searched for {n} on Google and even the algorithm seemed unenthusiastic.',
-  '{n} possesses the precise energetic aura of a corporate Friday 4:55 PM email.',
-  'The entire product roadmap for {n} is clearly a blurry screenshot in Apple Notes.',
-  '{n} pivoted so frequently that it ended up right back where it failed initially.',
-  'If {n} was an office snack, it’d be the stale rice cake at the bottom of the drawer.',
-  '{n} is the ultimate definition of "Coming Soon" on Product Hunt.',
-  'Bold decision naming it {n}. Bolder still to deploy it to production on a Friday.',
-  '{n} is dominating every market metric—strictly inside the founder\'s imagination.',
-  'I am literally unemployed and even I would ask {n} for a viable monetization strategy.',
-  '{n} has a five-year financial projection. Year one is still buffered at 0%.',
-  '{n}: 45 features, zero retention, 1000% irrational founder confidence.',
-  'Folks claim {n} is ahead of its time. Time took one look and walked away.',
-  '{n} is the kind of project name that raises $2M in a bull market and delivers a Notion page.',
-  'I showed {n} to my cat. It walked away and took a four-hour nap in protest.'
-];
-
-export const EXCUSES_LIST: readonly string[] = [
-  'I had an airtight master plan. Then a nap happened.',
-  'My inbox and I are currently experiencing mutual estrangement.',
-  'I was literally about to open VS Code, but lunch was ready.',
-  'Deadlines are merely philosophical suggestions.',
-  'My to-do list has evolved into a work of historical fiction.',
-  'Productivity is a lifestyle choice. I chose horizontal alignment.',
-  'I am awaiting the exact cosmic alignment before writing line 1.',
-  'I produce my finest creative work under zero pressure, preferably next year.',
-  'The couch has 12 years of workplace seniority over me.',
-  'Conserving cognitive bandwidth for unforeseen galactic emergencies.',
-  'The Wi-Fi was behaving with suspicious tranquility.',
-  'I’m not procrastinating; I’m performing background asynchronous incubation.',
-  'I cannot code on an empty stomach, nor on a full one.',
-  'My keyboard keys are on an unannounced tea break.'
 ];
 
 export const INITIAL_LEADERBOARD: LeaderboardEntry[] = [
@@ -152,10 +148,10 @@ export const INITIAL_LEADERBOARD: LeaderboardEntry[] = [
   },
   {
     id: 'seed-4',
-    name: 'Anonymous Hero',
+    name: 'Anonymous Legend',
     url: '',
     amt: 20.0,
-    desc: 'May your instant noodles always have flavor packets.',
+    desc: 'May your instant noodles always have extra seasoning.',
     img: '',
     anon: true,
     t: Date.now() - 1000 * 60 * 360,
@@ -164,7 +160,7 @@ export const INITIAL_LEADERBOARD: LeaderboardEntry[] = [
   },
   {
     id: 'seed-5',
-    name: 'Chai & Code Club',
+    name: 'Chai & Chill Club',
     url: 'https://linkedin.com',
     amt: 10.0,
     desc: 'Fueling the non-productive revolution, one cup at a time.',

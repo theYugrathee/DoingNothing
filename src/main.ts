@@ -9,6 +9,7 @@ import {
 import { StorageService } from './services/storage';
 import { AnalyticsService } from './services/analytics';
 import { PaymentService } from './services/payments';
+import { SupabaseService } from './services/supabase';
 import { sound } from './services/sound';
 import {
   ROTATING_LINES,
@@ -214,40 +215,50 @@ let lineIndex = 0;
 function cycleHeroLine(): void {
   const lineEl = $('#heroSubtitle');
   if (!lineEl) return;
+  const lines = config.lines && config.lines.length ? config.lines : ROTATING_LINES;
   lineEl.style.opacity = '0';
   setTimeout(() => {
-    lineEl.textContent = ROTATING_LINES[lineIndex++ % ROTATING_LINES.length];
+    lineEl.textContent = lines[lineIndex++ % lines.length];
     lineEl.style.opacity = '1';
   }, 250);
 }
 
 // ==========================================================================
-// Dodging "Go Get A Job" Button
+// Dodging "Go Get A Job" Button (Strictly Bounded Inside Arena!)
 // ==========================================================================
 let dodgeCount = 0;
 let dodgeLastTime = 0;
 
 function setupDodgingButton(): void {
   const runBtn = $('#run');
-  const heroCtaArea = $('#heroCtaArea');
-  if (!runBtn || !heroCtaArea) return;
+  const arena = $('#dodgeArena');
+  if (!runBtn || !arena) return;
 
   const dodge = (): void => {
     const now = performance.now();
-    if (now - dodgeLastTime < 40) return;
+    if (now - dodgeLastTime < 45) return;
     dodgeLastTime = now;
 
     dodgeCount++;
     const soundsList: Array<'boing' | 'squeak' | 'blorp' | 'honk'> = ['boing', 'squeak', 'blorp', 'honk'];
     sound.play(soundsList[dodgeCount % soundsList.length], 40);
 
-    runBtn.textContent = DODGE_QUOTES[Math.floor(Math.random() * DODGE_QUOTES.length)];
+    const quotes = config.dodgeQuotes && config.dodgeQuotes.length ? config.dodgeQuotes : DODGE_QUOTES;
+    runBtn.textContent = quotes[Math.floor(Math.random() * quotes.length)];
     runBtn.classList.add('dodging');
 
+    // Calculate evasion STRICTLY inside the dedicated #dodgeArena bounds!
+    // This ensures it NEVER touches or overlaps #fundHeroBtn!
+    const arenaW = arena.clientWidth;
+    const arenaH = arena.clientHeight;
     const btnW = runBtn.offsetWidth;
-    const maxOffsetX = Math.min(200, window.innerWidth - btnW - 40);
-    const offsetX = (Math.random() - 0.5) * maxOffsetX;
-    const offsetY = (Math.random() - 0.5) * 80;
+    const btnH = runBtn.offsetHeight;
+
+    const maxX = Math.max(0, (arenaW - btnW) / 2 - 10);
+    const maxY = Math.max(0, (arenaH - btnH) / 2 - 8);
+
+    const offsetX = (Math.random() - 0.5) * (maxX * 2);
+    const offsetY = (Math.random() - 0.5) * (maxY * 2);
 
     runBtn.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
 
@@ -256,7 +267,7 @@ function setupDodgingButton(): void {
       runBtn.textContent = 'Go get a job';
       runBtn.classList.remove('dodging');
       runBtn.style.transform = 'none';
-    }, 4500);
+    }, 4000);
   };
 
   runBtn.addEventListener('pointerenter', dodge);
@@ -511,11 +522,12 @@ function openFundModal(): void {
   let selectedGateway: PaymentGateway = 'stripe';
 
   const meal = AnalyticsService.getMealName();
+  const presets = config.presets && config.presets.length ? config.presets : [5, 10, 25, 50, 100];
 
   modalContent.innerHTML = `
     <button class="modal-close-x" id="modalCloseBtn">&times;</button>
     <h2>${AnalyticsService.escapeHtml(config.buttonText)} ${AnalyticsService.escapeHtml(meal)} 🍜</h2>
-    <p class="hint-text">Get featured on today's board and fuel the non-productive revolution.</p>
+    <p class="hint-text">Get featured on today's board and fuel the non-productive movement.</p>
 
     <label style="display:flex;align-items:center;gap:10px;margin-top:18px;cursor:pointer">
       <input type="checkbox" id="fundAnon">
@@ -524,31 +536,32 @@ function openFundModal(): void {
 
     <div id="fundNamedFields">
       <label for="fundName">Your Name or Startup Name</label>
-      <input id="fundName" maxlength="60" placeholder="e.g. Acme Analytics or John Doe">
+      <input type="text" id="fundName" maxlength="60" placeholder="e.g. Acme Analytics or John Doe">
 
       <label for="fundUrl">Website or Social Profile URL</label>
-      <input id="fundUrl" maxlength="140" placeholder="https://yourstartup.com or https://x.com/username">
+      <input type="text" id="fundUrl" maxlength="140" placeholder="https://yourstartup.com or https://x.com/username">
       <p class="hint-text">Visitors can click through directly to your product or profile.</p>
 
       <label for="fundLogo">Upload Logo / Avatar (optional)</label>
-      <input id="fundLogo" type="file" accept="image/*">
+      <input type="file" id="fundLogo" accept="image/*">
       <div id="fundLogoPreview" style="margin-top:8px;display:none"></div>
     </div>
 
     <label for="fundAmount">Contribution Amount (USD)</label>
     <div class="amount-presets">
-      <button class="chip" data-amt="5">$5</button>
-      <button class="chip on" data-amt="10">$10</button>
-      <button class="chip" data-amt="25">$25</button>
-      <button class="chip" data-amt="50">$50</button>
-      <button class="chip" data-amt="100">$100</button>
+      ${presets
+        .map(
+          (amt, idx) =>
+            `<button class="chip ${idx === 1 ? 'on' : ''}" data-amt="${amt}">$${amt}</button>`
+        )
+        .join('')}
     </div>
-    <input id="fundAmount" type="number" min="1" step="1" value="10" placeholder="Custom amount (min $1)">
+    <input type="number" id="fundAmount" min="${config.minAmount || 1}" step="1" value="${presets[1] || 10}" placeholder="Custom amount (min $${config.minAmount || 1})">
 
     <label for="fundDesc">Message / Product Pitch <span id="fundWordCount" class="hint-text" style="display:inline">(0 / 500 words)</span></label>
     <textarea id="fundDesc" placeholder="Tell the world what you're building, or share your favorite nap technique."></textarea>
 
-    <label>Select Payment Method (Simulation / Live Ready)</label>
+    <label>Select Payment Method</label>
     <div class="gateway-grid">
       <div class="gateway-card selected" data-gw="stripe">
         <span>💳 Stripe Card</span>
@@ -565,7 +578,7 @@ function openFundModal(): void {
     </div>
 
     <div class="banner-note" id="fundNotice">
-      <b>🚀 Instant Preview Mode:</b> Contributions instantly render on today's live leaderboard. When your live Stripe/Razorpay keys are connected, it automatically switches to live payment processing!
+      <b>🚀 Instant Live Sync:</b> Your contribution connects with our live Supabase database and renders instantly on the leaderboard!
     </div>
 
     <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap">
@@ -671,8 +684,8 @@ function openFundModal(): void {
         sound.play('sad');
         return;
       }
-      if (isNaN(amt) || amt < 1) {
-        showToast('Minimum contribution is $1.');
+      if (isNaN(amt) || amt < (config.minAmount || 1)) {
+        showToast(`Minimum contribution is $${config.minAmount || 1}.`);
         sound.play('sad');
         return;
       }
@@ -721,13 +734,13 @@ window.addEventListener('keydown', (e) => {
 // ==========================================================================
 let redPressCount = 0;
 const RED_PHRASES: readonly string[] = [
-  'I explicitly asked you not to press that.',
-  'That was literally my singular rule.',
-  'You possess the impulse control of a distracted kitten.',
-  'Nothing occurred. You did that to yourself.',
-  'I have inspected your browser history. Please stand down.',
-  'Go outside. Touch botanical vegetation.',
-  'Every button press delays the launch of my career by 1 hour.'
+  'bro i said don\'t press it',
+  'why are you still clicking this',
+  'you really have nothing better to do huh',
+  'leave the button alone',
+  'click one more time and see what happens',
+  'go drink some water instead',
+  'every click adds 1 hour to my afternoon nap'
 ];
 
 function setupRedButton(): void {
@@ -762,17 +775,17 @@ function triggerInternetDeletion(): void {
     <div class="progress-bar-wrap">
       <i class="progress-bar-fill" id="deleteProgressBar"></i>
     </div>
-    <p id="deleteStatusText" style="font-weight:700">Purging cached memes...</p>
-    <p class="hint-text">(Pure satire, your wifi is safe)</p>
+    <p id="deleteStatusText" style="font-weight:700">Clearing group chats you forgot to reply to...</p>
+    <p class="hint-text">(Just kidding, relax)</p>
   `;
   modalBackdrop.classList.add('on');
 
   const steps = [
-    'Dissolving corporate Slack channels...',
-    'Unsubscribing from marketing emails...',
-    'Cancelling Monday mornings permanently...',
-    'Erasing JavaScript frameworks...',
-    'Deleting the ramen noodles database... WAIT NO!'
+    'Closing 147 open browser tabs...',
+    'Unsubscribing from 50 marketing newsletters...',
+    'Deleting corporate Slack channels...',
+    'Cancelling Monday mornings forever...',
+    'Deleting the instant noodles database... WAIT STOP!'
   ];
 
   let progress = 0;
@@ -788,14 +801,14 @@ function triggerInternetDeletion(): void {
       progress = 98;
       window.clearInterval(interval);
       sound.play('scratch');
-      if (text) text.textContent = 'Wait. Deleting everything sounds like actual work.';
+      if (text) text.textContent = 'Wait. Deleting all of that is way too much work.';
 
       setTimeout(() => {
         sound.play('sad');
         if (!modalContent) return;
         modalContent.innerHTML = `
           <h2>Operation Aborted! 😴</h2>
-          <p style="font-size:16px;margin:12px 0">I got too overwhelmed and took a nap instead. You're welcome.</p>
+          <p style="font-size:16px;margin:12px 0">I got tired and decided to lie down instead. You're welcome.</p>
           <div style="display:flex;gap:12px">
             <button class="btn" id="redMealBtn" style="flex:1">Buy me noodles to say thanks</button>
             <button class="btn w" id="redCloseBtn">Phew</button>
@@ -830,19 +843,20 @@ function setupRoastMachine(): void {
   roastBtn.onclick = () => {
     const name = roastInput?.value.trim() || '';
     if (!name) {
-      showToast('Please enter a startup or project name first!');
+      showToast('Please type a name or startup first!');
       sound.play('sad');
       return;
     }
 
+    const templates = config.roastTemplates && config.roastTemplates.length ? config.roastTemplates : ROAST_TEMPLATES;
     let nextIdx: number;
     do {
-      nextIdx = Math.floor(Math.random() * ROAST_TEMPLATES.length);
+      nextIdx = Math.floor(Math.random() * templates.length);
     } while (nextIdx === lastRoastIdx);
     lastRoastIdx = nextIdx;
 
     sound.play('rim');
-    const roastText = ROAST_TEMPLATES[nextIdx].replace(/\{n\}/g, name);
+    const roastText = templates[nextIdx].replace(/\{n\}/g, name);
     if (roastOutput) roastOutput.textContent = roastText;
     if (roastActions) roastActions.style.display = 'flex';
   };
@@ -891,11 +905,11 @@ function challengeStop(failed: boolean = false): void {
   if (failed) {
     sound.play('sad');
     if (msgEl) {
-      if (durationSec < 5) msgEl.textContent = "You lasted as long as a New Year's gym resolution.";
-      else if (durationSec < 15) msgEl.textContent = 'Mediocre. Your phone screen detected twitches.';
-      else if (durationSec < 30) msgEl.textContent = 'Decent motionless poise. An apprentice of zero output.';
-      else if (durationSec < 60) msgEl.textContent = 'Remarkable stillness. Please consider consulting for us.';
-      else msgEl.textContent = 'Grandmaster of Couch Immobility. Truly awe-inspiring.';
+      if (durationSec < 5) msgEl.textContent = 'Bro you moved immediately lol.';
+      else if (durationSec < 15) msgEl.textContent = 'Not bad, but your phone detected twitches.';
+      else if (durationSec < 30) msgEl.textContent = 'Decent stillness. You have couch potential.';
+      else if (durationSec < 60) msgEl.textContent = 'Now that is serious motionless dedication.';
+      else msgEl.textContent = 'Grandmaster of doing absolutely nothing. I am proud.';
     }
     if (bestEl) bestEl.textContent = `Your Personal Record: ${best.toFixed(1)}s`;
     if (startBtn) {
@@ -950,21 +964,22 @@ function setupExcuseMachine(): void {
   if (!btn) return;
 
   btn.onclick = () => {
+    const list = config.excusesList && config.excusesList.length ? config.excusesList : EXCUSES_LIST;
     let next: number;
     do {
-      next = Math.floor(Math.random() * EXCUSES_LIST.length);
+      next = Math.floor(Math.random() * list.length);
     } while (next === lastExcuseIdx);
     lastExcuseIdx = next;
 
     sound.play('boing');
-    if (output) output.textContent = EXCUSES_LIST[next];
+    if (output) output.textContent = list[next];
   };
 
   if (copyBtn && output) {
     copyBtn.onclick = async () => {
       try {
         await navigator.clipboard.writeText(output.textContent || '');
-        showToast('Excuse copied! Use with extreme discretion.');
+        showToast('Excuse copied! Send it right away.');
         sound.play('pop');
       } catch {
         showToast('Could not copy.');
@@ -974,10 +989,11 @@ function setupExcuseMachine(): void {
 }
 
 // ==========================================================================
-// Admin Dashboard
+// Full Control Admin Command Center
 // ==========================================================================
 let adminUnlocked = false;
-let adminTab: 'entries' | 'settings' | 'backup' = 'entries';
+type AdminTab = 'entries' | 'hero' | 'dodge' | 'roasts' | 'pricing' | 'database' | 'backup';
+let adminTab: AdminTab = 'entries';
 
 function renderAdmin(): void {
   const adminEl = $('#adminDashboard');
@@ -990,7 +1006,7 @@ function renderAdmin(): void {
         <p class="hint-text">Default passcode: <code>admin123</code></p>
         <label for="adminPass">Passcode</label>
         <input type="password" id="adminPass" placeholder="Enter admin passcode">
-        <button class="btn sm" id="adminUnlockBtn" style="margin-top:16px">Unlock Console</button>
+        <button class="btn sm" id="adminUnlockBtn" style="margin-top:16px">Unlock Command Center</button>
       </div>
     `;
 
@@ -1012,12 +1028,29 @@ function renderAdmin(): void {
   }
 
   adminEl.innerHTML = `
-    <div class="chips-container" style="margin-bottom:20px">
-      <button class="chip ${adminTab === 'entries' ? 'on' : ''}" data-at="entries">Entries Manager (${entries.length})</button>
-      <button class="chip ${adminTab === 'settings' ? 'on' : ''}" data-at="settings">SaaS Configuration</button>
-      <button class="chip ${adminTab === 'backup' ? 'on' : ''}" data-at="backup">Export / Import JSON</button>
+    <!-- Top Status Bar with Supabase Realtime Health -->
+    <div class="admin-status-bar">
+      <div class="status-indicator">
+        <span class="status-dot"></span>
+        <span>Supabase Sync Active & Connected</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="chip" id="adminLockBtn">🔒 Lock Admin</button>
+      </div>
     </div>
 
+    <!-- Navigation Tabs -->
+    <div class="chips-container" style="margin-bottom:20px">
+      <button class="chip ${adminTab === 'entries' ? 'on' : ''}" data-at="entries">Patrons & Entries (${entries.length})</button>
+      <button class="chip ${adminTab === 'hero' ? 'on' : ''}" data-at="hero">Hero Copy & Quotes</button>
+      <button class="chip ${adminTab === 'dodge' ? 'on' : ''}" data-at="dodge">Dodge Button Quotes</button>
+      <button class="chip ${adminTab === 'roasts' ? 'on' : ''}" data-at="roasts">Roasts & Excuses</button>
+      <button class="chip ${adminTab === 'pricing' ? 'on' : ''}" data-at="pricing">Pricing & Payments</button>
+      <button class="chip ${adminTab === 'database' ? 'on' : ''}" data-at="database">Supabase Database</button>
+      <button class="chip ${adminTab === 'backup' ? 'on' : ''}" data-at="backup">Backup & JSON</button>
+    </div>
+
+    <!-- TAB 1: ENTRIES MANAGER (Full CRUD) -->
     ${
       adminTab === 'entries'
         ? `
@@ -1027,18 +1060,18 @@ function renderAdmin(): void {
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div>
               <label>Name or Startup</label>
-              <input id="mName" placeholder="Acme Inc">
+              <input type="text" id="mName" placeholder="Acme Inc">
             </div>
             <div>
               <label>Amount (USD)</label>
-              <input id="mAmt" type="number" step="0.01" value="25">
+              <input type="number" id="mAmt" step="0.01" value="25">
             </div>
           </div>
           <label>Website URL</label>
-          <input id="mUrl" placeholder="https://...">
-          <label>Description</label>
+          <input type="text" id="mUrl" placeholder="https://...">
+          <label>Message / Note</label>
           <textarea id="mDesc" placeholder="Supporter note"></textarea>
-          <button class="btn sm" id="mSaveBtn" style="margin-top:14px">Add Record</button>
+          <button class="btn sm" id="mSaveBtn" style="margin-top:14px">Add Record to Board</button>
         </div>
 
         <div style="display:flex;gap:10px;margin:16px 0;flex-wrap:wrap">
@@ -1049,39 +1082,121 @@ function renderAdmin(): void {
 
         <div id="adminCsvOutput"></div>
 
-        <h3 style="margin:24px 0 12px">Live Database (${entries.length} entries)</h3>
+        <h3 style="margin:24px 0 12px">Current Patrons (${entries.length} entries)</h3>
         ${entries
           .map(
             (item) => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--card);border:2px solid var(--line);border-radius:var(--radius-sm);margin-bottom:8px">
-            <div>
+          <div class="admin-crud-item">
+            <div class="text-body">
               <b>${AnalyticsService.escapeHtml(item.name)}</b> · ${AnalyticsService.formatMoney(item.amt)} · <span class="hint-text">${new Date(item.t).toLocaleDateString()}</span>
             </div>
-            <button class="chip" data-del="${item.id}" style="padding:4px 10px;font-size:12px">Delete</button>
+            <div style="display:flex;gap:6px">
+              <button class="chip" data-edit="${item.id}" style="padding:4px 10px;font-size:12px">Edit</button>
+              <button class="chip" data-del="${item.id}" style="padding:4px 10px;font-size:12px">Delete</button>
+            </div>
           </div>
         `
           )
           .join('')}
       `
-        : adminTab === 'settings'
+        : adminTab === 'hero'
         ? `
+        <!-- TAB 2: HERO & CONTENT CONTROL -->
         <div class="panel">
-          <h3>SaaS Configuration</h3>
-          <label>Live Payment Gateway Link (Stripe Payment Link / LemonSqueezy)</label>
-          <input id="cfgPayUrl" value="${AnalyticsService.escapeHtml(config.payUrl)}" placeholder="https://buy.stripe.com/...">
-          <label>Tagline</label>
-          <input id="cfgTag" value="${AnalyticsService.escapeHtml(config.tagline)}">
-          <label>Main Button Text</label>
-          <input id="cfgBtn" value="${AnalyticsService.escapeHtml(config.buttonText)}">
-          <label>Admin Passcode</label>
-          <input id="cfgPass" value="${AnalyticsService.escapeHtml(config.adminPasscode)}">
-          <button class="btn sm" id="cfgSaveBtn" style="margin-top:16px">Save Configuration</button>
+          <h3>Hero Titles & Rotating Lines</h3>
+          <label>Main Hero Title (HTML supported for &lt;span class="hl"&gt;)</label>
+          <input type="text" id="cfgHeroTitle" value="${AnalyticsService.escapeHtml(config.heroTitle || 'I do nothing.')}">
+
+          <label>Hero Tag Banner</label>
+          <input type="text" id="cfgTag" value="${AnalyticsService.escapeHtml(config.tagline)}">
+
+          <label>Main Button Text (time of day meal appended)</label>
+          <input type="text" id="cfgBtn" value="${AnalyticsService.escapeHtml(config.buttonText)}">
+
+          <label>Small Subtitle Under Main Button</label>
+          <input type="text" id="cfgSub" value="${AnalyticsService.escapeHtml(config.subText)}">
+
+          <label>Rotating Hero Lines (Conversational quotes, one per line)</label>
+          <textarea id="cfgLines" style="min-height:220px">${AnalyticsService.escapeHtml((config.lines || ROTATING_LINES).join('\n'))}</textarea>
+
+          <button class="btn sm" id="cfgSaveHeroBtn" style="margin-top:16px">Save Hero Settings</button>
+        </div>
+      `
+        : adminTab === 'dodge'
+        ? `
+        <!-- TAB 3: DODGE BUTTON QUOTES -->
+        <div class="panel">
+          <h3>"Go Get A Job" Evasive Phrases</h3>
+          <p class="hint-text">Quotes that appear when users try to hover or tap the dodging button (one per line):</p>
+          <textarea id="cfgDodgeQuotes" style="min-height:260px">${AnalyticsService.escapeHtml((config.dodgeQuotes || DODGE_QUOTES).join('\n'))}</textarea>
+          <button class="btn sm" id="cfgSaveDodgeBtn" style="margin-top:16px">Save Dodge Quotes</button>
+        </div>
+      `
+        : adminTab === 'roasts'
+        ? `
+        <!-- TAB 4: ROASTS & EXCUSES -->
+        <div class="panel">
+          <h3>Startup & Founder Roasts</h3>
+          <p class="hint-text">Templates for the Roast Machine. Use <code>{n}</code> for the startup/person name (one per line):</p>
+          <textarea id="cfgRoasts" style="min-height:200px">${AnalyticsService.escapeHtml((config.roastTemplates || ROAST_TEMPLATES).join('\n'))}</textarea>
+
+          <h3 style="margin-top:24px">Relatable Excuses</h3>
+          <p class="hint-text">One excuse per line for the Excuse Machine:</p>
+          <textarea id="cfgExcuses" style="min-height:200px">${AnalyticsService.escapeHtml((config.excusesList || EXCUSES_LIST).join('\n'))}</textarea>
+
+          <button class="btn sm" id="cfgSaveRoastsBtn" style="margin-top:16px">Save Roasts & Excuses</button>
+        </div>
+      `
+        : adminTab === 'pricing'
+        ? `
+        <!-- TAB 5: PRICING & PAYMENT GATEWAY -->
+        <div class="panel">
+          <h3>Pricing, Goals & Payment Links</h3>
+          <label>Live Payment Gateway Link (Stripe Payment Link / Razorpay URL)</label>
+          <input type="text" id="cfgPayUrl" value="${AnalyticsService.escapeHtml(config.payUrl)}" placeholder="https://buy.stripe.com/...">
+          <p class="hint-text">When set, the checkout button redirects directly to this live payment gateway.</p>
+
+          <label>Preset Contribution Chips (comma separated)</label>
+          <input type="text" id="cfgPresets" value="${(config.presets || [5, 10, 25, 50, 100]).join(', ')}">
+
+          <label>Minimum Contribution ($)</label>
+          <input type="number" id="cfgMinAmt" value="${config.minAmount || 1}">
+
+          <label>Daily Target Goal ($)</label>
+          <input type="number" id="cfgTargetGoal" value="${config.targetGoal || 100}">
+
+          <button class="btn sm" id="cfgSavePricingBtn" style="margin-top:16px">Save Pricing Settings</button>
+        </div>
+      `
+        : adminTab === 'database'
+        ? `
+        <!-- TAB 6: SUPABASE DATABASE TOOLS -->
+        <div class="panel">
+          <h3>Supabase Database Tools</h3>
+          <p class="hint-text">Connected Project: <code>https://upnbvommgourlstrilsa.supabase.co</code></p>
+          <div style="display:flex;gap:10px;margin:16px 0;flex-wrap:wrap">
+            <button class="btn sm" id="btnTestSupabase">Test Connection</button>
+            <button class="btn sm w" id="btnPushSupabase">Push Local Entries to Supabase</button>
+            <button class="btn sm w" id="btnPullSupabase">Pull from Supabase</button>
+          </div>
+          <div id="supabaseTestResult" style="margin-top:12px"></div>
+
+          <h4 style="margin-top:20px">Supabase SQL Schema</h4>
+          <p class="hint-text">Run this SQL query inside your Supabase project's SQL Editor to create the <code>entries</code> table with Realtime enabled:</p>
+          <textarea style="min-height:160px;font-family:monospace;font-size:13px" readonly>${AnalyticsService.escapeHtml(SupabaseService.getCreateSqlSchema())}</textarea>
+          <button class="chip" id="btnCopySql" style="margin-top:8px">📋 Copy SQL to Clipboard</button>
         </div>
       `
         : `
+        <!-- TAB 7: BACKUP & SECURITY -->
         <div class="panel">
+          <h3>Security & Passcode</h3>
+          <label>Change Admin Passcode</label>
+          <input type="text" id="cfgPass" value="${AnalyticsService.escapeHtml(config.adminPasscode)}">
+          <button class="btn sm" id="cfgSavePassBtn" style="margin:12px 0 24px">Update Passcode</button>
+
           <h3>JSON Backup & Migration</h3>
-          <label>Export Current State</label>
+          <label>Export Current Full State</label>
           <textarea style="min-height:140px;font-family:monospace" readonly>${AnalyticsService.escapeHtml(JSON.stringify({ config, entries }, null, 2))}</textarea>
           <label style="margin-top:16px">Import Backup JSON</label>
           <textarea id="importJsonBox" style="min-height:120px;font-family:monospace" placeholder="Paste exported JSON here"></textarea>
@@ -1091,17 +1206,29 @@ function renderAdmin(): void {
     }
   `;
 
+  // Lock Admin
+  const lockBtn = $('#adminLockBtn');
+  if (lockBtn) {
+    lockBtn.onclick = () => {
+      adminUnlocked = false;
+      renderAdmin();
+      showToast('Admin locked.');
+    };
+  }
+
+  // Tab switching
   adminEl.querySelectorAll<HTMLElement>('[data-at]').forEach((b) => {
     b.onclick = () => {
-      adminTab = (b.getAttribute('data-at') as typeof adminTab) || 'entries';
+      adminTab = (b.getAttribute('data-at') as AdminTab) || 'entries';
       renderAdmin();
     };
   });
 
+  // Action listeners per tab
   if (adminTab === 'entries') {
     const saveBtn = $('#mSaveBtn');
     if (saveBtn) {
-      saveBtn.onclick = () => {
+      saveBtn.onclick = async () => {
         const name = ($('#mName') as HTMLInputElement | null)?.value.trim() || '';
         const amt = parseFloat(($('#mAmt') as HTMLInputElement | null)?.value || '0');
         if (!name || isNaN(amt) || amt <= 0) {
@@ -1119,20 +1246,67 @@ function renderAdmin(): void {
           t: Date.now(),
           src: 'manual'
         };
-        entries = StorageService.addEntry(newManual);
+        entries = await StorageService.addEntry(newManual);
         renderAdmin();
         renderLeaderboard();
-        showToast('Manual record added!');
+        showToast('Record added to board and synced to Supabase!');
       };
     }
 
     adminEl.querySelectorAll<HTMLElement>('[data-del]').forEach((b) => {
-      b.onclick = () => {
+      b.onclick = async () => {
         const delId = b.getAttribute('data-del');
-        entries = entries.filter((x) => x.id !== delId);
-        StorageService.saveEntries(entries);
-        renderAdmin();
-        renderLeaderboard();
+        if (delId) {
+          entries = await StorageService.deleteEntry(delId);
+          renderAdmin();
+          renderLeaderboard();
+          showToast('Entry deleted.');
+        }
+      };
+    });
+
+    adminEl.querySelectorAll<HTMLElement>('[data-edit]').forEach((b) => {
+      b.onclick = () => {
+        const editId = b.getAttribute('data-edit');
+        const item = entries.find((x) => x.id === editId);
+        if (!item || !modalContent || !modalBackdrop) return;
+
+        modalContent.innerHTML = `
+          <button class="modal-close-x" id="modalCloseBtn">&times;</button>
+          <h2>Edit Patron Entry</h2>
+          <label>Name</label>
+          <input type="text" id="edName" value="${AnalyticsService.escapeHtml(item.name)}">
+          <label>Amount ($)</label>
+          <input type="number" id="edAmt" value="${item.amt}">
+          <label>Website Link</label>
+          <input type="text" id="edUrl" value="${AnalyticsService.escapeHtml(item.url)}">
+          <label>Message</label>
+          <textarea id="edDesc">${AnalyticsService.escapeHtml(item.desc)}</textarea>
+          <div style="display:flex;gap:10px;margin-top:16px">
+            <button class="btn sm" id="edSaveBtn">Save Changes</button>
+            <button class="btn sm w" id="edCancelBtn">Cancel</button>
+          </div>
+        `;
+        modalBackdrop.classList.add('on');
+        $('#modalCloseBtn')!.onclick = closeModal;
+        $('#edCancelBtn')!.onclick = closeModal;
+        $('#edSaveBtn')!.onclick = async () => {
+          const updName = ($('#edName') as HTMLInputElement).value.trim();
+          const updAmt = parseFloat(($('#edAmt') as HTMLInputElement).value);
+          const updUrl = ($('#edUrl') as HTMLInputElement).value.trim();
+          const updDesc = ($('#edDesc') as HTMLTextAreaElement).value.trim();
+
+          entries = await StorageService.updateEntry(item.id, {
+            name: updName,
+            amt: updAmt,
+            url: AnalyticsService.safeUrl(updUrl),
+            desc: updDesc
+          });
+          closeModal();
+          renderAdmin();
+          renderLeaderboard();
+          showToast('Patron updated successfully!');
+        };
       };
     });
 
@@ -1179,42 +1353,115 @@ function renderAdmin(): void {
         }
       };
     }
-  } else if (adminTab === 'settings') {
-    const cfgSave = $('#cfgSaveBtn');
-    if (cfgSave) {
-      cfgSave.onclick = () => {
-        config.payUrl = ($('#cfgPayUrl') as HTMLInputElement | null)?.value.trim() || '';
-        config.tagline = ($('#cfgTag') as HTMLInputElement | null)?.value.trim() || '';
-        config.buttonText = ($('#cfgBtn') as HTMLInputElement | null)?.value.trim() || '';
-        config.adminPasscode = ($('#cfgPass') as HTMLInputElement | null)?.value.trim() || 'admin123';
-        StorageService.saveConfig(config);
-        renderApp();
-        showToast('Configuration saved!');
-      };
-    }
+  } else if (adminTab === 'hero') {
+    $('#cfgSaveHeroBtn')!.onclick = () => {
+      config.heroTitle = ($('#cfgHeroTitle') as HTMLInputElement).value.trim();
+      config.tagline = ($('#cfgTag') as HTMLInputElement).value.trim();
+      config.buttonText = ($('#cfgBtn') as HTMLInputElement).value.trim();
+      config.subText = ($('#cfgSub') as HTMLInputElement).value.trim();
+
+      const linesRaw = ($('#cfgLines') as HTMLTextAreaElement).value;
+      config.lines = linesRaw.split('\n').map((s) => s.trim()).filter(Boolean);
+
+      StorageService.saveConfig(config);
+      renderApp();
+      showToast('Hero copy updated!');
+    };
+  } else if (adminTab === 'dodge') {
+    $('#cfgSaveDodgeBtn')!.onclick = () => {
+      const dodgeRaw = ($('#cfgDodgeQuotes') as HTMLTextAreaElement).value;
+      config.dodgeQuotes = dodgeRaw.split('\n').map((s) => s.trim()).filter(Boolean);
+      StorageService.saveConfig(config);
+      showToast('Dodge button phrases saved!');
+    };
+  } else if (adminTab === 'roasts') {
+    $('#cfgSaveRoastsBtn')!.onclick = () => {
+      const roastsRaw = ($('#cfgRoasts') as HTMLTextAreaElement).value;
+      const excusesRaw = ($('#cfgExcuses') as HTMLTextAreaElement).value;
+      config.roastTemplates = roastsRaw.split('\n').map((s) => s.trim()).filter(Boolean);
+      config.excusesList = excusesRaw.split('\n').map((s) => s.trim()).filter(Boolean);
+      StorageService.saveConfig(config);
+      showToast('Roasts and Excuses updated!');
+    };
+  } else if (adminTab === 'pricing') {
+    $('#cfgSavePricingBtn')!.onclick = () => {
+      config.payUrl = ($('#cfgPayUrl') as HTMLInputElement).value.trim();
+      const presetsRaw = ($('#cfgPresets') as HTMLInputElement).value;
+      config.presets = presetsRaw
+        .split(',')
+        .map((n) => parseFloat(n.trim()))
+        .filter((n) => !isNaN(n) && n > 0);
+      config.minAmount = parseFloat(($('#cfgMinAmt') as HTMLInputElement).value) || 1;
+      config.targetGoal = parseFloat(($('#cfgTargetGoal') as HTMLInputElement).value) || 100;
+      StorageService.saveConfig(config);
+      renderApp();
+      showToast('Pricing and gateway settings saved!');
+    };
+  } else if (adminTab === 'database') {
+    $('#btnTestSupabase')!.onclick = async () => {
+      const out = $('#supabaseTestResult');
+      if (out) out.innerHTML = `<span class="hint-text">Testing connection to Supabase...</span>`;
+      const res = await SupabaseService.testConnection();
+      if (out) {
+        out.innerHTML = `
+          <div class="banner-note" style="background:${res.ok ? '#DCFCE7' : '#FEE2E2'}">
+            <b>${res.ok ? '🟢 Success' : '🔴 Notice'}:</b> ${AnalyticsService.escapeHtml(res.message)}
+          </div>
+        `;
+      }
+    };
+
+    $('#btnPushSupabase')!.onclick = async () => {
+      let count = 0;
+      for (const entry of entries) {
+        const ok = await SupabaseService.insertEntry(entry);
+        if (ok) count++;
+      }
+      showToast(`Pushed ${count} entry/entries to Supabase!`);
+    };
+
+    $('#btnPullSupabase')!.onclick = async () => {
+      const fresh = await StorageService.syncFromSupabase();
+      entries = fresh;
+      renderLeaderboard();
+      renderAdmin();
+      showToast(`Pulled ${fresh.length} entries from Supabase!`);
+    };
+
+    $('#btnCopySql')!.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(SupabaseService.getCreateSqlSchema());
+        showToast('SQL schema copied to clipboard!');
+      } catch {
+        showToast('Could not copy.');
+      }
+    };
   } else if (adminTab === 'backup') {
-    const importBtn = $('#importJsonBtn');
-    if (importBtn) {
-      importBtn.onclick = () => {
-        try {
-          const val = ($('#importJsonBox') as HTMLTextAreaElement | null)?.value || '';
-          const parsed = JSON.parse(val);
-          if (parsed.entries && Array.isArray(parsed.entries)) {
-            entries = parsed.entries;
-            StorageService.saveEntries(entries);
-          }
-          if (parsed.config) {
-            config = { ...config, ...parsed.config };
-            StorageService.saveConfig(config);
-          }
-          renderAdmin();
-          renderApp();
-          showToast('Data restored successfully!');
-        } catch {
-          showToast('Invalid JSON syntax.');
+    $('#cfgSavePassBtn')!.onclick = () => {
+      config.adminPasscode = ($('#cfgPass') as HTMLInputElement).value.trim() || 'admin123';
+      StorageService.saveConfig(config);
+      showToast('Admin passcode updated!');
+    };
+
+    $('#importJsonBtn')!.onclick = () => {
+      try {
+        const val = ($('#importJsonBox') as HTMLTextAreaElement).value || '';
+        const parsed = JSON.parse(val);
+        if (parsed.entries && Array.isArray(parsed.entries)) {
+          entries = parsed.entries;
+          StorageService.saveEntries(entries);
         }
-      };
-    }
+        if (parsed.config) {
+          config = { ...config, ...parsed.config };
+          StorageService.saveConfig(config);
+        }
+        renderAdmin();
+        renderApp();
+        showToast('Data restored successfully!');
+      } catch {
+        showToast('Invalid JSON syntax.');
+      }
+    };
   }
 }
 
@@ -1225,6 +1472,7 @@ function renderApp(): void {
   const meal = AnalyticsService.getMealName();
   const mainBtn = $('#fundHeroBtn');
   const tagEl = $('#heroTag');
+  const heroTitleEl = $('#mainHeroTitle');
 
   if (mainBtn) {
     mainBtn.innerHTML = `
@@ -1233,12 +1481,17 @@ function renderApp(): void {
     `;
   }
   if (tagEl) tagEl.textContent = config.tagline;
+  if (heroTitleEl && config.heroTitle) {
+    heroTitleEl.innerHTML = config.heroTitle.includes('<')
+      ? config.heroTitle
+      : `${AnalyticsService.escapeHtml(config.heroTitle)}`;
+  }
 
   renderLeaderboard();
   renderHallOfFame();
 }
 
-function initApp(): void {
+async function initApp(): Promise<void> {
   const soundBtn = $('#soundToggleBtn');
   if (soundBtn) {
     soundBtn.onclick = () => {
@@ -1293,6 +1546,23 @@ function initApp(): void {
     const rstEl = $('#resetCountdown');
     if (rstEl) rstEl.textContent = stats.resetCountdownFormatted;
   }, 1000);
+
+  // Supabase background sync and realtime subscription
+  try {
+    const remoteEntries = await StorageService.syncFromSupabase();
+    if (remoteEntries && remoteEntries.length > 0) {
+      entries = remoteEntries;
+      renderLeaderboard();
+    }
+    SupabaseService.subscribeToEntries(async () => {
+      const updated = await StorageService.syncFromSupabase();
+      entries = updated;
+      renderLeaderboard();
+      renderHallOfFame();
+    });
+  } catch (err) {
+    console.warn('Initial Supabase sync fallback:', err);
+  }
 
   route();
 }

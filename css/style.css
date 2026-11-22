@@ -57,7 +57,6 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Typography Helpers */
 h1, h2, h3, h4, .disp {
   font-family: var(--font-disp);
   font-weight: 800;
@@ -84,10 +83,10 @@ header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(246, 244, 238, 0.95);
+  background: rgba(246, 244, 238, 0.96);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 2px solid var(--ink);
+  border-bottom: 2.5px solid var(--ink);
   transition: all 0.2s ease;
 }
 
@@ -185,7 +184,6 @@ nav.desktop-nav a.on {
   gap: 8px;
 }
 
-/* Sound Button */
 .btn-sound {
   display: inline-flex;
   align-items: center;
@@ -200,6 +198,7 @@ nav.desktop-nav a.on {
   cursor: pointer;
   transition: all 0.15s;
   color: var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
 }
 
 .btn-sound:hover {
@@ -212,7 +211,6 @@ nav.desktop-nav a.on {
   height: 16px;
 }
 
-/* Mobile Hamburger Toggle */
 .mobile-toggle {
   display: none;
   background: var(--card);
@@ -230,7 +228,6 @@ nav.desktop-nav a.on {
   height: 22px;
 }
 
-/* Mobile Drawer Overlay */
 .mobile-drawer {
   display: none;
   position: fixed;
@@ -302,6 +299,109 @@ nav.desktop-nav a.on {
 }
 
 /* ==========================================================================
+   Universal Form & Input Styling (Fixing raw input rendering)
+   ========================================================================== */
+label {
+  font-weight: 700;
+  font-size: 14.5px;
+  display: block;
+  margin-top: 16px;
+  margin-bottom: 6px;
+  color: var(--ink);
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 15.5px;
+  font-weight: 500;
+  padding: 13px 16px;
+  border: 2.5px solid var(--ink);
+  border-radius: var(--radius-sm);
+  background: #FFFFFF;
+  color: var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  display: block;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 4px 4px 0 var(--blue);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  margin: 0 8px 0 0;
+  cursor: pointer;
+  accent-color: var(--blue);
+  box-shadow: none;
+}
+
+input[type="file"] {
+  padding: 10px 14px;
+  background: var(--paper-subtle);
+  cursor: pointer;
+}
+
+input[type="file"]::file-selector-button {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 13px;
+  border: 2px solid var(--ink);
+  background: var(--sun);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 7px 14px;
+  margin-right: 12px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--ink);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+input[type="file"]::file-selector-button:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.input-action-group {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  margin-top: 10px;
+}
+
+.input-action-group input {
+  flex: 1;
+  margin: 0;
+}
+
+.input-action-group .btn {
+  margin: 0;
+  white-space: nowrap;
+  justify-content: center;
+}
+
+@media (max-width: 580px) {
+  .input-action-group {
+    flex-direction: column;
+  }
+}
+
+/* ==========================================================================
    Tactile Neo-Brutalist Buttons
    ========================================================================== */
 .btn {
@@ -312,9 +412,9 @@ nav.desktop-nav a.on {
   font-family: var(--font-sans);
   font-weight: 700;
   font-size: 16px;
-  border: 2px solid var(--ink);
+  border: 2.5px solid var(--ink);
   border-radius: var(--radius-md);
-  padding: 14px 24px;
+  padding: 14px 26px;
   background: var(--blue);
   color: #FFFFFF;
   cursor: pointer;
@@ -379,23 +479,12 @@ nav.desktop-nav a.on {
   display: block;
   font-weight: 500;
   font-size: 12.5px;
-  opacity: 0.85;
+  opacity: 0.9;
   margin-top: 2px;
 }
 
-/* Accessibility focus styles */
-.btn:focus-visible,
-a:focus-visible,
-button:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  outline: 3px solid var(--blue);
-  outline-offset: 3px;
-}
-
 /* ==========================================================================
-   Page Switching & Animations
+   Page Containers & Hero Layout (Fixing Button Overlap)
    ========================================================================== */
 .pg {
   display: none;
@@ -408,14 +497,8 @@ select:focus-visible {
 }
 
 @keyframes pageIn {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .pgx {
@@ -433,18 +516,9 @@ select:focus-visible {
   padding: 0 0.06em;
 }
 
-.hl-blue {
-  background: linear-gradient(transparent 60%, var(--blue-tint) 60%);
-  padding: 0 0.06em;
-}
-
-/* ==========================================================================
-   Hero Section
-   ========================================================================== */
 .hero {
-  padding: 40px 0 30px;
+  padding: 40px 0 20px;
   position: relative;
-  min-height: 380px;
 }
 
 .tag-banner {
@@ -474,7 +548,7 @@ h1.hero-title {
   font-family: var(--font-disp);
   font-weight: 700;
   font-size: clamp(18px, 2.4vw, 26px);
-  line-height: 1.3;
+  line-height: 1.35;
   letter-spacing: -0.03em;
   min-height: 2.8em;
   max-width: 32em;
@@ -482,41 +556,60 @@ h1.hero-title {
   color: var(--ink);
 }
 
+/* Hero CTA Area: Clean separate alignment so buttons NEVER overlap! */
 .hero-cta-area {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   flex-wrap: wrap;
-  margin-top: 14px;
-  position: relative;
+  margin-top: 24px;
 }
 
-/* The Dodging "Go Get A Job" button */
+/* Dedicated Bounded Dodge Arena */
+.dodge-arena {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  height: 90px;
+  border: 2px dashed var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.02);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+}
+
+.dodge-arena .arena-hint {
+  position: absolute;
+  color: #A3A096;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
 #run {
   position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 10;
+  z-index: 5;
   white-space: nowrap;
-  transition: transform 0.12s cubic-bezier(0.18, 0.89, 0.32, 1.28), left 0.15s ease, top 0.15s ease;
+  box-shadow: 3px 3px 0 var(--ink);
   cursor: pointer;
-}
-
-#run.dodging {
-  box-shadow: var(--shadow-sm);
-  background: var(--sun);
+  transition: transform 0.12s cubic-bezier(0.18, 0.89, 0.32, 1.28);
 }
 
 /* ==========================================================================
-   Metrics Strip (Today's Stats)
+   Metrics Strip
    ========================================================================== */
 .metrics-strip {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1.2fr;
-  border: 2px solid var(--ink);
+  border: 2.5px solid var(--ink);
   border-radius: var(--radius-lg);
   background: var(--card);
-  margin: 24px 0;
+  margin: 28px 0;
   box-shadow: var(--shadow-md);
   overflow: hidden;
 }
@@ -529,7 +622,7 @@ h1.hero-title {
 }
 
 .metric-cell + .metric-cell {
-  border-left: 2px solid var(--ink);
+  border-left: 2.5px solid var(--ink);
 }
 
 .metric-label {
@@ -539,9 +632,6 @@ h1.hero-title {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 4px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .metric-value {
@@ -559,11 +649,11 @@ h1.hero-title {
 }
 
 /* ==========================================================================
-   Leaderboard & Today's Board
+   Leaderboard Box
    ========================================================================== */
 .board-container {
   background: var(--card);
-  border: 2px solid var(--ink);
+  border: 2.5px solid var(--ink);
   border-radius: var(--radius-lg);
   padding: 24px;
   margin: 16px 0 36px;
@@ -589,7 +679,6 @@ h1.hero-title {
   font-size: 15px;
 }
 
-/* Filter Chips */
 .chips-container {
   display: flex;
   gap: 8px;
@@ -623,7 +712,7 @@ h1.hero-title {
   transform: translate(2px, 2px);
 }
 
-/* Podium 1st, 2nd, 3rd Cards */
+/* Podiums */
 .podium-grid {
   display: grid;
   gap: 16px;
@@ -732,7 +821,7 @@ h1.hero-title {
   color: var(--blue);
 }
 
-/* Leaderboard List Row */
+/* Rows */
 .board-row {
   position: relative;
   display: grid;
@@ -805,7 +894,6 @@ h1.hero-title {
   animation: pulse 1.2s infinite;
 }
 
-/* Avatars */
 .avatar {
   width: 54px;
   height: 54px;
@@ -889,7 +977,6 @@ h1.hero-title {
   background: linear-gradient(90deg, var(--blue), var(--sun));
 }
 
-/* Tier Chips */
 .tier-tag {
   font-weight: 700;
   font-size: 11px;
@@ -909,7 +996,6 @@ h1.hero-title {
   padding: 2px 7px;
 }
 
-/* Empty State */
 .empty-box {
   border: 2px dashed var(--ink);
   border-radius: var(--radius-lg);
@@ -933,18 +1019,17 @@ h1.hero-title {
 }
 
 /* ==========================================================================
-   Interactive Panels & Mini-Apps
+   Panels, Forms & Mini-Apps
    ========================================================================== */
 .panel {
   background: var(--card);
-  border: 2px solid var(--ink);
+  border: 2.5px solid var(--ink);
   border-radius: var(--radius-lg);
   padding: 28px;
   margin: 20px 0;
   box-shadow: var(--shadow-md);
 }
 
-/* Big Red Button */
 .big-red-btn {
   width: 180px;
   height: 180px;
@@ -984,7 +1069,6 @@ h1.hero-title {
   transition: width 0.3s ease;
 }
 
-/* Big Timer */
 .challenge-timer {
   font-family: var(--font-disp);
   font-weight: 800;
@@ -995,48 +1079,8 @@ h1.hero-title {
   margin: 16px 0;
 }
 
-/* Input Fields & Forms */
-label {
-  font-weight: 700;
-  font-size: 14px;
-  display: block;
-  margin-top: 16px;
-  color: var(--ink);
-}
-
-input[type="text"],
-input[type="number"],
-input[type="password"],
-input[type="datetime-local"],
-textarea,
-select {
-  width: 100%;
-  font-family: inherit;
-  font-size: 15.5px;
-  padding: 13px 16px;
-  border: 2px solid var(--ink);
-  border-radius: var(--radius-sm);
-  background: var(--card);
-  color: var(--ink);
-  margin-top: 6px;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-input:focus,
-textarea:focus,
-select:focus {
-  border-color: var(--blue);
-  box-shadow: 2px 2px 0 var(--blue);
-  outline: none;
-}
-
-textarea {
-  min-height: 110px;
-  resize: vertical;
-}
-
 .hint-text {
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--mut);
   margin: 5px 0 0;
 }
@@ -1051,7 +1095,6 @@ textarea {
   box-shadow: 2px 2px 0 var(--ink);
 }
 
-/* Preset Amount Selector */
 .amount-presets {
   display: flex;
   gap: 8px;
@@ -1059,7 +1102,6 @@ textarea {
   margin-top: 8px;
 }
 
-/* Gateway Picker */
 .gateway-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
@@ -1091,9 +1133,59 @@ textarea {
   transform: translateY(-2px);
 }
 
-.gateway-card svg {
-  width: 22px;
-  height: 22px;
+/* ==========================================================================
+   Full Control Admin Dashboard Styling
+   ========================================================================== */
+.admin-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #16A34A;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+}
+
+.admin-crud-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #FFFFFF;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  gap: 12px;
+}
+
+.admin-crud-item:hover {
+  border-color: var(--ink);
+}
+
+.admin-crud-item .text-body {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ==========================================================================
@@ -1126,7 +1218,7 @@ textarea {
   background: var(--paper);
   border: 3px solid var(--ink);
   border-radius: var(--radius-lg);
-  max-width: 540px;
+  max-width: 560px;
   width: 100%;
   max-height: 92vh;
   overflow-y: auto;
@@ -1137,14 +1229,8 @@ textarea {
 }
 
 @keyframes modalSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .modal-close-x {
@@ -1171,7 +1257,6 @@ textarea {
   box-shadow: 1px 1px 0 var(--ink);
 }
 
-/* Toast Notification */
 #toast {
   position: fixed;
   left: 50%;
@@ -1197,7 +1282,6 @@ textarea {
   opacity: 1;
 }
 
-/* Confetti Canvas */
 #confetti-canvas {
   position: fixed;
   inset: 0;
@@ -1207,11 +1291,8 @@ textarea {
   height: 100%;
 }
 
-/* ==========================================================================
-   Footer
-   ========================================================================== */
 footer {
-  border-top: 2px solid var(--ink);
+  border-top: 2.5px solid var(--ink);
   padding: 36px 20px 48px;
   background: var(--paper);
   margin-top: auto;
@@ -1245,27 +1326,25 @@ footer {
   text-decoration: underline;
 }
 
-/* ==========================================================================
-   Responsive Breakpoints
-   ========================================================================== */
+/* Responsive */
 @media (max-width: 900px) {
   .metrics-strip {
     grid-template-columns: 1fr 1fr;
   }
   .metric-cell:nth-child(1) {
     grid-column: 1 / 3;
-    border-bottom: 2px solid var(--ink);
+    border-bottom: 2.5px solid var(--ink);
   }
   .metric-cell:nth-child(2) {
     border-left: none;
   }
   .metric-cell:nth-child(3) {
-    border-left: 2px solid var(--ink);
+    border-left: 2.5px solid var(--ink);
   }
   .metric-cell:nth-child(4) {
     grid-column: 1 / 3;
     border-left: none;
-    border-top: 2px solid var(--ink);
+    border-top: 2.5px solid var(--ink);
   }
 }
 
@@ -1276,22 +1355,16 @@ footer {
   .mobile-toggle {
     display: flex;
   }
-  .hero {
-    min-height: auto;
-    padding: 24px 0 20px;
-  }
   .hero-cta-area {
-    margin-top: 20px;
-    min-height: 140px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .dodge-arena {
+    max-width: 100%;
   }
   .board-header {
     flex-direction: column;
     align-items: flex-start;
-  }
-  .chips-container {
-    width: 100%;
-    overflow-x: auto;
-    padding-bottom: 4px;
   }
 }
 
@@ -1333,14 +1406,5 @@ footer {
   .footer-inner {
     flex-direction: column;
     text-align: center;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
 }

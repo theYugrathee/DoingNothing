@@ -39,6 +39,7 @@
         <a href="#challenge">Challenge</a>
         <a href="#excuses">Excuses</a>
         <a href="#about">About</a>
+        <a href="#admin">Admin</a>
       </nav>
 
       <!-- Action Buttons -->
@@ -90,15 +91,20 @@
       <!-- Hero Section -->
       <div class="hero">
         <div class="tag-banner" id="heroTag">Unemployed since 2026. Proud of it.</div>
-        <h1 class="hero-title">I do<br><span class="hl">nothing.</span></h1>
-        <div class="hero-subtitle" id="heroSubtitle">Today I ate: nothing. Yesterday: instant noodles. Progress.</div>
+        <h1 class="hero-title" id="mainHeroTitle">I do<br><span class="hl">nothing.</span></h1>
+        <div class="hero-subtitle" id="heroSubtitle">bro i literally just woke up</div>
 
         <div class="hero-cta-area" id="heroCtaArea">
           <button class="btn" id="fundHeroBtn">
             Buy me lunch
             <small>and get on today’s board</small>
           </button>
-          <button class="btn w" id="run">Go get a job</button>
+          
+          <!-- Dedicated Dodge Arena: Keeps the dodging button strictly inside its own box so it NEVER overlaps the main button! -->
+          <div class="dodge-arena" id="dodgeArena">
+            <span class="arena-hint">try touching it 👇</span>
+            <button class="btn w" id="run">Go get a job</button>
+          </div>
         </div>
       </div>
 
@@ -138,7 +144,7 @@
         <div class="board-header">
           <div class="board-intro">
             <h2>Today’s Live Board</h2>
-            <p>Every contribution puts you or your startup in the spotlight. Tap any card for full details.</p>
+            <p>Every meal contribution features your name or project. Tap any card to view details.</p>
           </div>
           <div class="chips-container">
             <button class="chip on" data-board-mode="recent">⚡ Recent</button>
@@ -149,25 +155,19 @@
         <div id="boardContainer"></div>
       </div>
 
-      <!-- Architecture & Tech Stack Card for Future Expansion -->
+      <!-- Supabase Live Realtime Sync Status Banner -->
       <div class="panel" style="background:var(--paper);border:2px dashed var(--ink);margin-bottom:40px">
-        <h3 style="font-size:22px;margin-bottom:8px">🛠️ Ready for Live Payments, Auth & Real-Time Stats</h3>
-        <p style="font-size:15px;margin-bottom:14px;color:var(--mut)">
-          This application is architected to seamlessly plug into production services whenever you are ready:
-        </p>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:14px">
-          <div style="background:var(--card);border:2px solid var(--ink);border-radius:var(--radius-sm);padding:14px">
-            <b>💳 Live Payments</b>
-            <p style="font-size:13.5px;margin-top:4px">Stripe Payment Links, Checkout API, or Razorpay for instant card/UPI collections.</p>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <h3 style="font-size:20px;display:flex;align-items:center;gap:8px">
+              <span class="status-dot" id="dbStatusDot"></span>
+              Supabase Real-Time Backend Active
+            </h3>
+            <p style="font-size:14px;color:var(--mut);margin-top:4px">
+              Contributions are synced with Supabase. Patrons appear live across all devices instantly.
+            </p>
           </div>
-          <div style="background:var(--card);border:2px solid var(--ink);border-radius:var(--radius-sm);padding:14px">
-            <b>🔐 Authentication</b>
-            <p style="font-size:13.5px;margin-top:4px">Clerk, Supabase Auth, or NextAuth for passwordless login and founder dashboard.</p>
-          </div>
-          <div style="background:var(--card);border:2px solid var(--ink);border-radius:var(--radius-sm);padding:14px">
-            <b>📊 Real-Time Analytics</b>
-            <p style="font-size:13.5px;margin-top:4px">PostgreSQL database + Redis cache for instantaneous multi-device leaderboard synchronization.</p>
-          </div>
+          <a class="btn sm w" href="#admin">⚙️ Open Admin Control Center</a>
         </div>
       </div>
     </section>
@@ -194,11 +194,10 @@
 
         <div class="panel" style="max-width:680px">
           <label for="roastInput">Your Name, Startup, or Twitter Handle</label>
-          <input id="roastInput" maxlength="50" placeholder="e.g. MySaaS, Elon, Uber for Cats">
-
-          <button class="btn" id="generateRoastBtn" style="margin-top:14px">
-            Roast Me 🔥
-          </button>
+          <div class="input-action-group">
+            <input type="text" id="roastInput" maxlength="50" placeholder="e.g. MySaaS, Rahul, Uber for Dogs...">
+            <button class="btn" id="generateRoastBtn">Roast Me 🔥</button>
+          </div>
 
           <div class="disp" id="roastOutput" style="font-size:clamp(22px, 3.5vw, 32px);line-height:1.2;margin-top:24px;min-height:3em">
             Type your startup above to receive an unvarnished reality check.
@@ -242,14 +241,14 @@
     <section class="pg" id="excuses">
       <div class="pgx">
         <h1>The Excuse <span class="hl">Machine.</span></h1>
-        <p style="color:var(--mut)">When you need an ironclad reason why the project isn't finished yet.</p>
+        <p style="color:var(--mut)">When you need a relatable reason why the project isn't finished yet.</p>
 
         <div class="panel" style="max-width:680px">
           <div class="disp" id="excuseOutput" style="font-size:clamp(26px, 4.5vw, 44px);line-height:1.1;min-height:3em">
-            Click the button below. I would, but I’m conserving glucose.
+            Click the button below. I would, but my bed was asking for me.
           </div>
           <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap">
-            <button class="btn" id="generateExcuseBtn">Generate Bulletproof Excuse</button>
+            <button class="btn" id="generateExcuseBtn">Generate Real Excuse</button>
             <button class="btn w" id="copyExcuseBtn">📋 Copy</button>
           </div>
         </div>
@@ -274,11 +273,11 @@
       </div>
     </section>
 
-    <!-- 8. ADMIN CONSOLE -->
+    <!-- 8. ADMIN CONSOLE (FULL CONTROL) -->
     <section class="pg" id="admin">
       <div class="pgx">
-        <h1>Admin <span class="hl">Console.</span></h1>
-        <p style="color:var(--mut);margin-bottom:16px">Manage board entries, configure donation targets, or export backup JSON.</p>
+        <h1>Admin <span class="hl">Control Center.</span></h1>
+        <p style="color:var(--mut);margin-bottom:16px">Full control over the website: entries, hero copy, funny lines, roasts, pricing, and Supabase database.</p>
         <div id="adminDashboard"></div>
       </div>
     </section>

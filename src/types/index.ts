@@ -33,10 +33,17 @@ export interface AppConfig {
   timezone: string;
   adminPasscode: string;
   tagline: string;
+  heroTitle: string;
   buttonText: string;
   subText: string;
   targetGoal: number;
+  minAmount: number;
+  presets: number[];
   currency: Currency;
+  lines: string[];
+  dodgeQuotes: string[];
+  roastTemplates: string[];
+  excusesList: string[];
   socials: {
     twitter: string;
     github: string;
