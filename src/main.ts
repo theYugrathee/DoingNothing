@@ -788,6 +788,7 @@ function openFundModal(): void {
         entries = StorageService.getEntries();
         closeModal();
         renderApp();
+        renderLeaderboard();
         sound.play('fanfare');
         confetti.fire(95);
         showToast("Added to the board! Thank you for the meal.");

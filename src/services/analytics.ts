@@ -31,8 +31,13 @@ export class AnalyticsService {
   }
 
   public static filterToday(entries: LeaderboardEntry[]): LeaderboardEntry[] {
+    const now = Date.now();
     const todayStr = new Date().toDateString();
-    return entries.filter((e) => new Date(e.t).toDateString() === todayStr);
+    return entries.filter((e) => {
+      // Active daily cycle: any contribution in the last 24 hours or matching today's date
+      if (now - e.t < 24 * 60 * 60 * 1000) return true;
+      return new Date(e.t).toDateString() === todayStr;
+    });
   }
 
   public static getSortedBoard(entries: LeaderboardEntry[], mode: BoardFilterMode): LeaderboardEntry[] {

@@ -48,7 +48,7 @@ export class PaymentService {
       currency: payload.currency || 'USD'
     };
 
-    StorageService.addEntry(newEntry);
+    await StorageService.addEntry(newEntry);
 
     return {
       success: true,

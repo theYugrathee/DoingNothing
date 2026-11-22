@@ -65,21 +65,39 @@ export class StorageService {
   public static async syncFromSupabase(): Promise<LeaderboardEntry[]> {
     const remote = await SupabaseService.fetchEntries();
     if (remote && remote.length > 0) {
-      this.saveEntries(remote);
-      return remote;
+      // Merge with recent local entries (added in the last 2 hours) so fresh items aren't overwritten
+      const local = this.getEntries();
+      const combined = [...remote];
+      for (const loc of local) {
+        if (
+          Date.now() - loc.t < 7200000 &&
+          !combined.some((r) => r.id === loc.id || (r.name === loc.name && Math.abs(r.amt - loc.amt) < 0.01))
+        ) {
+          combined.unshift(loc);
+        }
+      }
+      this.saveEntries(combined);
+      return combined;
     }
     return this.getEntries();
   }
 
   public static async addEntry(entry: LeaderboardEntry): Promise<LeaderboardEntry[]> {
     const list = this.getEntries();
-    list.unshift(entry);
+    const existingIndex = list.findIndex((e) => e.id === entry.id);
+    if (existingIndex >= 0) {
+      list[existingIndex] = entry;
+    } else {
+      list.unshift(entry);
+    }
     this.saveEntries(list);
 
-    // Asynchronously send to Supabase
-    SupabaseService.insertEntry(entry).catch((err) => {
+    // Persist to Supabase
+    try {
+      await SupabaseService.insertEntry(entry);
+    } catch (err) {
       console.warn('Supabase remote insert fallback:', err);
-    });
+    }
 
     return list;
   }
