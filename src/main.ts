@@ -404,7 +404,13 @@ function renderLeaderboard(): void {
   const stats = AnalyticsService.calculateDailyStats(entries, config.targetGoal);
   if (totalEl) totalEl.textContent = AnalyticsService.formatMoney(stats.collectedToday);
   if (countEl) countEl.textContent = stats.feedersToday.toString();
-  if (topNameEl) topNameEl.textContent = stats.topSupporter;
+  if (topNameEl) {
+    if (stats.topSupporter && stats.topSupporter !== 'Nobody yet' && stats.topSupporter !== 'Nobody') {
+      topNameEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px"><span style="font-size:16px;line-height:1">👑</span><span>${AnalyticsService.escapeHtml(stats.topSupporter)}</span></span>`;
+    } else {
+      topNameEl.textContent = 'Nobody yet';
+    }
+  }
 
   const displayList = AnalyticsService.getSortedBoard(entries, currentBoardMode);
 

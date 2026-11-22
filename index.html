@@ -100,7 +100,10 @@
       <div class="lbx">
         <div class="strip">
           <div>
-            <div class="k">Collected today</div>
+            <div class="k">
+              <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--blue)"></span>
+              Collected today
+            </div>
             <div class="v m" id="totalToday">$0</div>
           </div>
           <div>
@@ -113,16 +116,27 @@
           </div>
           <div>
             <div class="k">Board resets in</div>
-            <div class="v" id="resetCountdown">--:--:--</div>
+            <div class="v"><span class="timer-pill" id="resetCountdown">--:--:--</span></div>
           </div>
         </div>
 
         <div class="sec">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-            <h2>Today’s board</h2>
-            <div class="chips" id="boardModeChips">
-              <button class="chip on" data-board-mode="recent">Recent</button>
-              <button class="chip" data-board-mode="top">Top</button>
+          <div class="board-header">
+            <div class="board-title-group">
+              <h2>Today’s board</h2>
+              <span class="live-pulse-badge">
+                <span class="live-dot"></span> Live
+              </span>
+            </div>
+            <div class="board-mode-toggle" id="boardModeChips">
+              <button class="board-mode-tab on" data-board-mode="recent" aria-label="Show Recent Supporters">
+                <span class="tab-icon">⚡</span>
+                <span class="tab-label">Recent</span>
+              </button>
+              <button class="board-mode-tab" data-board-mode="top" aria-label="Show Top Supporters">
+                <span class="tab-icon">🏆</span>
+                <span class="tab-label">Top</span>
+              </button>
             </div>
           </div>
           <div id="boardContainer"></div>
