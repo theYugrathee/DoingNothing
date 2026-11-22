@@ -30,13 +30,17 @@ export class AnalyticsService {
     };
   }
 
+  public static getTodayDateString(): string {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  }
+
   public static filterToday(entries: LeaderboardEntry[]): LeaderboardEntry[] {
-    const now = Date.now();
-    const todayStr = new Date().toDateString();
+    const todayDate = this.getTodayDateString();
     return entries.filter((e) => {
-      // Active daily cycle: any contribution in the last 24 hours or matching today's date
-      if (now - e.t < 24 * 60 * 60 * 1000) return true;
-      return new Date(e.t).toDateString() === todayStr;
+      const d = new Date(e.t);
+      const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      return dStr === todayDate;
     });
   }
 

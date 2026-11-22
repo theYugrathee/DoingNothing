@@ -58,10 +58,4 @@ USING (true);
 -- 6. Enable Realtime updates for live board sync
 ALTER PUBLICATION supabase_realtime ADD TABLE public.patrons;
 
--- 7. Insert starter seed data so the board is active immediately on launch
-INSERT INTO public.patrons (name, url, amount, message, category, is_today, is_approved)
-VALUES
-('Alex Dev Studios', 'https://github.com', 150.00, 'Huge fans of doing absolutely nothing. Keep inspiring the world!', 'Legend', true, true),
-('PixelPulse SaaS', 'https://pixelpulse.io', 75.00, 'We build analytics while you nap. Here''s lunch on us!', 'Big Spender', true, true),
-('@sarah_designs', 'https://x.com', 35.00, 'Proud supporter of the horizontal economy.', 'Big Spender', true, true)
-ON CONFLICT DO NOTHING;
+-- 7. No seed data — board starts empty and fills with real contributions only.

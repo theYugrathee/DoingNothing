@@ -1,5 +1,5 @@
 import { AppConfig, LeaderboardEntry } from '../types';
-import { DEFAULT_CONFIG, INITIAL_LEADERBOARD } from '../data/defaults';
+import { DEFAULT_CONFIG } from '../data/defaults';
 import { SupabaseService } from './supabase';
 
 const STORAGE_KEYS = {
@@ -44,19 +44,37 @@ export class StorageService {
       const data = localStorage.getItem(STORAGE_KEYS.ENTRIES);
       if (data) {
         const parsed = JSON.parse(data);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+        if (Array.isArray(parsed)) {
+          // Remove any leftover dummy/seed data
+          return parsed.filter(
+            (e) =>
+              e.src !== 'seed' &&
+              !String(e.id).startsWith('seed-') &&
+              e.name !== 'Alex Dev Studios' &&
+              e.name !== 'PixelPulse SaaS' &&
+              e.name !== '@sarah_designs' &&
+              e.name !== 'Chai & Chill Club'
+          );
         }
       }
     } catch (e) {
       console.warn('Failed to parse entries from storage:', e);
     }
-    return [...INITIAL_LEADERBOARD];
+    return [];
   }
 
   public static saveEntries(entries: LeaderboardEntry[]): void {
     try {
-      localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(entries));
+      // Never save dummy seed rows
+      const cleaned = entries.filter(
+        (e) =>
+          e.src !== 'seed' &&
+          !String(e.id).startsWith('seed-') &&
+          e.name !== 'Alex Dev Studios' &&
+          e.name !== 'PixelPulse SaaS' &&
+          e.name !== '@sarah_designs'
+      );
+      localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(cleaned));
     } catch (e) {
       console.error('Failed to save entries:', e);
     }
@@ -65,9 +83,17 @@ export class StorageService {
   public static async syncFromSupabase(): Promise<LeaderboardEntry[]> {
     const remote = await SupabaseService.fetchEntries();
     if (remote && remote.length > 0) {
-      // Merge with recent local entries (added in the last 2 hours) so fresh items aren't overwritten
+      // Filter out any dummy data
+      const cleanedRemote = remote.filter(
+        (r) =>
+          r.src !== 'seed' &&
+          !String(r.id).startsWith('seed-') &&
+          r.name !== 'Alex Dev Studios' &&
+          r.name !== 'PixelPulse SaaS' &&
+          r.name !== '@sarah_designs'
+      );
       const local = this.getEntries();
-      const combined = [...remote];
+      const combined = [...cleanedRemote];
       for (const loc of local) {
         if (
           Date.now() - loc.t < 7200000 &&

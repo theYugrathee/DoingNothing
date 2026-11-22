@@ -15,8 +15,7 @@ import {
   ROTATING_LINES,
   DODGE_QUOTES,
   ROAST_TEMPLATES,
-  EXCUSES_LIST,
-  INITIAL_LEADERBOARD
+  EXCUSES_LIST
 } from './data/defaults';
 
 // ==========================================================================
@@ -1274,7 +1273,7 @@ function renderAdmin(): void {
 
         <div class="chips" style="margin:12px 0">
           <button class="chip" id="adminExportCsv">Show CSV</button>
-          <button class="chip" id="adminResetSample">Reset to sample</button>
+          <button class="chip" id="adminResetSample">Restart Board (Reset to 0)</button>
           <button class="chip" id="adminClearAll">Delete all entries</button>
         </div>
         <div id="adminCsvOutput"></div>
@@ -1475,12 +1474,28 @@ function renderAdmin(): void {
 
     const resetBtn = $('#adminResetSample');
     if (resetBtn) {
-      resetBtn.onclick = () => {
-        entries = [...INITIAL_LEADERBOARD];
-        StorageService.saveEntries(entries);
-        renderAdmin();
-        renderLeaderboard();
-        showToast('Reset.');
+      resetBtn.onclick = async () => {
+        if (confirm('Restart daily board? This will clear today\'s entries and reset everything to zero.')) {
+          // Delete all today's entries from Supabase too
+          const todayStr = AnalyticsService.getTodayDateString();
+          const todayEntries = entries.filter((e) => {
+            const d = new Date(e.t);
+            const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            return dStr === todayStr;
+          });
+          for (const e of todayEntries) {
+            await SupabaseService.deleteEntry(e.id);
+          }
+          entries = entries.filter((e) => {
+            const d = new Date(e.t);
+            const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            return dStr !== todayStr;
+          });
+          StorageService.saveEntries(entries);
+          renderAdmin();
+          renderLeaderboard();
+          showToast('Board restarted — today\'s stats are now zero.');
+        }
       };
     }
 
@@ -1664,6 +1679,15 @@ async function initApp(): Promise<void> {
     const stats = AnalyticsService.calculateDailyStats(entries, config.targetGoal);
     const rstEl = $('#resetCountdown');
     if (rstEl) rstEl.textContent = stats.resetCountdownFormatted;
+
+    // Automatic midnight rollover: re-render board when date changes (strict daily boundary)
+    const newDay = AnalyticsService.getTodayDateString();
+    if ((window as unknown as Record<string,string>).__lastDay && (window as unknown as Record<string,string>).__lastDay !== newDay) {
+      renderLeaderboard();
+      renderHallOfFame();
+      showToast('New day — board reset to zero. Fresh start!');
+    }
+    (window as unknown as Record<string,string>).__lastDay = newDay;
   }, 1000);
 
   // Supabase background sync and realtime subscription
