@@ -55,7 +55,18 @@ ON public.patrons FOR DELETE
 TO anon, authenticated
 USING (true);
 
--- 6. Enable Realtime updates for live board sync
-ALTER PUBLICATION supabase_realtime ADD TABLE public.patrons;
+-- 6. Enable Realtime updates for live board sync (safe: skip if already a member)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'patrons'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.patrons;
+  END IF;
+END;
+$$;
 
 -- 7. No seed data — board starts empty and fills with real contributions only.
