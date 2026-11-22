@@ -61,11 +61,27 @@ header {
 }
 
 .logo {
-  font: 800 20px 'Bricolage Grotesque', sans-serif;
-  letter-spacing: -.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 800 21px 'Bricolage Grotesque', sans-serif;
+  letter-spacing: -.03em;
   text-decoration: none;
   color: var(--ink);
   white-space: nowrap;
+  transition: transform 0.15s ease;
+}
+
+.logo:hover {
+  transform: translateY(-1px);
+}
+
+.logo-mark {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: block;
+  flex-shrink: 0;
 }
 
 .logo span {
