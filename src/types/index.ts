@@ -106,4 +106,7 @@ export type AppPage =
   | 'challenge'
   | 'excuses'
   | 'about'
+  | 'rules'
+  | 'privacy'
+  | 'terms'
   | 'admin';

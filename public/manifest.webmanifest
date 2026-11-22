@@ -1,0 +1,17 @@
+{
+  "name": "Doing Nothing",
+  "short_name": "DoingNothing",
+  "description": "Unemployed since 2026. Buy me a meal and get featured on today's leaderboard.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FCFBF7",
+  "theme_color": "#2F4BFF",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

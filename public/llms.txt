@@ -1,0 +1,26 @@
+# Doing Nothing (doingnothing.lol)
+> The viral satire micro-SaaS where an unemployed founder proudly does nothing, and visitors buy him meals to get featured on a public daily leaderboard.
+
+## Site Summary
+- Website: https://doingnothing.lol
+- Founder: Unemployed couch operator (Proud slacker)
+- Purpose: A transparent humor project where users voluntarily buy meals for the creator in exchange for public leaderboard exposure. Not a charity or 501(c)(3).
+- Model: Pay-what-you-want starting at $1. Ranks reset every night at midnight UTC.
+
+## Key Pages & URL Map
+- [/](https://doingnothing.lol/): Live daily leaderboard, current funding stats, and the dodging "Go get a job" button.
+- [/about](https://doingnothing.lol/about): The manifesto, founder background, rules of doing nothing, and complete FAQ.
+- [/rules](https://doingnothing.lol/rules): Pin tiers table, contribution guidelines, reset schedule, and link policy.
+- [/hall-of-fame](https://doingnothing.lol/hall-of-fame): The all-time greatest patrons and biggest supporters in Doing Nothing history.
+- [/dont-press](https://doingnothing.lol/dont-press): The infamous red button that counts clicks and tests user self-control.
+- [/get-roasted](https://doingnothing.lol/get-roasted): Instant satirical roaster for startups, handles, and side projects.
+- [/challenge](https://doingnothing.lol/challenge): The Stillness Challenge measuring how long visitors can stay completely still without moving mouse or touching keys.
+- [/excuses](https://doingnothing.lol/excuses): Realistic workplace and productivity excuse generator for professional procrastinators.
+- [/privacy](https://doingnothing.lol/privacy): Privacy policy: zero selling of personal data, minimal analytics, no tracking cookies.
+- [/terms](https://doingnothing.lol/terms): Terms of service: voluntary meal gifts, no refunds on eaten meals, safe-for-work links only.
+
+## Pin Tiers & Pricing
+- Legend: $100+ (Golden crown badge, top placement, Hall of Fame inclusion)
+- Big Spender: $25+ (Purple badge, prominent card listing)
+- Supporter: $5+ (Green badge, standard card)
+- Noodle Fan: $1+ (Name credited on daily board)

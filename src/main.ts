@@ -148,31 +148,126 @@ const confetti = new ConfettiEngine();
 // ==========================================================================
 // Routing & Mobile Drawer
 // ==========================================================================
-const PAGES: readonly AppPage[] = ['home', 'red', 'roast', 'hall-of-fame', 'challenge', 'excuses', 'about', 'admin'];
+// Technical SEO & Real URL Routing (HTML5 History API with No-Hash Fallbacks)
+// ==========================================================================
+const PAGE_CONFIG: Record<AppPage, { path: string; title: string; desc: string }> = {
+  home: {
+    path: '/',
+    title: 'Doing Nothing | The Viral "Buy Me a Meal" Leaderboard',
+    desc: "I do nothing for a living. Buy me a meal to get your product, name, or profile featured on today's public daily leaderboard."
+  },
+  red: {
+    path: '/dont-press',
+    title: "Don't Press The Button | Doing Nothing",
+    desc: 'A big red button that you definitely should not press. Nothing productive will happen.'
+  },
+  roast: {
+    path: '/get-roasted',
+    title: 'Startup Roaster | Free Instant Founder Roasts',
+    desc: 'Enter your startup name or handle and get roasted by someone who proudly does nothing all day.'
+  },
+  'hall-of-fame': {
+    path: '/hall-of-fame',
+    title: 'Hall of Fame | All-Time Top Supporters | Doing Nothing',
+    desc: 'The all-time greatest patrons who funded the horizontal lifestyle. Browse the top historical contributors.'
+  },
+  challenge: {
+    path: '/challenge',
+    title: 'The Stillness Challenge | Doing Nothing',
+    desc: "Test your ability to do nothing. Don't touch your mouse or keyboard for as long as possible."
+  },
+  excuses: {
+    path: '/excuses',
+    title: 'Excuse Generator | Free Slacker Excuses',
+    desc: "Need an excuse for why it isn't done yet? Generate instant realistic excuses crafted by a professional couch potato."
+  },
+  about: {
+    path: '/about',
+    title: 'About Doing Nothing | The Horizontal Economy & FAQ',
+    desc: 'Learn why Doing Nothing exists, who is behind it, and how the voluntary daily meal leaderboard works. Read the official FAQ.'
+  },
+  rules: {
+    path: '/rules',
+    title: 'Rules & Pricing | Doing Nothing Leaderboard Pin Tiers',
+    desc: 'Transparent rules and pricing for the Doing Nothing daily leaderboard. View pin tiers, reset times, and policies.'
+  },
+  privacy: {
+    path: '/privacy',
+    title: 'Privacy Policy | Doing Nothing',
+    desc: 'Privacy policy for doingnothing.lol. We do not sell data, use tracking cookies, or collect private info.'
+  },
+  terms: {
+    path: '/terms',
+    title: 'Terms of Service | Doing Nothing',
+    desc: 'Terms of service for doingnothing.lol. Voluntary meal contributions, no-refund policy, and common-sense rules.'
+  },
+  admin: {
+    path: '/admin',
+    title: 'Admin Console | Doing Nothing',
+    desc: 'Internal administration center.'
+  }
+};
+
+const PAGES = Object.keys(PAGE_CONFIG) as AppPage[];
+
+function getPageFromCurrentLocation(): AppPage {
+  // 1. Check legacy hash (e.g. #admin, #about, #rules) and redirect to clean real URL
+  const hash = window.location.hash.replace(/^#/, '').toLowerCase();
+  if (hash) {
+    for (const [key, conf] of Object.entries(PAGE_CONFIG)) {
+      if (key === hash || conf.path.replace(/^\//, '') === hash) {
+        window.history.replaceState(null, '', conf.path);
+        return key as AppPage;
+      }
+    }
+  }
+
+  // 2. Check clean pathname
+  const path = window.location.pathname.replace(/\/+$/, '') || '/';
+  for (const [key, conf] of Object.entries(PAGE_CONFIG)) {
+    if (conf.path === path) return key as AppPage;
+  }
+
+  return 'home';
+}
 
 function route(): void {
-  let hash = location.hash.slice(1) as AppPage;
-  if (!PAGES.includes(hash)) hash = 'home';
+  const currentPage = getPageFromCurrentLocation();
+  const config = PAGE_CONFIG[currentPage] || PAGE_CONFIG.home;
 
+  // Toggle visible page section
   PAGES.forEach((p) => {
     const el = $('#' + p);
-    if (el) el.classList.toggle('on', p === hash);
+    if (el) el.classList.toggle('on', p === currentPage);
   });
 
+  // Highlight matching navigation link
   $$('nav a').forEach((a) => {
-    a.classList.toggle('on', a.getAttribute('href') === '#' + hash);
+    const href = a.getAttribute('href');
+    const isMatch = href === config.path || (config.path === '/' && href === '/');
+    a.classList.toggle('on', Boolean(isMatch));
   });
+
+  // Dynamic SEO metadata updates
+  document.title = config.title;
+  const metaDesc = $('meta[name="description"]');
+  if (metaDesc) metaDesc.setAttribute('content', config.desc);
+
+  const canonical = $('link[rel="canonical"]');
+  if (canonical) {
+    canonical.setAttribute('href', `https://doingnothing.lol${config.path === '/' ? '/' : config.path}`);
+  }
 
   closeMobileDrawer();
 
-  if (hash !== 'challenge') {
+  if (currentPage !== 'challenge') {
     challengeStop();
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
   renderApp();
 
-  if (hash === 'admin') {
+  if (currentPage === 'admin') {
     renderAdmin();
   }
 
@@ -180,7 +275,48 @@ function route(): void {
   setTimeout(resetDodgeHome, 60);
 }
 
+// Intercept internal link clicks for seamless SPA transitions without page reloads
+document.addEventListener('click', (e) => {
+  const target = (e.target as HTMLElement).closest('a');
+  if (!target) return;
+  const href = target.getAttribute('href');
+  if (
+    href &&
+    href.startsWith('/') &&
+    !href.startsWith('//') &&
+    !target.hasAttribute('download') &&
+    target.getAttribute('target') !== '_blank'
+  ) {
+    e.preventDefault();
+    if (window.location.pathname !== href) {
+      window.history.pushState(null, '', href);
+      route();
+    }
+  }
+});
+
+window.addEventListener('popstate', route);
 window.addEventListener('hashchange', route);
+
+// ==========================================================================
+// Privacy-Friendly Analytics Tracking Helper
+// ==========================================================================
+export function trackEvent(eventName: string, props?: Record<string, unknown>): void {
+  try {
+    // Plausible Analytics integration (if script is added)
+    const win = window as unknown as { plausible?: (event: string, opts?: { props?: Record<string, unknown> }) => void };
+    if (typeof win.plausible === 'function') {
+      win.plausible(eventName, { props });
+    }
+    // Google Analytics 4 integration (if gtag is added)
+    const gWin = window as unknown as { gtag?: (type: string, name: string, data?: Record<string, unknown>) => void };
+    if (typeof gWin.gtag === 'function') {
+      gWin.gtag('event', eventName, props);
+    }
+  } catch {
+    // Fail silently
+  }
+}
 
 function setupMobileNav(): void {
   const toggleBtn = $('#mobileToggle');
@@ -766,6 +902,8 @@ function openFundModal(): void {
 
       // If user didn't upload a custom file, auto-resolve their logo from their link!
       const finalAvatar = isAnon ? '' : (uploadedLogo || resolveAvatarUrl(rawUrl));
+
+      trackEvent('submit_contribution', { amount: amt, is_anon: isAnon });
 
       const result = await PaymentService.processPayment({
         name,
@@ -1499,7 +1637,10 @@ async function initApp(): Promise<void> {
 
   const fundHeroBtn = $('#fundHeroBtn');
   if (fundHeroBtn) {
-    fundHeroBtn.onclick = () => openFundModal();
+    fundHeroBtn.onclick = () => {
+      trackEvent('click_buy_meal_button', { location: 'hero' });
+      openFundModal();
+    };
   }
 
   document.addEventListener('click', (e) => {
