@@ -96,49 +96,79 @@
         <button class="btn w" id="run">Go get a job</button>
       </div>
 
-      <!-- Today's Stats Strip -->
+      <!-- Today's Stats & Standout Leaderboard Section -->
       <div class="lbx">
-        <div class="strip">
-          <div>
-            <div class="k">
-              <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--blue)"></span>
-              Collected today
+        <!-- Upgraded 4-Card Metrics Grid -->
+        <div class="metrics-grid">
+          <div class="metric-card hero-metric">
+            <div class="metric-top">
+              <span class="metric-label">Collected Today</span>
+              <span class="metric-pill live">⚡ Live</span>
             </div>
-            <div class="v m" id="totalToday">$0</div>
+            <div class="metric-value-huge" id="totalToday">$0</div>
+            <div class="metric-hint">100% voluntary meals</div>
           </div>
-          <div>
-            <div class="k">Feeders today</div>
-            <div class="v" id="countToday">0</div>
+
+          <div class="metric-card">
+            <div class="metric-top">
+              <span class="metric-label">Feeders Today</span>
+              <span class="metric-emoji">🥣</span>
+            </div>
+            <div class="metric-value" id="countToday">0</div>
+            <div class="metric-hint">Supporters on board</div>
           </div>
-          <div>
-            <div class="k">Top today</div>
-            <div class="v" id="topSupporterName" style="word-break:break-word">Nobody</div>
+
+          <div class="metric-card">
+            <div class="metric-top">
+              <span class="metric-label">Top Patron</span>
+              <span class="metric-emoji">👑</span>
+            </div>
+            <div class="metric-value metric-value-text" id="topSupporterName" style="word-break:break-word">Nobody yet</div>
+            <div class="metric-hint">Highest daily meal</div>
           </div>
-          <div>
-            <div class="k">Board resets in</div>
-            <div class="v"><span class="timer-pill" id="resetCountdown">--:--:--</span></div>
+
+          <div class="metric-card">
+            <div class="metric-top">
+              <span class="metric-label">Board Resets In</span>
+              <span class="metric-emoji">⏳</span>
+            </div>
+            <div class="metric-value">
+              <span class="timer-countdown" id="resetCountdown">--:--:--</span>
+            </div>
+            <div class="metric-hint">Resets at midnight</div>
           </div>
         </div>
 
-        <div class="sec">
-          <div class="board-header">
+        <!-- Standout Segmented Leaderboard Switcher -->
+        <div class="sec board-section-wrap">
+          <div class="board-top-bar">
             <div class="board-title-group">
-              <h2>Today’s board</h2>
-              <span class="live-pulse-badge">
-                <span class="live-dot"></span> Live
+              <h2 class="board-heading">Today’s Board</h2>
+              <span class="board-live-pill">
+                <span class="pulse-dot"></span> Live Rankings
               </span>
             </div>
-            <div class="board-mode-toggle" id="boardModeChips">
-              <button class="board-mode-tab on" data-board-mode="recent" aria-label="Show Recent Supporters">
-                <span class="tab-icon">⚡</span>
-                <span class="tab-label">Recent</span>
+
+            <!-- Highly Prominent Dual Switcher -->
+            <div class="board-switch-container" id="boardModeChips">
+              <button class="board-tab-btn on" data-board-mode="recent" aria-label="Show Recent Supporters">
+                <span class="tab-emoji">⚡</span>
+                <div class="tab-copy">
+                  <span class="tab-title">Recent Feeders</span>
+                  <span class="tab-desc">Latest meals sent</span>
+                </div>
               </button>
-              <button class="board-mode-tab" data-board-mode="top" aria-label="Show Top Supporters">
-                <span class="tab-icon">🏆</span>
-                <span class="tab-label">Top</span>
+              <button class="board-tab-btn" data-board-mode="top" aria-label="Show Top Supporters">
+                <span class="tab-emoji">🏆</span>
+                <div class="tab-copy">
+                  <span class="tab-title">Top Bosses</span>
+                  <span class="tab-desc">Highest daily spenders</span>
+                </div>
               </button>
             </div>
           </div>
+
+          <!-- Dynamic Supporter List -->
           <div id="boardContainer"></div>
         </div>
       </div>

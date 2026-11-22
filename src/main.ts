@@ -375,22 +375,18 @@ const CROWN_SVG = '<svg class="crown" viewBox="0 0 24 24" width="28" height="28"
 
 function renderAvatar(item: LeaderboardEntry): string {
   if (item.anon) {
-    return `<div class="av" style="background:#8a877d">?</div>`;
+    return `<div class="av anon-av">?</div>`;
   }
 
-  // Automatically fetch logo / favicon / profile picture if image or url exists!
+  // Automatically fetch logo / favicon / profile picture if image or url exists
   const avatarUrl = resolveAvatarUrl(item.url, item.img);
-  const colors = ['#2F4BFF', '#E8412C', '#0E9F6E', '#8B3DFF', '#F08A00', '#101010', '#D6246E'];
-  let hash = 0;
-  for (let i = 0; i < item.name.length; i++) hash += item.name.charCodeAt(i);
-  const bg = colors[hash % colors.length];
   const initial = (item.name[0] || '?').toUpperCase();
 
   if (avatarUrl) {
-    return `<div class="av" style="background:${bg}"><img src="${AnalyticsService.escapeHtml(avatarUrl)}" alt="" onerror="this.style.display='none';this.parentElement.textContent='${AnalyticsService.escapeHtml(initial)}'"></div>`;
+    return `<div class="av logo-av"><img src="${AnalyticsService.escapeHtml(avatarUrl)}" alt="${AnalyticsService.escapeHtml(item.name)}" loading="lazy" onerror="this.style.display='none';this.parentElement.innerHTML='<span class=\\'fallback-letter\\'>${AnalyticsService.escapeHtml(initial)}</span>';"></div>`;
   }
 
-  return `<div class="av" style="background:${bg}">${AnalyticsService.escapeHtml(initial)}</div>`;
+  return `<div class="av letter-av"><span class="fallback-letter">${AnalyticsService.escapeHtml(initial)}</span></div>`;
 }
 
 function renderLeaderboard(): void {
@@ -467,21 +463,21 @@ function renderLeaderboard(): void {
         <div class="lk">
           ${
             currentBoardMode === 'top'
-              ? `<b>${rank}</b>`
-              : `<span class="tp ${isFresh ? 'nw' : ''}">${AnalyticsService.getTimeAgo(item.t)}</span>`
+              ? `<b class="rank-badge ${rank <= 3 ? 'rank-' + rank : ''}">#${rank}</b>`
+              : `<span class="tp ${isFresh ? 'nw' : ''}">⏱️ ${AnalyticsService.getTimeAgo(item.t)}</span>`
           }
         </div>
         ${renderAvatar(item)}
-        <div style="min-width:0">
-          <h3>
-            ${AnalyticsService.escapeHtml(item.name)}
+        <div style="min-width:0;flex:1">
+          <div class="lr-title-row">
+            <h3 class="lr-name">${AnalyticsService.escapeHtml(item.name)}</h3>
             <span class="tc" style="background:${tier.color}">${tier.name}</span>
-          </h3>
-          <p>${AnalyticsService.escapeHtml(item.desc || '')}</p>
-          <div class="d">${AnalyticsService.escapeHtml(host || item.url || '')}</div>
+          </div>
+          <p class="lr-desc">${AnalyticsService.escapeHtml(item.desc || '')}</p>
+          ${host ? `<div class="lr-link"><span>↗</span> ${AnalyticsService.escapeHtml(host)}</div>` : ''}
         </div>
         <div class="lp">
-          ${AnalyticsService.formatMoney(item.amt)}
+          <div class="lp-amt">${AnalyticsService.formatMoney(item.amt)}</div>
           <span class="go">Details ›</span>
         </div>
         <i class="lbar" style="width:${pct}%"></i>
