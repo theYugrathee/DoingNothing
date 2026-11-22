@@ -3,8 +3,7 @@ import {
   AppConfig,
   LeaderboardEntry,
   BoardFilterMode,
-  AppPage,
-  PaymentGateway
+  AppPage
 } from './types';
 import { StorageService } from './services/storage';
 import { AnalyticsService } from './services/analytics';
@@ -29,6 +28,21 @@ let currentBoardMode: BoardFilterMode = 'recent';
 // DOM Selectors Helper
 const $ = <T extends HTMLElement = HTMLElement>(sel: string): T | null => document.querySelector<T>(sel);
 const $$ = <T extends HTMLElement = HTMLElement>(sel: string): T[] => Array.from(document.querySelectorAll<T>(sel));
+
+// ==========================================================================
+// Toast Notification
+// ==========================================================================
+let toastTimeout: number | undefined;
+export const showToast = (message: string): void => {
+  const toastEl = $('#toast');
+  if (!toastEl) return;
+  toastEl.textContent = message;
+  toastEl.style.display = 'block';
+  window.clearTimeout(toastTimeout);
+  toastTimeout = window.setTimeout(() => {
+    toastEl.style.display = 'none';
+  }, 3200);
+};
 
 // ==========================================================================
 // Particle Confetti Engine
@@ -130,19 +144,6 @@ class ConfettiEngine {
 
 const confetti = new ConfettiEngine();
 
-// Toast Notifications
-let toastTimeout: number | undefined;
-export const showToast = (message: string): void => {
-  const toastEl = $('#toast');
-  if (!toastEl) return;
-  toastEl.textContent = message;
-  toastEl.classList.add('visible');
-  window.clearTimeout(toastTimeout);
-  toastTimeout = window.setTimeout(() => {
-    toastEl.classList.remove('visible');
-  }, 3400);
-};
-
 // ==========================================================================
 // Routing & Mobile Drawer
 // ==========================================================================
@@ -175,6 +176,7 @@ function route(): void {
   }
 
   sound.play('up', 120);
+  setTimeout(resetDodgeHome, 60);
 }
 
 window.addEventListener('hashchange', route);
@@ -224,79 +226,167 @@ function cycleHeroLine(): void {
 }
 
 // ==========================================================================
-// Dodging "Go Get A Job" Button (Strictly Bounded Inside Arena!)
+// Precision Dodging "Go Get A Job" Button (Restored Original Mechanics)
+// Moves strictly along the horizontal section and avoids overlapping buttons!
 // ==========================================================================
-let dodgeCount = 0;
-let dodgeLastTime = 0;
+let px = -999;
+let py = -999;
+let lt = 0;
+let hy = 0;
+
+function resetDodgeHome(): void {
+  const run = $('#run');
+  const hero = $('.hero');
+  const slot = $('#slot');
+  if (!hero || !slot || !run) return;
+  const s = slot.getBoundingClientRect();
+  const h = hero.getBoundingClientRect();
+  run.style.left = (s.left - h.left) + 'px';
+  run.style.top = (s.top - h.top) + 'px';
+  hy = s.top - h.top;
+}
+
+function getProtectedRects(): DOMRect[] {
+  const hero = $('.hero');
+  if (!hero) return [];
+  const list: DOMRect[] = [];
+  hero.querySelectorAll('#fundHeroBtn, #heroTag').forEach((e) => list.push(e.getBoundingClientRect()));
+  ['h1.big', '.line'].forEach((q) => {
+    const el = hero.querySelector(q);
+    if (el) {
+      const rg = document.createRange();
+      rg.selectNodeContents(el);
+      list.push(...Array.from(rg.getClientRects()));
+    }
+  });
+  return list.filter((r) => r.width > 0);
+}
+
+function flee(): void {
+  const run = $('#run');
+  const hero = $('.hero');
+  if (!run || !hero) return;
+
+  const soundsList: Array<'boing' | 'squeak' | 'blorp' | 'honk'> = ['boing', 'squeak', 'blorp', 'honk'];
+  sound.play(soundsList[Math.floor(Math.random() * soundsList.length)], 40);
+
+  const quotes = config.dodgeQuotes && config.dodgeQuotes.length ? config.dodgeQuotes : DODGE_QUOTES;
+  run.textContent = quotes[Math.floor(Math.random() * quotes.length)];
+
+  const h = hero.getBoundingClientRect();
+  const W = run.offsetWidth;
+  const H = run.offsetHeight;
+  const R = getProtectedRects();
+  const pad = 14;
+
+  let best: [number, number] | null = null;
+  let bd = -1;
+
+  // Moves across the horizontal section on the same row band (Image 2)
+  for (let i = 0; i < 90; i++) {
+    const x = Math.random() * Math.max(0, h.width - W);
+    const y = Math.min(Math.max(0, hy - 14 + (Math.random() * 32 - 16)), Math.max(0, h.height - H));
+    const L = h.left + x;
+    const T = h.top + y;
+
+    // Guard: Never overlap the main button or title!
+    if (R.some((r) => L < r.right + pad && L + W > r.left - pad && T < r.bottom + pad && T + H > r.top - pad)) {
+      continue;
+    }
+
+    const d = Math.hypot(L + W / 2 - px, T + H / 2 - py);
+    if (d > bd) {
+      bd = d;
+      best = [x, y];
+    }
+  }
+
+  if (best) {
+    run.style.left = best[0] + 'px';
+    run.style.top = best[1] + 'px';
+  }
+
+  window.clearTimeout((flee as { t?: number }).t);
+  (flee as { t?: number }).t = window.setTimeout(() => {
+    if (run) run.textContent = 'Go get a job';
+  }, 6000);
+}
+
+const isNearButton = (): boolean => {
+  const run = $('#run');
+  if (!run) return false;
+  const b = run.getBoundingClientRect();
+  const m = 12;
+  const homeEl = $('#home');
+  return !!(homeEl?.classList.contains('on') && px > b.left - m && px < b.right + m && py > b.top - m && py < b.bottom + m);
+};
 
 function setupDodgingButton(): void {
-  const runBtn = $('#run');
-  const arena = $('#dodgeArena');
-  if (!runBtn || !arena) return;
+  window.addEventListener(
+    'pointermove',
+    (e) => {
+      px = e.clientX;
+      py = e.clientY;
+      if (isNearButton()) {
+        const n = performance.now();
+        if (n - lt > 30) {
+          lt = n;
+          flee();
+        }
+      }
+    },
+    { passive: true }
+  );
 
-  const dodge = (): void => {
-    const now = performance.now();
-    if (now - dodgeLastTime < 45) return;
-    dodgeLastTime = now;
-
-    dodgeCount++;
-    const soundsList: Array<'boing' | 'squeak' | 'blorp' | 'honk'> = ['boing', 'squeak', 'blorp', 'honk'];
-    sound.play(soundsList[dodgeCount % soundsList.length], 40);
-
-    const quotes = config.dodgeQuotes && config.dodgeQuotes.length ? config.dodgeQuotes : DODGE_QUOTES;
-    runBtn.textContent = quotes[Math.floor(Math.random() * quotes.length)];
-    runBtn.classList.add('dodging');
-
-    // Calculate evasion STRICTLY inside the dedicated #dodgeArena bounds!
-    // This ensures it NEVER touches or overlaps #fundHeroBtn!
-    const arenaW = arena.clientWidth;
-    const arenaH = arena.clientHeight;
-    const btnW = runBtn.offsetWidth;
-    const btnH = runBtn.offsetHeight;
-
-    const maxX = Math.max(0, (arenaW - btnW) / 2 - 10);
-    const maxY = Math.max(0, (arenaH - btnH) / 2 - 8);
-
-    const offsetX = (Math.random() - 0.5) * (maxX * 2);
-    const offsetY = (Math.random() - 0.5) * (maxY * 2);
-
-    runBtn.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
-
-    window.clearTimeout((dodge as { timer?: number }).timer);
-    (dodge as { timer?: number }).timer = window.setTimeout(() => {
-      runBtn.textContent = 'Go get a job';
-      runBtn.classList.remove('dodging');
-      runBtn.style.transform = 'none';
-    }, 4000);
-  };
-
-  runBtn.addEventListener('pointerenter', dodge);
-  runBtn.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    dodge();
+  (['pointerdown', 'touchstart'] as const).forEach((v) => {
+    document.addEventListener(
+      v,
+      (e) => {
+        const touch = 'touches' in e && e.touches.length ? e.touches[0] : (e as PointerEvent);
+        px = touch.clientX;
+        py = touch.clientY;
+        if (isNearButton()) {
+          lt = performance.now();
+          flee();
+          if ((e.target as HTMLElement)?.closest('#run')) e.preventDefault();
+        }
+      },
+      { passive: false }
+    );
   });
-  runBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    dodge();
-  });
+
+  const run = $('#run');
+  if (run) {
+    run.addEventListener('click', (e) => {
+      e.preventDefault();
+      flee();
+    });
+  }
+
+  window.addEventListener('resize', resetDodgeHome);
+  if (document.fonts) {
+    document.fonts.ready.then(resetDodgeHome);
+  }
 }
 
 // ==========================================================================
 // Leaderboard & Today's Board Rendering
 // ==========================================================================
-function renderAvatar(item: LeaderboardEntry, isLarge: boolean = false): string {
+const CROWN_SVG = '<svg class="crown" viewBox="0 0 24 24" width="34" height="34" aria-hidden="true"><path d="M3 18h18l1-10-5 4-5-8-5 8-5-4z" fill="#FFD23F" stroke="#101010" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+
+function renderAvatar(item: LeaderboardEntry): string {
   if (item.img) {
-    return `<div class="avatar ${isLarge ? 'lg' : ''}"><img src="${AnalyticsService.escapeHtml(item.img)}" alt="${AnalyticsService.escapeHtml(item.name)}"></div>`;
+    return `<div class="av"><img src="${AnalyticsService.escapeHtml(item.img)}" alt=""></div>`;
   }
   if (item.anon) {
-    return `<div class="avatar ${isLarge ? 'lg' : ''}" style="background:#555">?</div>`;
+    return `<div class="av" style="background:#8a877d">?</div>`;
   }
   const colors = ['#2F4BFF', '#E8412C', '#0E9F6E', '#8B3DFF', '#F08A00', '#101010', '#D6246E'];
   let hash = 0;
   for (let i = 0; i < item.name.length; i++) hash += item.name.charCodeAt(i);
   const bg = colors[hash % colors.length];
   const initial = (item.name[0] || '?').toUpperCase();
-  return `<div class="avatar ${isLarge ? 'lg' : ''}" style="background:${bg}">${AnalyticsService.escapeHtml(initial)}</div>`;
+  return `<div class="av" style="background:${bg}">${AnalyticsService.escapeHtml(initial)}</div>`;
 }
 
 function renderLeaderboard(): void {
@@ -316,9 +406,9 @@ function renderLeaderboard(): void {
 
   if (displayList.length === 0) {
     boardEl.innerHTML = `
-      <div class="empty-box">
-        Nobody has bought me a meal today yet.
-        <span>Be the first legend on the board. I'm extraordinarily hungry!</span>
+      <div class="empty">
+        Nobody has bought me a meal today.<br>
+        <span style="font:500 16px 'DM Sans'">Be the first name on the board. I’m very hungry.</span>
       </div>
     `;
     return;
@@ -326,7 +416,7 @@ function renderLeaderboard(): void {
 
   let html = '';
 
-  // Render top 3 podium in Top mode
+  // Render top 3 podium in Top mode (matches original layout)
   if (currentBoardMode === 'top' && displayList.length >= 2) {
     const podiums = [
       { item: displayList[1], rank: 2, cls: 'p2' },
@@ -334,27 +424,19 @@ function renderLeaderboard(): void {
       { item: displayList[2], rank: 3, cls: 'p3' }
     ].filter((p) => p.item);
 
-    html += `<div class="podium-grid" style="grid-template-columns: repeat(${podiums.length}, 1fr)">`;
+    html += `<div class="pod" style="grid-template-columns: repeat(${podiums.length}, minmax(0, 1fr))">`;
     podiums.forEach((p) => {
       const tier = AnalyticsService.getTier(p.item.amt);
       html += `
-        <div class="podium-card ${p.cls}" data-id="${p.item.id}">
-          <span class="medal-badge">${p.rank}</span>
-          ${
-            p.rank === 1
-              ? `<div class="crown-icon">
-                  <svg viewBox="0 0 24 24" width="36" height="36">
-                    <path d="M3 18h18l1-10-5 4-5-8-5 8-5-4z" fill="#FFD23F" stroke="#101010" stroke-width="1.8" stroke-linejoin="round"/>
-                  </svg>
-                </div>`
-              : ''
-          }
-          ${renderAvatar(p.item, p.rank === 1)}
+        <button class="pc ${p.cls}" data-id="${p.item.id}">
+          <span class="medal">${p.rank}</span>
+          ${p.rank === 1 ? CROWN_SVG : ''}
+          ${renderAvatar(p.item)}
           <h3>${AnalyticsService.escapeHtml(p.item.name)}</h3>
-          <span class="tier-tag" style="background:${tier.color}">${tier.name}</span>
+          <span class="tc" style="background:${tier.color}">${tier.name}</span>
           <div class="amt">${AnalyticsService.formatMoney(p.item.amt)}</div>
-          <span class="view-details">Click for bio ›</span>
-        </div>
+          <span class="go">Details ›</span>
+        </button>
       `;
     });
     html += `</div>`;
@@ -367,34 +449,33 @@ function renderLeaderboard(): void {
     const rank = startIndex + idx + 1;
     const tier = AnalyticsService.getTier(item.amt);
     const host = AnalyticsService.getHost(item.url);
-    const pct = Math.min(100, Math.max(6, (item.amt / maxAmount) * 100));
-    const isFresh = Date.now() - item.t < 1000 * 60 * 15;
+    const pct = Math.min(100, Math.max(3, (item.amt / maxAmount) * 100));
+    const isFresh = Date.now() - item.t < 120000;
 
     html += `
-      <div class="board-row ${isFresh ? 'hot' : ''}" data-id="${item.id}">
-        <div>
+      <button class="lr ${currentBoardMode === 'recent' && idx === 0 ? 'hot' : ''}" data-id="${item.id}">
+        <div class="lk">
           ${
             currentBoardMode === 'top'
-              ? `<span class="rank-badge">${rank}</span>`
-              : `<span class="time-pill ${isFresh ? 'fresh' : ''}">${AnalyticsService.getTimeAgo(item.t)}</span>`
+              ? `<b>${rank}</b>`
+              : `<span class="tp ${isFresh ? 'nw' : ''}">${AnalyticsService.getTimeAgo(item.t)}</span>`
           }
         </div>
         ${renderAvatar(item)}
-        <div>
+        <div style="min-width:0">
           <h3>
             ${AnalyticsService.escapeHtml(item.name)}
-            <span class="tier-tag" style="background:${tier.color}">${tier.name}</span>
-            ${item.src === 'preview' ? `<span class="badge-src">Preview</span>` : ''}
+            <span class="tc" style="background:${tier.color}">${tier.name}</span>
           </h3>
-          <p>${AnalyticsService.escapeHtml(item.desc || 'Fueling the non-productive movement.')}</p>
-          ${host ? `<div class="url-preview">🔗 ${AnalyticsService.escapeHtml(host)}</div>` : ''}
+          <p>${AnalyticsService.escapeHtml(item.desc || '')}</p>
+          <div class="d">${AnalyticsService.escapeHtml(host || item.url || '')}</div>
         </div>
-        <div class="row-amount">
+        <div class="lp">
           ${AnalyticsService.formatMoney(item.amt)}
-          <span class="view-btn">Details ›</span>
+          <span class="go">Details ›</span>
         </div>
-        <div class="progress-strip" style="width:${pct}%"></div>
-      </div>
+        <i class="lbar" style="width:${pct}%"></i>
+      </button>
     `;
   });
 
@@ -418,40 +499,40 @@ function renderHallOfFame(): void {
 
   if (sortedAll.length === 0) {
     hofContainer.innerHTML = `
-      <div class="empty-box">
-        The Hall of Fame is awaiting its first hero.
-        <span>Contributions of all time will be recorded here eternally.</span>
+      <div class="empty">
+        Nobody in the hall of fame yet.<br>
+        <span style="font:500 16px 'DM Sans'">The biggest payers of all time will live here.</span>
       </div>
     `;
     return;
   }
 
-  let html = `<p class="hint-text" style="margin-bottom:14px">Showing the top ${sortedAll.length} all-time supporters.</p>`;
+  let html = `<p class="hint" style="margin-bottom:10px">${entries.length} payments so far. Showing the top ${sortedAll.length}.</p>`;
 
   sortedAll.forEach((item, idx) => {
     const rank = idx + 1;
     const tier = AnalyticsService.getTier(item.amt);
     const host = AnalyticsService.getHost(item.url);
-    const pct = Math.min(100, Math.max(6, (item.amt / maxAmount) * 100));
+    const pct = Math.min(100, Math.max(3, (item.amt / maxAmount) * 100));
 
     html += `
-      <div class="board-row ${rank <= 3 ? 'hot' : ''}" data-id="${item.id}">
-        <div><span class="rank-badge" style="${rank === 1 ? 'background:#FFD23F;color:#101010' : ''}">${rank}</span></div>
+      <button class="lr ${rank <= 3 ? 'hot' : ''}" data-id="${item.id}">
+        <div class="lk"><b>${rank}</b></div>
         ${renderAvatar(item)}
-        <div>
+        <div style="min-width:0">
           <h3>
             ${AnalyticsService.escapeHtml(item.name)}
-            <span class="tier-tag" style="background:${tier.color}">${tier.name}</span>
+            <span class="tc" style="background:${tier.color}">${tier.name}</span>
           </h3>
-          <p>${AnalyticsService.escapeHtml(item.desc || 'Legendary patron of doing nothing.')}</p>
-          ${host ? `<div class="url-preview">🔗 ${AnalyticsService.escapeHtml(host)}</div>` : ''}
+          <p>${AnalyticsService.escapeHtml(item.desc || '')}</p>
+          <div class="d">${AnalyticsService.escapeHtml(host || item.url || '')}</div>
         </div>
-        <div class="row-amount">
+        <div class="lp">
           ${AnalyticsService.formatMoney(item.amt)}
-          <span class="view-btn">Details ›</span>
+          <span class="go">Details ›</span>
         </div>
-        <div class="progress-strip" style="width:${pct}%"></div>
-      </div>
+        <i class="lbar" style="width:${pct}%"></i>
+      </button>
     `;
   });
 
@@ -481,74 +562,63 @@ function showDetailModal(item: LeaderboardEntry): void {
 
   const url = AnalyticsService.safeUrl(item.url);
   const host = AnalyticsService.getHost(item.url);
-  const tier = AnalyticsService.getTier(item.amt);
 
   modalContent.innerHTML = `
-    <button class="modal-close-x" id="modalCloseBtn">&times;</button>
-    <div style="display:flex;gap:16px;align-items:center;margin-bottom:16px">
-      ${renderAvatar(item, true)}
+    <div style="display:flex;gap:14px;align-items:center">
+      ${renderAvatar(item)}
       <div>
-        <h2 style="font-size:26px">${AnalyticsService.escapeHtml(item.name)}</h2>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
-          <b style="font-size:20px;font-family:var(--font-disp)">${AnalyticsService.formatMoney(item.amt)}</b>
-          <span class="tier-tag" style="background:${tier.color}">${tier.name}</span>
-        </div>
+        <h2 style="font-size:28px">${AnalyticsService.escapeHtml(item.name)}</h2>
+        <b>${AnalyticsService.formatMoney(item.amt)}</b>
       </div>
     </div>
-    <div style="background:var(--paper);border:2px solid var(--line);border-radius:var(--radius-md);padding:16px;margin:14px 0">
-      <p style="font-size:15px;line-height:1.6;white-space:pre-wrap">${AnalyticsService.escapeHtml(item.desc || 'No custom message provided.')}</p>
-    </div>
+    <p style="white-space:pre-wrap;margin:14px 0">${AnalyticsService.escapeHtml(item.desc || 'No description.')}</p>
     ${
       url
-        ? `<div style="margin-top:16px">
-            <a class="btn sm" href="${AnalyticsService.escapeHtml(url)}" target="_blank" rel="nofollow noopener ugc">
-              Visit Website (${AnalyticsService.escapeHtml(host)}) ↗
-            </a>
-           </div>`
+        ? `<p><a class="btn sm" href="${AnalyticsService.escapeHtml(url)}" target="_blank" rel="nofollow noopener ugc">Visit ${AnalyticsService.escapeHtml(host)}</a></p>`
+        : item.url
+        ? `<p><b>${AnalyticsService.escapeHtml(item.url)}</b></p>`
         : ''
     }
-    <p class="hint-text" style="margin-top:14px">Contributed on ${new Date(item.t).toLocaleString()}</p>
+    <p><button class="chip" id="modalCloseChip">Close</button></p>
   `;
 
   modalBackdrop.classList.add('on');
-  const closeBtn = $('#modalCloseBtn');
-  if (closeBtn) closeBtn.onclick = closeModal;
+  const closeChip = $('#modalCloseChip');
+  if (closeChip) closeChip.onclick = closeModal;
 }
 
 function openFundModal(): void {
   if (!modalContent || !modalBackdrop) return;
   sound.play('kaching');
   let uploadedLogo = '';
-  let selectedGateway: PaymentGateway = 'stripe';
 
   const meal = AnalyticsService.getMealName();
   const presets = config.presets && config.presets.length ? config.presets : [5, 10, 25, 50, 100];
 
   modalContent.innerHTML = `
-    <button class="modal-close-x" id="modalCloseBtn">&times;</button>
-    <h2>${AnalyticsService.escapeHtml(config.buttonText)} ${AnalyticsService.escapeHtml(meal)} 🍜</h2>
-    <p class="hint-text">Get featured on today's board and fuel the non-productive movement.</p>
+    <h2>${AnalyticsService.escapeHtml(config.buttonText)} ${AnalyticsService.escapeHtml(meal)}</h2>
+    <p style="margin:0;color:var(--mut)">Put your name or product on today’s board, or stay anonymous.</p>
 
-    <label style="display:flex;align-items:center;gap:10px;margin-top:18px;cursor:pointer">
+    <label style="display:flex;align-items:center;margin-top:16px;cursor:pointer">
       <input type="checkbox" id="fundAnon">
-      <span>Contribute anonymously (no name, no website link)</span>
+      Pay anonymously (no name, no link, no logo)
     </label>
 
     <div id="fundNamedFields">
-      <label for="fundName">Your Name or Startup Name</label>
-      <input type="text" id="fundName" maxlength="60" placeholder="e.g. Acme Analytics or John Doe">
+      <label for="fundName">Your name or product name</label>
+      <input type="text" id="fundName" maxlength="60" placeholder="Acme Analytics">
 
-      <label for="fundUrl">Website or Social Profile URL</label>
-      <input type="text" id="fundUrl" maxlength="140" placeholder="https://yourstartup.com or https://x.com/username">
-      <p class="hint-text">Visitors can click through directly to your product or profile.</p>
+      <label for="fundUrl">One link (website or social profile)</label>
+      <input type="text" id="fundUrl" maxlength="140" placeholder="https://yourproduct.com or https://x.com/you">
+      <p class="hint">Social links get their platform badge. Websites get a letter avatar unless you upload a logo.</p>
 
-      <label for="fundLogo">Upload Logo / Avatar (optional)</label>
+      <label for="fundLogo">Logo or profile picture (optional)</label>
       <input type="file" id="fundLogo" accept="image/*">
-      <div id="fundLogoPreview" style="margin-top:8px;display:none"></div>
+      <div id="fundLogoPreview" style="margin-top:6px;display:none"></div>
     </div>
 
-    <label for="fundAmount">Contribution Amount (USD)</label>
-    <div class="amount-presets">
+    <label for="fundAmount">How much do you want to pay? (USD)</label>
+    <div class="chips" id="quickAmountChips">
       ${presets
         .map(
           (amt, idx) =>
@@ -556,44 +626,28 @@ function openFundModal(): void {
         )
         .join('')}
     </div>
-    <input type="number" id="fundAmount" min="${config.minAmount || 1}" step="1" value="${presets[1] || 10}" placeholder="Custom amount (min $${config.minAmount || 1})">
+    <input type="number" id="fundAmount" min="${config.minAmount || 1}" step="1" value="${presets[1] || 10}" placeholder="Any amount, $1 or more">
 
-    <label for="fundDesc">Message / Product Pitch <span id="fundWordCount" class="hint-text" style="display:inline">(0 / 500 words)</span></label>
-    <textarea id="fundDesc" placeholder="Tell the world what you're building, or share your favorite nap technique."></textarea>
+    <label for="fundDesc">Short description or message <span id="fundWordCount" class="hint" style="display:inline">0 / 500 words</span></label>
+    <textarea id="fundDesc" placeholder="What are you building? Or just say hi."></textarea>
 
-    <label>Select Payment Method</label>
-    <div class="gateway-grid">
-      <div class="gateway-card selected" data-gw="stripe">
-        <span>💳 Stripe Card</span>
-      </div>
-      <div class="gateway-card" data-gw="razorpay">
-        <span>🇮🇳 UPI / Razorpay</span>
-      </div>
-      <div class="gateway-card" data-gw="paypal">
-        <span>🅿️ PayPal</span>
-      </div>
-      <div class="gateway-card" data-gw="crypto">
-        <span>⚡ Crypto</span>
-      </div>
-    </div>
+    ${
+      config.payUrl
+        ? `<div class="note">You’ll continue to the payment page. You appear on the board once the payment is verified.</div>`
+        : `<div class="note"><b>Live Supabase sync active:</b> Your contribution connects directly with Supabase and renders on the board immediately!</div>`
+    }
 
-    <div class="banner-note" id="fundNotice">
-      <b>🚀 Instant Live Sync:</b> Your contribution connects with our live Supabase database and renders instantly on the leaderboard!
-    </div>
-
-    <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap">
+    <p style="display:flex;gap:10px;margin-top:16px">
       <button class="btn" id="fundSubmitBtn" style="flex:1;text-align:center">
-        Complete & Get on Board 🚀
+        ${config.payUrl ? 'Continue to payment' : 'Add to board'}
       </button>
       <button class="btn w" id="fundCancelBtn">Cancel</button>
-    </div>
+    </p>
   `;
 
   modalBackdrop.classList.add('on');
 
-  const closeBtn = $('#modalCloseBtn');
   const cancelBtn = $('#fundCancelBtn');
-  if (closeBtn) closeBtn.onclick = closeModal;
   if (cancelBtn) cancelBtn.onclick = closeModal;
 
   const anonCheckbox = $('#fundAnon') as HTMLInputElement | null;
@@ -613,21 +667,12 @@ function openFundModal(): void {
     };
   });
 
-  modalContent.querySelectorAll<HTMLElement>('[data-gw]').forEach((gw) => {
-    gw.onclick = () => {
-      modalContent.querySelectorAll('[data-gw]').forEach((g) => g.classList.remove('selected'));
-      gw.classList.add('selected');
-      selectedGateway = (gw.getAttribute('data-gw') as PaymentGateway) || 'stripe';
-      sound.play('pop');
-    };
-  });
-
   const descInput = $('#fundDesc') as HTMLTextAreaElement | null;
   const wcEl = $('#fundWordCount');
   if (descInput && wcEl) {
     descInput.oninput = () => {
       const words = descInput.value.trim().split(/\s+/).filter(Boolean).length;
-      wcEl.textContent = `(${words} / 500 words)`;
+      wcEl.textContent = `${words} / 500 words`;
     };
   }
 
@@ -648,12 +693,12 @@ function openFundModal(): void {
           if (ctx) {
             const s = Math.min(img.width, img.height);
             ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 96, 96);
-            uploadedLogo = canvas.toDataURL('image/jpeg', 0.85);
+            uploadedLogo = canvas.toDataURL('image/jpeg', 0.8);
 
             const previewEl = $('#fundLogoPreview');
             if (previewEl) {
               previewEl.style.display = 'block';
-              previewEl.innerHTML = `<img src="${uploadedLogo}" style="width:48px;height:48px;border-radius:8px;border:2px solid var(--ink)">`;
+              previewEl.innerHTML = `<img src="${uploadedLogo}" style="width:40px;height:40px;border-radius:10px;border:2px solid var(--ink);object-fit:cover">`;
             }
           }
         };
@@ -669,23 +714,23 @@ function openFundModal(): void {
       const isAnon = anonCheckbox?.checked ?? false;
       const nameInput = $('#fundName') as HTMLInputElement | null;
       const urlInput = $('#fundUrl') as HTMLInputElement | null;
-      const name = isAnon ? 'Anonymous Hero' : (nameInput?.value.trim() || '');
+      const name = isAnon ? 'Anonymous legend' : (nameInput?.value.trim() || '');
       const rawUrl = isAnon ? '' : (urlInput?.value.trim() || '');
       const amt = parseFloat(amountInput?.value || '0');
       const desc = descInput?.value.trim() || '';
 
       if (!name) {
-        showToast("Please provide your name or check 'Contribute anonymously'.");
+        showToast('Add your name or product name, or tick “Pay anonymously”.');
         sound.play('sad');
         return;
       }
       if (rawUrl && !AnalyticsService.safeUrl(rawUrl) && rawUrl[0] !== '@') {
-        showToast('Please enter a valid website link (e.g. https://yourstartup.com).');
+        showToast('That link doesn’t look valid. Use https://…');
         sound.play('sad');
         return;
       }
       if (isNaN(amt) || amt < (config.minAmount || 1)) {
-        showToast(`Minimum contribution is $${config.minAmount || 1}.`);
+        showToast(`Enter an amount of $${config.minAmount || 1} or more.`);
         sound.play('sad');
         return;
       }
@@ -697,13 +742,13 @@ function openFundModal(): void {
         desc,
         img: uploadedLogo,
         anon: isAnon,
-        gateway: selectedGateway
+        gateway: 'stripe'
       });
 
       if (result.redirectUrl) {
         window.open(result.redirectUrl, '_blank', 'noopener');
         closeModal();
-        showToast('Complete payment on checkout page.');
+        showToast('Complete the payment. You’ll appear once it’s verified.');
         return;
       }
 
@@ -713,7 +758,7 @@ function openFundModal(): void {
         renderApp();
         sound.play('fanfare');
         confetti.fire(95);
-        showToast("🎉 You're on today's board! Thank you for the meal.");
+        showToast("Added to the board! Thank you for the meal.");
         location.hash = 'home';
       }
     };
@@ -753,7 +798,7 @@ function setupRedButton(): void {
     redPressCount++;
     sound.play(redPressCount === 5 ? 'alarm' : redPressCount % 2 === 0 ? 'boom' : 'horn');
 
-    if (counterEl) counterEl.textContent = `Total button presses: ${redPressCount}`;
+    if (counterEl) counterEl.textContent = `Presses: ${redPressCount}`;
 
     if (redPressCount === 5) {
       triggerInternetDeletion();
@@ -771,21 +816,21 @@ function triggerInternetDeletion(): void {
   sound.play('alarm');
 
   modalContent.innerHTML = `
-    <h2>⚠️ Deleting the Entire Internet...</h2>
-    <div class="progress-bar-wrap">
-      <i class="progress-bar-fill" id="deleteProgressBar"></i>
+    <h2>Deleting the internet…</h2>
+    <div class="bar2">
+      <i id="deleteProgressBar"></i>
     </div>
-    <p id="deleteStatusText" style="font-weight:700">Clearing group chats you forgot to reply to...</p>
-    <p class="hint-text">(Just kidding, relax)</p>
+    <p id="deleteStatusText" class="hint">Starting…</p>
+    <p class="hint">(not real, obviously)</p>
   `;
   modalBackdrop.classList.add('on');
 
   const steps = [
-    'Closing 147 open browser tabs...',
-    'Unsubscribing from 50 marketing newsletters...',
-    'Deleting corporate Slack channels...',
-    'Cancelling Monday mornings forever...',
-    'Deleting the instant noodles database... WAIT STOP!'
+    'Removing cat videos…',
+    'Deleting group chats… you’re welcome',
+    'Cancelling Mondays…',
+    'Unsubscribing from newsletters…',
+    'Deleting the noodle recipes… no, wait'
   ];
 
   let progress = 0;
@@ -794,38 +839,38 @@ function triggerInternetDeletion(): void {
   const text = $('#deleteStatusText');
 
   const interval = window.setInterval(() => {
-    progress += Math.random() * 12 + 5;
+    progress += Math.random() * 9 + 3;
     sound.play('tick', 20);
 
-    if (progress >= 98) {
-      progress = 98;
+    if (progress >= 99) {
+      progress = 99;
       window.clearInterval(interval);
       sound.play('scratch');
-      if (text) text.textContent = 'Wait. Deleting all of that is way too much work.';
+      if (text) text.textContent = 'Wait. That’s a lot of work.';
 
       setTimeout(() => {
         sound.play('sad');
         if (!modalContent) return;
         modalContent.innerHTML = `
-          <h2>Operation Aborted! 😴</h2>
-          <p style="font-size:16px;margin:12px 0">I got tired and decided to lie down instead. You're welcome.</p>
-          <div style="display:flex;gap:12px">
-            <button class="btn" id="redMealBtn" style="flex:1">Buy me noodles to say thanks</button>
+          <h2>Cancelled.</h2>
+          <p>I’m too lazy to finish deleting the internet. You’re welcome.</p>
+          <p style="display:flex;gap:10px">
+            <button class="btn" id="redMealBtn" style="flex:1;text-align:center">Buy me a noodle</button>
             <button class="btn w" id="redCloseBtn">Phew</button>
-          </div>
+          </p>
         `;
         const mealBtn = $('#redMealBtn');
         const closeB = $('#redCloseBtn');
         if (mealBtn) mealBtn.onclick = openFundModal;
         if (closeB) closeB.onclick = closeModal;
-      }, 1400);
+      }, 1500);
     } else {
       if (bar) bar.style.width = progress + '%';
-      if (text && Math.random() < 0.4) {
+      if (text && Math.random() < 0.5) {
         text.textContent = steps[stepIdx++ % steps.length];
       }
     }
-  }, 280);
+  }, 350);
 }
 
 // 2. Roast Machine
@@ -843,7 +888,7 @@ function setupRoastMachine(): void {
   roastBtn.onclick = () => {
     const name = roastInput?.value.trim() || '';
     if (!name) {
-      showToast('Please type a name or startup first!');
+      showToast('Type a name or product first.');
       sound.play('sad');
       return;
     }
@@ -858,17 +903,17 @@ function setupRoastMachine(): void {
     sound.play('rim');
     const roastText = templates[nextIdx].replace(/\{n\}/g, name);
     if (roastOutput) roastOutput.textContent = roastText;
-    if (roastActions) roastActions.style.display = 'flex';
+    if (roastActions) roastActions.style.display = 'block';
   };
 
   if (copyRoastBtn && roastOutput) {
     copyRoastBtn.onclick = async () => {
       try {
         await navigator.clipboard.writeText(roastOutput.textContent || '');
-        showToast('Roast copied to clipboard!');
+        showToast('Roast copied.');
         sound.play('pop');
       } catch {
-        showToast('Could not copy.');
+        showToast('Couldn’t copy.');
       }
     };
   }
@@ -905,16 +950,16 @@ function challengeStop(failed: boolean = false): void {
   if (failed) {
     sound.play('sad');
     if (msgEl) {
-      if (durationSec < 5) msgEl.textContent = 'Bro you moved immediately lol.';
-      else if (durationSec < 15) msgEl.textContent = 'Not bad, but your phone detected twitches.';
-      else if (durationSec < 30) msgEl.textContent = 'Decent stillness. You have couch potential.';
-      else if (durationSec < 60) msgEl.textContent = 'Now that is serious motionless dedication.';
-      else msgEl.textContent = 'Grandmaster of doing absolutely nothing. I am proud.';
+      if (durationSec < 5) msgEl.textContent = 'You lasted about as long as a New Year’s resolution.';
+      else if (durationSec < 15) msgEl.textContent = 'Decent. Your phone is judging you.';
+      else if (durationSec < 30) msgEl.textContent = 'Impressive. A true beginner of nothing.';
+      else if (durationSec < 60) msgEl.textContent = 'Elite stillness. Please consider a career in nothing.';
+      else msgEl.textContent = 'Legendary. I’m honestly a little jealous.';
     }
-    if (bestEl) bestEl.textContent = `Your Personal Record: ${best.toFixed(1)}s`;
+    if (bestEl) bestEl.textContent = `Your best: ${best.toFixed(1)}s (stored on this device)`;
     if (startBtn) {
-      startBtn.textContent = 'Try Doing Nothing Again';
-      startBtn.style.display = 'inline-flex';
+      startBtn.textContent = 'Try again';
+      startBtn.style.visibility = 'visible';
     }
   }
 }
@@ -932,10 +977,11 @@ function setupChallenge(): void {
   const msgEl = $('#challengeMessage');
   if (!startBtn) return;
 
-  startBtn.onclick = () => {
+  startBtn.onclick = (e) => {
+    e.preventDefault();
     sound.play('dun');
-    if (msgEl) msgEl.textContent = "DON'T MOVE. No mouse, no scrolling, no keyboard...";
-    startBtn.style.display = 'none';
+    if (msgEl) msgEl.textContent = 'Don’t touch anything...';
+    startBtn.style.visibility = 'hidden';
 
     setTimeout(() => {
       challengeActive = true;
@@ -947,11 +993,12 @@ function setupChallenge(): void {
       const onMove = (ev: Event): void => {
         if (ev.type === 'pointermove' && ++moves < 4) return;
         failEvents.forEach((t) => window.removeEventListener(t, onMove, true));
+        startBtn.style.visibility = 'visible';
         challengeStop(true);
       };
 
       failEvents.forEach((t) => window.addEventListener(t, onMove, true));
-    }, 600);
+    }, 500);
   };
 }
 
@@ -979,10 +1026,10 @@ function setupExcuseMachine(): void {
     copyBtn.onclick = async () => {
       try {
         await navigator.clipboard.writeText(output.textContent || '');
-        showToast('Excuse copied! Send it right away.');
+        showToast('Copied. Use it wisely.');
         sound.play('pop');
       } catch {
-        showToast('Could not copy.');
+        showToast('Couldn’t copy.');
       }
     };
   }
@@ -1001,12 +1048,11 @@ function renderAdmin(): void {
 
   if (!adminUnlocked) {
     adminEl.innerHTML = `
-      <div class="panel" style="max-width:440px">
-        <h3>Admin Authentication</h3>
-        <p class="hint-text">Default passcode: <code>admin123</code></p>
+      <div class="panel" style="max-width:420px">
         <label for="adminPass">Passcode</label>
         <input type="password" id="adminPass" placeholder="Enter admin passcode">
-        <button class="btn sm" id="adminUnlockBtn" style="margin-top:16px">Unlock Command Center</button>
+        <p style="margin-top:14px"><button class="btn sm" id="adminUnlockBtn">Unlock</button></p>
+        <p class="hint">Passcode: <code>admin123</code></p>
       </div>
     `;
 
@@ -1019,7 +1065,7 @@ function renderAdmin(): void {
           sound.play('fanfare');
           renderAdmin();
         } else {
-          showToast('Invalid passcode.');
+          showToast('Wrong passcode.');
           sound.play('sad');
         }
       };
@@ -1028,68 +1074,46 @@ function renderAdmin(): void {
   }
 
   adminEl.innerHTML = `
-    <!-- Top Status Bar with Supabase Realtime Health -->
-    <div class="admin-status-bar">
-      <div class="status-indicator">
-        <span class="status-dot"></span>
-        <span>Supabase Sync Active & Connected</span>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button class="chip" id="adminLockBtn">🔒 Lock Admin</button>
-      </div>
-    </div>
-
-    <!-- Navigation Tabs -->
-    <div class="chips-container" style="margin-bottom:20px">
-      <button class="chip ${adminTab === 'entries' ? 'on' : ''}" data-at="entries">Patrons & Entries (${entries.length})</button>
-      <button class="chip ${adminTab === 'hero' ? 'on' : ''}" data-at="hero">Hero Copy & Quotes</button>
-      <button class="chip ${adminTab === 'dodge' ? 'on' : ''}" data-at="dodge">Dodge Button Quotes</button>
+    <div class="chips" style="margin-bottom:14px">
+      <button class="chip ${adminTab === 'entries' ? 'on' : ''}" data-at="entries">Entries (${entries.length})</button>
+      <button class="chip ${adminTab === 'hero' ? 'on' : ''}" data-at="hero">Hero Lines</button>
+      <button class="chip ${adminTab === 'dodge' ? 'on' : ''}" data-at="dodge">Dodge Quotes</button>
       <button class="chip ${adminTab === 'roasts' ? 'on' : ''}" data-at="roasts">Roasts & Excuses</button>
-      <button class="chip ${adminTab === 'pricing' ? 'on' : ''}" data-at="pricing">Pricing & Payments</button>
-      <button class="chip ${adminTab === 'database' ? 'on' : ''}" data-at="database">Supabase Database</button>
-      <button class="chip ${adminTab === 'backup' ? 'on' : ''}" data-at="backup">Backup & JSON</button>
+      <button class="chip ${adminTab === 'pricing' ? 'on' : ''}" data-at="pricing">Settings</button>
+      <button class="chip ${adminTab === 'database' ? 'on' : ''}" data-at="database">Supabase</button>
+      <button class="chip ${adminTab === 'backup' ? 'on' : ''}" data-at="backup">Backup</button>
     </div>
 
-    <!-- TAB 1: ENTRIES MANAGER (Full CRUD) -->
     ${
       adminTab === 'entries'
         ? `
         <div class="panel">
-          <h3>Record Real Payment / Manual Entry</h3>
-          <p class="hint-text">Add cash, direct UPI, or off-platform contributions directly to the board.</p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div>
-              <label>Name or Startup</label>
-              <input type="text" id="mName" placeholder="Acme Inc">
-            </div>
-            <div>
-              <label>Amount (USD)</label>
-              <input type="number" id="mAmt" step="0.01" value="25">
-            </div>
-          </div>
-          <label>Website URL</label>
+          <h3>Record an entry</h3>
+          <p class="hint">Use this to record payments you actually received outside the site (UPI, PayPal, cash).</p>
+          <label>Name or product</label>
+          <input type="text" id="mName" placeholder="Acme Inc">
+          <label>Link</label>
           <input type="text" id="mUrl" placeholder="https://...">
-          <label>Message / Note</label>
-          <textarea id="mDesc" placeholder="Supporter note"></textarea>
-          <button class="btn sm" id="mSaveBtn" style="margin-top:14px">Add Record to Board</button>
+          <label>Amount (USD)</label>
+          <input type="number" id="mAmt" step="0.01" value="25">
+          <label>Description</label>
+          <textarea id="mDesc" placeholder="Note"></textarea>
+          <p style="margin-top:14px"><button class="btn sm" id="mSaveBtn">Add entry</button></p>
         </div>
 
-        <div style="display:flex;gap:10px;margin:16px 0;flex-wrap:wrap">
-          <button class="chip" id="adminExportCsv">Export CSV</button>
-          <button class="chip" id="adminResetSample">Reset to Sample Data</button>
-          <button class="chip" id="adminClearAll">Clear All Entries</button>
+        <div class="chips" style="margin:14px 0">
+          <button class="chip" id="adminExportCsv">Show CSV</button>
+          <button class="chip" id="adminResetSample">Reset to sample</button>
+          <button class="chip" id="adminClearAll">Delete all entries</button>
         </div>
-
         <div id="adminCsvOutput"></div>
 
-        <h3 style="margin:24px 0 12px">Current Patrons (${entries.length} entries)</h3>
+        <h3 style="margin-top:20px">${entries.length} entries</h3>
         ${entries
           .map(
             (item) => `
-          <div class="admin-crud-item">
-            <div class="text-body">
-              <b>${AnalyticsService.escapeHtml(item.name)}</b> · ${AnalyticsService.formatMoney(item.amt)} · <span class="hint-text">${new Date(item.t).toLocaleDateString()}</span>
-            </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1.5px solid var(--line);gap:10px;flex-wrap:wrap">
+            <span><b>${AnalyticsService.escapeHtml(item.name)}</b> · ${AnalyticsService.formatMoney(item.amt)} · ${new Date(item.t).toLocaleDateString()}</span>
             <div style="display:flex;gap:6px">
               <button class="chip" data-edit="${item.id}" style="padding:4px 10px;font-size:12px">Edit</button>
               <button class="chip" data-del="${item.id}" style="padding:4px 10px;font-size:12px">Delete</button>
@@ -1101,120 +1125,76 @@ function renderAdmin(): void {
       `
         : adminTab === 'hero'
         ? `
-        <!-- TAB 2: HERO & CONTENT CONTROL -->
         <div class="panel">
-          <h3>Hero Titles & Rotating Lines</h3>
-          <label>Main Hero Title (HTML supported for &lt;span class="hl"&gt;)</label>
-          <input type="text" id="cfgHeroTitle" value="${AnalyticsService.escapeHtml(config.heroTitle || 'I do nothing.')}">
-
-          <label>Hero Tag Banner</label>
+          <label>Hero Tag</label>
           <input type="text" id="cfgTag" value="${AnalyticsService.escapeHtml(config.tagline)}">
-
-          <label>Main Button Text (time of day meal appended)</label>
+          <label>Main Button Text</label>
           <input type="text" id="cfgBtn" value="${AnalyticsService.escapeHtml(config.buttonText)}">
-
           <label>Small Subtitle Under Main Button</label>
           <input type="text" id="cfgSub" value="${AnalyticsService.escapeHtml(config.subText)}">
-
-          <label>Rotating Hero Lines (Conversational quotes, one per line)</label>
+          <label>Rotating Hero Lines (one per line)</label>
           <textarea id="cfgLines" style="min-height:220px">${AnalyticsService.escapeHtml((config.lines || ROTATING_LINES).join('\n'))}</textarea>
-
-          <button class="btn sm" id="cfgSaveHeroBtn" style="margin-top:16px">Save Hero Settings</button>
+          <p style="margin-top:14px"><button class="btn sm" id="cfgSaveHeroBtn">Save Hero Lines</button></p>
         </div>
       `
         : adminTab === 'dodge'
         ? `
-        <!-- TAB 3: DODGE BUTTON QUOTES -->
         <div class="panel">
-          <h3>"Go Get A Job" Evasive Phrases</h3>
-          <p class="hint-text">Quotes that appear when users try to hover or tap the dodging button (one per line):</p>
+          <label>“Go get a job” button texts (one per line)</label>
           <textarea id="cfgDodgeQuotes" style="min-height:260px">${AnalyticsService.escapeHtml((config.dodgeQuotes || DODGE_QUOTES).join('\n'))}</textarea>
-          <button class="btn sm" id="cfgSaveDodgeBtn" style="margin-top:16px">Save Dodge Quotes</button>
+          <p style="margin-top:14px"><button class="btn sm" id="cfgSaveDodgeBtn">Save Dodge Quotes</button></p>
         </div>
       `
         : adminTab === 'roasts'
         ? `
-        <!-- TAB 4: ROASTS & EXCUSES -->
         <div class="panel">
-          <h3>Startup & Founder Roasts</h3>
-          <p class="hint-text">Templates for the Roast Machine. Use <code>{n}</code> for the startup/person name (one per line):</p>
-          <textarea id="cfgRoasts" style="min-height:200px">${AnalyticsService.escapeHtml((config.roastTemplates || ROAST_TEMPLATES).join('\n'))}</textarea>
-
-          <h3 style="margin-top:24px">Relatable Excuses</h3>
-          <p class="hint-text">One excuse per line for the Excuse Machine:</p>
-          <textarea id="cfgExcuses" style="min-height:200px">${AnalyticsService.escapeHtml((config.excusesList || EXCUSES_LIST).join('\n'))}</textarea>
-
-          <button class="btn sm" id="cfgSaveRoastsBtn" style="margin-top:16px">Save Roasts & Excuses</button>
+          <label>Roast templates (use {n} for name, one per line)</label>
+          <textarea id="cfgRoasts" style="min-height:180px">${AnalyticsService.escapeHtml((config.roastTemplates || ROAST_TEMPLATES).join('\n'))}</textarea>
+          <label style="margin-top:14px">Excuses (one per line)</label>
+          <textarea id="cfgExcuses" style="min-height:180px">${AnalyticsService.escapeHtml((config.excusesList || EXCUSES_LIST).join('\n'))}</textarea>
+          <p style="margin-top:14px"><button class="btn sm" id="cfgSaveRoastsBtn">Save Roasts & Excuses</button></p>
         </div>
       `
         : adminTab === 'pricing'
         ? `
-        <!-- TAB 5: PRICING & PAYMENT GATEWAY -->
         <div class="panel">
-          <h3>Pricing, Goals & Payment Links</h3>
-          <label>Live Payment Gateway Link (Stripe Payment Link / Razorpay URL)</label>
-          <input type="text" id="cfgPayUrl" value="${AnalyticsService.escapeHtml(config.payUrl)}" placeholder="https://buy.stripe.com/...">
-          <p class="hint-text">When set, the checkout button redirects directly to this live payment gateway.</p>
-
-          <label>Preset Contribution Chips (comma separated)</label>
+          <label>Payment link (empty = preview mode)</label>
+          <input type="text" id="cfgPayUrl" value="${AnalyticsService.escapeHtml(config.payUrl)}" placeholder="https://...">
+          <label>Presets (comma separated)</label>
           <input type="text" id="cfgPresets" value="${(config.presets || [5, 10, 25, 50, 100]).join(', ')}">
-
-          <label>Minimum Contribution ($)</label>
-          <input type="number" id="cfgMinAmt" value="${config.minAmount || 1}">
-
-          <label>Daily Target Goal ($)</label>
-          <input type="number" id="cfgTargetGoal" value="${config.targetGoal || 100}">
-
-          <button class="btn sm" id="cfgSavePricingBtn" style="margin-top:16px">Save Pricing Settings</button>
+          <label>Admin passcode</label>
+          <input type="text" id="cfgPass" value="${AnalyticsService.escapeHtml(config.adminPasscode)}">
+          <p style="margin-top:14px"><button class="btn sm" id="cfgSavePricingBtn">Save settings</button></p>
         </div>
       `
         : adminTab === 'database'
         ? `
-        <!-- TAB 6: SUPABASE DATABASE TOOLS -->
         <div class="panel">
-          <h3>Supabase Database Tools</h3>
-          <p class="hint-text">Connected Project: <code>https://upnbvommgourlstrilsa.supabase.co</code></p>
-          <div style="display:flex;gap:10px;margin:16px 0;flex-wrap:wrap">
-            <button class="btn sm" id="btnTestSupabase">Test Connection</button>
-            <button class="btn sm w" id="btnPushSupabase">Push Local Entries to Supabase</button>
-            <button class="btn sm w" id="btnPullSupabase">Pull from Supabase</button>
+          <h3>Supabase Database</h3>
+          <p class="hint">URL: <code>https://upnbvommgourlstrilsa.supabase.co</code></p>
+          <div class="chips" style="margin:12px 0">
+            <button class="chip" id="btnTestSupabase">Test Connection</button>
+            <button class="chip" id="btnPushSupabase">Push Local to Supabase</button>
+            <button class="chip" id="btnPullSupabase">Pull from Supabase</button>
           </div>
-          <div id="supabaseTestResult" style="margin-top:12px"></div>
+          <div id="supabaseTestResult" style="margin-top:8px"></div>
 
-          <h4 style="margin-top:20px">Supabase SQL Schema</h4>
-          <p class="hint-text">Run this SQL query inside your Supabase project's SQL Editor to create the <code>entries</code> table with Realtime enabled:</p>
-          <textarea style="min-height:160px;font-family:monospace;font-size:13px" readonly>${AnalyticsService.escapeHtml(SupabaseService.getCreateSqlSchema())}</textarea>
-          <button class="chip" id="btnCopySql" style="margin-top:8px">📋 Copy SQL to Clipboard</button>
+          <label style="margin-top:16px">SQL Schema for Supabase Editor</label>
+          <textarea style="min-height:140px;font-family:monospace;font-size:12px" readonly>${AnalyticsService.escapeHtml(SupabaseService.getCreateSqlSchema())}</textarea>
+          <p style="margin-top:10px"><button class="chip" id="btnCopySql">Copy SQL</button></p>
         </div>
       `
         : `
-        <!-- TAB 7: BACKUP & SECURITY -->
         <div class="panel">
-          <h3>Security & Passcode</h3>
-          <label>Change Admin Passcode</label>
-          <input type="text" id="cfgPass" value="${AnalyticsService.escapeHtml(config.adminPasscode)}">
-          <button class="btn sm" id="cfgSavePassBtn" style="margin:12px 0 24px">Update Passcode</button>
-
-          <h3>JSON Backup & Migration</h3>
-          <label>Export Current Full State</label>
-          <textarea style="min-height:140px;font-family:monospace" readonly>${AnalyticsService.escapeHtml(JSON.stringify({ config, entries }, null, 2))}</textarea>
-          <label style="margin-top:16px">Import Backup JSON</label>
-          <textarea id="importJsonBox" style="min-height:120px;font-family:monospace" placeholder="Paste exported JSON here"></textarea>
-          <button class="btn sm" id="importJsonBtn" style="margin-top:12px">Restore from JSON</button>
+          <label>Export (copy this)</label>
+          <textarea style="min-height:140px;font-family:monospace" readonly>${AnalyticsService.escapeHtml(JSON.stringify({ config, entries }))}</textarea>
+          <label style="margin-top:14px">Import (paste here)</label>
+          <textarea id="importJsonBox" style="min-height:120px;font-family:monospace"></textarea>
+          <p style="margin-top:10px"><button class="btn sm" id="importJsonBtn">Import</button></p>
         </div>
       `
     }
   `;
-
-  // Lock Admin
-  const lockBtn = $('#adminLockBtn');
-  if (lockBtn) {
-    lockBtn.onclick = () => {
-      adminUnlocked = false;
-      renderAdmin();
-      showToast('Admin locked.');
-    };
-  }
 
   // Tab switching
   adminEl.querySelectorAll<HTMLElement>('[data-at]').forEach((b) => {
@@ -1224,7 +1204,6 @@ function renderAdmin(): void {
     };
   });
 
-  // Action listeners per tab
   if (adminTab === 'entries') {
     const saveBtn = $('#mSaveBtn');
     if (saveBtn) {
@@ -1232,7 +1211,7 @@ function renderAdmin(): void {
         const name = ($('#mName') as HTMLInputElement | null)?.value.trim() || '';
         const amt = parseFloat(($('#mAmt') as HTMLInputElement | null)?.value || '0');
         if (!name || isNaN(amt) || amt <= 0) {
-          showToast('Please enter a valid name and amount.');
+          showToast('Name and a positive amount are required.');
           return;
         }
         const newManual: LeaderboardEntry = {
@@ -1249,7 +1228,7 @@ function renderAdmin(): void {
         entries = await StorageService.addEntry(newManual);
         renderAdmin();
         renderLeaderboard();
-        showToast('Record added to board and synced to Supabase!');
+        showToast('Saved.');
       };
     }
 
@@ -1260,7 +1239,6 @@ function renderAdmin(): void {
           entries = await StorageService.deleteEntry(delId);
           renderAdmin();
           renderLeaderboard();
-          showToast('Entry deleted.');
         }
       };
     });
@@ -1272,23 +1250,21 @@ function renderAdmin(): void {
         if (!item || !modalContent || !modalBackdrop) return;
 
         modalContent.innerHTML = `
-          <button class="modal-close-x" id="modalCloseBtn">&times;</button>
-          <h2>Edit Patron Entry</h2>
+          <h2>Edit entry</h2>
           <label>Name</label>
           <input type="text" id="edName" value="${AnalyticsService.escapeHtml(item.name)}">
-          <label>Amount ($)</label>
+          <label>Amount (USD)</label>
           <input type="number" id="edAmt" value="${item.amt}">
-          <label>Website Link</label>
+          <label>Link</label>
           <input type="text" id="edUrl" value="${AnalyticsService.escapeHtml(item.url)}">
-          <label>Message</label>
+          <label>Description</label>
           <textarea id="edDesc">${AnalyticsService.escapeHtml(item.desc)}</textarea>
-          <div style="display:flex;gap:10px;margin-top:16px">
-            <button class="btn sm" id="edSaveBtn">Save Changes</button>
+          <p style="display:flex;gap:10px;margin-top:16px">
+            <button class="btn sm" id="edSaveBtn">Save changes</button>
             <button class="btn sm w" id="edCancelBtn">Cancel</button>
-          </div>
+          </p>
         `;
         modalBackdrop.classList.add('on');
-        $('#modalCloseBtn')!.onclick = closeModal;
         $('#edCancelBtn')!.onclick = closeModal;
         $('#edSaveBtn')!.onclick = async () => {
           const updName = ($('#edName') as HTMLInputElement).value.trim();
@@ -1305,7 +1281,7 @@ function renderAdmin(): void {
           closeModal();
           renderAdmin();
           renderLeaderboard();
-          showToast('Patron updated successfully!');
+          showToast('Saved.');
         };
       };
     });
@@ -1314,16 +1290,13 @@ function renderAdmin(): void {
     if (exportBtn) {
       exportBtn.onclick = () => {
         const rows = [
-          ['ID', 'Name', 'Amount', 'URL', 'Date', 'Source'],
-          ...entries.map((x) => [x.id, x.name, x.amt, x.url, new Date(x.t).toISOString(), x.src || ''])
+          ['name', 'url', 'amount', 'date', 'source'],
+          ...entries.map((x) => [x.name, x.url, x.amt, new Date(x.t).toISOString(), x.src || ''])
         ];
         const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
         const csvOut = $('#adminCsvOutput');
         if (csvOut) {
-          csvOut.innerHTML = `
-            <label style="margin-top:10px">CSV Output</label>
-            <textarea style="font-family:monospace;min-height:120px">${AnalyticsService.escapeHtml(csv)}</textarea>
-          `;
+          csvOut.innerHTML = `<textarea style="min-height:140px;margin-top:10px">${AnalyticsService.escapeHtml(csv)}</textarea>`;
         }
       };
     }
@@ -1331,31 +1304,28 @@ function renderAdmin(): void {
     const resetBtn = $('#adminResetSample');
     if (resetBtn) {
       resetBtn.onclick = () => {
-        if (confirm('Reset to initial sample entries?')) {
-          entries = [...INITIAL_LEADERBOARD];
-          StorageService.saveEntries(entries);
-          renderAdmin();
-          renderLeaderboard();
-          showToast('Reset to sample data.');
-        }
+        entries = [...INITIAL_LEADERBOARD];
+        StorageService.saveEntries(entries);
+        renderAdmin();
+        renderLeaderboard();
+        showToast('Reset.');
       };
     }
 
     const clearBtn = $('#adminClearAll');
     if (clearBtn) {
       clearBtn.onclick = () => {
-        if (confirm('Delete all entries permanently?')) {
+        if (confirm('Delete all entries?')) {
           entries = [];
           StorageService.saveEntries(entries);
           renderAdmin();
           renderLeaderboard();
-          showToast('All entries cleared.');
+          showToast('Cleared.');
         }
       };
     }
   } else if (adminTab === 'hero') {
     $('#cfgSaveHeroBtn')!.onclick = () => {
-      config.heroTitle = ($('#cfgHeroTitle') as HTMLInputElement).value.trim();
       config.tagline = ($('#cfgTag') as HTMLInputElement).value.trim();
       config.buttonText = ($('#cfgBtn') as HTMLInputElement).value.trim();
       config.subText = ($('#cfgSub') as HTMLInputElement).value.trim();
@@ -1365,14 +1335,14 @@ function renderAdmin(): void {
 
       StorageService.saveConfig(config);
       renderApp();
-      showToast('Hero copy updated!');
+      showToast('Lines saved.');
     };
   } else if (adminTab === 'dodge') {
     $('#cfgSaveDodgeBtn')!.onclick = () => {
       const dodgeRaw = ($('#cfgDodgeQuotes') as HTMLTextAreaElement).value;
       config.dodgeQuotes = dodgeRaw.split('\n').map((s) => s.trim()).filter(Boolean);
       StorageService.saveConfig(config);
-      showToast('Dodge button phrases saved!');
+      showToast('Saved.');
     };
   } else if (adminTab === 'roasts') {
     $('#cfgSaveRoastsBtn')!.onclick = () => {
@@ -1381,7 +1351,7 @@ function renderAdmin(): void {
       config.roastTemplates = roastsRaw.split('\n').map((s) => s.trim()).filter(Boolean);
       config.excusesList = excusesRaw.split('\n').map((s) => s.trim()).filter(Boolean);
       StorageService.saveConfig(config);
-      showToast('Roasts and Excuses updated!');
+      showToast('Saved.');
     };
   } else if (adminTab === 'pricing') {
     $('#cfgSavePricingBtn')!.onclick = () => {
@@ -1391,23 +1361,18 @@ function renderAdmin(): void {
         .split(',')
         .map((n) => parseFloat(n.trim()))
         .filter((n) => !isNaN(n) && n > 0);
-      config.minAmount = parseFloat(($('#cfgMinAmt') as HTMLInputElement).value) || 1;
-      config.targetGoal = parseFloat(($('#cfgTargetGoal') as HTMLInputElement).value) || 100;
+      config.adminPasscode = ($('#cfgPass') as HTMLInputElement).value.trim() || 'admin123';
       StorageService.saveConfig(config);
       renderApp();
-      showToast('Pricing and gateway settings saved!');
+      showToast('Settings saved.');
     };
   } else if (adminTab === 'database') {
     $('#btnTestSupabase')!.onclick = async () => {
       const out = $('#supabaseTestResult');
-      if (out) out.innerHTML = `<span class="hint-text">Testing connection to Supabase...</span>`;
+      if (out) out.innerHTML = `<span class="hint">Testing...</span>`;
       const res = await SupabaseService.testConnection();
       if (out) {
-        out.innerHTML = `
-          <div class="banner-note" style="background:${res.ok ? '#DCFCE7' : '#FEE2E2'}">
-            <b>${res.ok ? '🟢 Success' : '🔴 Notice'}:</b> ${AnalyticsService.escapeHtml(res.message)}
-          </div>
-        `;
+        out.innerHTML = `<div class="note" style="background:${res.ok ? '#DCFCE7' : '#FEE2E2'}">${AnalyticsService.escapeHtml(res.message)}</div>`;
       }
     };
 
@@ -1417,7 +1382,7 @@ function renderAdmin(): void {
         const ok = await SupabaseService.insertEntry(entry);
         if (ok) count++;
       }
-      showToast(`Pushed ${count} entry/entries to Supabase!`);
+      showToast(`Pushed ${count} to Supabase.`);
     };
 
     $('#btnPullSupabase')!.onclick = async () => {
@@ -1425,24 +1390,18 @@ function renderAdmin(): void {
       entries = fresh;
       renderLeaderboard();
       renderAdmin();
-      showToast(`Pulled ${fresh.length} entries from Supabase!`);
+      showToast(`Pulled ${fresh.length} entries.`);
     };
 
     $('#btnCopySql')!.onclick = async () => {
       try {
         await navigator.clipboard.writeText(SupabaseService.getCreateSqlSchema());
-        showToast('SQL schema copied to clipboard!');
+        showToast('Copied.');
       } catch {
-        showToast('Could not copy.');
+        showToast('Couldn’t copy.');
       }
     };
   } else if (adminTab === 'backup') {
-    $('#cfgSavePassBtn')!.onclick = () => {
-      config.adminPasscode = ($('#cfgPass') as HTMLInputElement).value.trim() || 'admin123';
-      StorageService.saveConfig(config);
-      showToast('Admin passcode updated!');
-    };
-
     $('#importJsonBtn')!.onclick = () => {
       try {
         const val = ($('#importJsonBox') as HTMLTextAreaElement).value || '';
@@ -1457,9 +1416,9 @@ function renderAdmin(): void {
         }
         renderAdmin();
         renderApp();
-        showToast('Data restored successfully!');
+        showToast('Imported.');
       } catch {
-        showToast('Invalid JSON syntax.');
+        showToast('Invalid JSON.');
       }
     };
   }
@@ -1472,7 +1431,6 @@ function renderApp(): void {
   const meal = AnalyticsService.getMealName();
   const mainBtn = $('#fundHeroBtn');
   const tagEl = $('#heroTag');
-  const heroTitleEl = $('#mainHeroTitle');
 
   if (mainBtn) {
     mainBtn.innerHTML = `
@@ -1481,11 +1439,6 @@ function renderApp(): void {
     `;
   }
   if (tagEl) tagEl.textContent = config.tagline;
-  if (heroTitleEl && config.heroTitle) {
-    heroTitleEl.innerHTML = config.heroTitle.includes('<')
-      ? config.heroTitle
-      : `${AnalyticsService.escapeHtml(config.heroTitle)}`;
-  }
 
   renderLeaderboard();
   renderHallOfFame();
@@ -1496,16 +1449,7 @@ async function initApp(): Promise<void> {
   if (soundBtn) {
     soundBtn.onclick = () => {
       const isSoundOn = sound.toggle();
-      soundBtn.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          ${
-            isSoundOn
-              ? '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>'
-              : '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>'
-          }
-        </svg>
-        <span>Sound: ${isSoundOn ? 'on' : 'off'}</span>
-      `;
+      soundBtn.textContent = 'Sound: ' + (isSoundOn ? 'on' : 'off');
     };
   }
 
@@ -1526,7 +1470,7 @@ async function initApp(): Promise<void> {
 
   document.addEventListener('click', (e) => {
     const target = e.target as HTMLElement | null;
-    if (target?.closest('.btn, .chip, .gateway-card, .board-row, .podium-card, .big-red-btn')) {
+    if (target?.closest('.btn, .chip, .lr, .pc, .rbtn')) {
       sound.randomClick();
     }
   });
@@ -1539,7 +1483,7 @@ async function initApp(): Promise<void> {
   setupExcuseMachine();
 
   cycleHeroLine();
-  window.setInterval(cycleHeroLine, 4000);
+  window.setInterval(cycleHeroLine, 3800);
 
   window.setInterval(() => {
     const stats = AnalyticsService.calculateDailyStats(entries, config.targetGoal);
@@ -1547,7 +1491,7 @@ async function initApp(): Promise<void> {
     if (rstEl) rstEl.textContent = stats.resetCountdownFormatted;
   }, 1000);
 
-  // Supabase background sync and realtime subscription
+  // Supabase background sync
   try {
     const remoteEntries = await StorageService.syncFromSupabase();
     if (remoteEntries && remoteEntries.length > 0) {
