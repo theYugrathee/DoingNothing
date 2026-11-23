@@ -1,1703 +1,342 @@
+// @ts-nocheck
 import '../css/style.css';
-import {
-  AppConfig,
-  LeaderboardEntry,
-  BoardFilterMode,
-  AppPage
-} from './types';
 import { StorageService } from './services/storage';
-import { AnalyticsService } from './services/analytics';
-import { PaymentService } from './services/payments';
 import { SupabaseService } from './services/supabase';
-import { resolveAvatarUrl } from './services/avatar';
-import { sound } from './services/sound';
-import {
-  ROTATING_LINES,
-  DODGE_QUOTES,
-  ROAST_TEMPLATES,
-  EXCUSES_LIST
-} from './data/defaults';
+import { LeaderboardEntry } from './types';
 
-// ==========================================================================
-// Application State
-// ==========================================================================
-let config: AppConfig = StorageService.getConfig();
-let entries: LeaderboardEntry[] = StorageService.getEntries();
-let currentBoardMode: BoardFilterMode = 'recent';
-
-// DOM Selectors Helper
-const $ = <T extends HTMLElement = HTMLElement>(sel: string): T | null => document.querySelector<T>(sel);
-const $$ = <T extends HTMLElement = HTMLElement>(sel: string): T[] => Array.from(document.querySelectorAll<T>(sel));
-
-// ==========================================================================
-// Toast Notification
-// ==========================================================================
-let toastTimeout: number | undefined;
-export const showToast = (message: string): void => {
-  const toastEl = $('#toast');
-  if (!toastEl) return;
-  toastEl.textContent = message;
-  toastEl.style.display = 'block';
-  window.clearTimeout(toastTimeout);
-  toastTimeout = window.setTimeout(() => {
-    toastEl.style.display = 'none';
-  }, 3200);
-};
-
-// ==========================================================================
-// Particle Confetti Engine
-// ==========================================================================
-interface ConfettiParticle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  size: number;
-  color: string;
-  rotation: number;
-  rSpeed: number;
-  life: number;
-  decay: number;
-}
-
-class ConfettiEngine {
-  private canvas: HTMLCanvasElement | null = null;
-  private ctx: CanvasRenderingContext2D | null = null;
-  private particles: ConfettiParticle[] = [];
-  private animId: number | null = null;
-
-  constructor() {
-    this.canvas = document.getElementById('confetti-canvas') as HTMLCanvasElement | null;
-    this.ctx = this.canvas ? this.canvas.getContext('2d') : null;
-    if (this.canvas) {
-      this.resize();
-      window.addEventListener('resize', () => this.resize());
-    }
-  }
-
-  private resize(): void {
-    if (!this.canvas) return;
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
-  }
-
-  public fire(count: number = 75): void {
-    if (!this.canvas || !this.ctx) return;
-    const colors = ['#2F4BFF', '#FFD23F', '#FF4D8D', '#10B981', '#101010'];
-    const w = this.canvas.width;
-    const h = this.canvas.height;
-
-    for (let i = 0; i < count; i++) {
-      this.particles.push({
-        x: w / 2 + (Math.random() * 200 - 100),
-        y: h / 2 - 50 + (Math.random() * 80 - 40),
-        vx: (Math.random() - 0.5) * 16,
-        vy: (Math.random() - 1.5) * 14,
-        size: Math.random() * 8 + 6,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        rotation: Math.random() * 360,
-        rSpeed: (Math.random() - 0.5) * 12,
-        life: 1,
-        decay: Math.random() * 0.015 + 0.01
-      });
-    }
-
-    if (!this.animId) {
-      this.loop();
-    }
-  }
-
-  private loop(): void {
-    if (!this.ctx || !this.canvas) return;
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-    for (let i = this.particles.length - 1; i >= 0; i--) {
-      const p = this.particles[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.35;
-      p.vx *= 0.98;
-      p.rotation += p.rSpeed;
-      p.life -= p.decay;
-
-      if (p.life <= 0) {
-        this.particles.splice(i, 1);
-        continue;
-      }
-
-      this.ctx.save();
-      this.ctx.translate(p.x, p.y);
-      this.ctx.rotate((p.rotation * Math.PI) / 180);
-      this.ctx.fillStyle = p.color;
-      this.ctx.globalAlpha = p.life;
-      this.ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
-      this.ctx.restore();
-    }
-
-    if (this.particles.length > 0) {
-      this.animId = requestAnimationFrame(() => this.loop());
-    } else {
-      this.animId = null;
-    }
+declare global {
+  interface Window {
+    THREE: any;
+    burstAt: (x: number, y: number) => void;
+    shock: (x: number, y: number, p?: number) => void;
   }
 }
 
-const confetti = new ConfettiEngine();
 
-// ==========================================================================
-// Routing & Mobile Drawer
-// ==========================================================================
-// Technical SEO & Real URL Routing (HTML5 History API with No-Hash Fallbacks)
-// ==========================================================================
-const PAGE_CONFIG: Record<AppPage, { path: string; title: string; desc: string }> = {
-  home: {
-    path: '/',
-    title: 'Doing Nothing | The Viral "Buy Me a Meal" Leaderboard',
-    desc: "I do nothing for a living. Buy me a meal to get your product, name, or profile featured on today's public daily leaderboard."
-  },
-  red: {
-    path: '/dont-press',
-    title: "Don't Press The Button | Doing Nothing",
-    desc: 'A big red button that you definitely should not press. Nothing productive will happen.'
-  },
-  roast: {
-    path: '/get-roasted',
-    title: 'Startup Roaster | Free Instant Founder Roasts',
-    desc: 'Enter your startup name or handle and get roasted by someone who proudly does nothing all day.'
-  },
-  'hall-of-fame': {
-    path: '/hall-of-fame',
-    title: 'Hall of Fame | All-Time Top Supporters | Doing Nothing',
-    desc: 'The all-time greatest patrons who funded the horizontal lifestyle. Browse the top historical contributors.'
-  },
-  challenge: {
-    path: '/challenge',
-    title: 'The Stillness Challenge | Doing Nothing',
-    desc: "Test your ability to do nothing. Don't touch your mouse or keyboard for as long as possible."
-  },
-  excuses: {
-    path: '/excuses',
-    title: 'Excuse Generator | Free Slacker Excuses',
-    desc: "Need an excuse for why it isn't done yet? Generate instant realistic excuses crafted by a professional couch potato."
-  },
-  about: {
-    path: '/about',
-    title: 'About Doing Nothing | The Horizontal Economy & FAQ',
-    desc: 'Learn why Doing Nothing exists, who is behind it, and how the voluntary daily meal leaderboard works. Read the official FAQ.'
-  },
-  rules: {
-    path: '/rules',
-    title: 'Rules & Pricing | Doing Nothing Leaderboard Pin Tiers',
-    desc: 'Transparent rules and pricing for the Doing Nothing daily leaderboard. View pin tiers, reset times, and policies.'
-  },
-  privacy: {
-    path: '/privacy',
-    title: 'Privacy Policy | Doing Nothing',
-    desc: 'Privacy policy for doingnothing.lol. We do not sell data, use tracking cookies, or collect private info.'
-  },
-  terms: {
-    path: '/terms',
-    title: 'Terms of Service | Doing Nothing',
-    desc: 'Terms of service for doingnothing.lol. Voluntary meal contributions, no-refund policy, and common-sense rules.'
-  },
-  admin: {
-    path: '/admin',
-    title: 'Admin Console | Doing Nothing',
-    desc: 'Internal administration center.'
-  }
-};
+        // ===== DEFAULTS (the Admin page can override these in this browser; use Backup > Export to bake them in for everyone) =====
+        const DEF = {
+            pay: "", tz: "Asia/Kolkata", pass: "admin123", tag: "Unemployed since 2026. Proud of it.", btn: "Buy me", sub: "and get on today’s board",
+            lines: ["Today I ate: nothing. Yesterday: instant noodles. Progress.", "Employee of the month at my own couch.", "Unemployed, undefeated, underfed.", "My diet is 80% noodles, 20% excuses.", "Current net worth: one cup of noodles.", "Last meal: spaghetti with ketchup. Michelin-adjacent.", "I’m not unemployed. I’m pre-productive.", "The cheapest meal in Europe? I’ve had it. Twice.", "My LinkedIn says open to nothing.", "I once tried to work. It was a weekend.", "Hustle culture called. I let it go to voicemail.", "I’m the reason the word “lazy” exists.", "Dinner tonight: cup noodles. Dessert: water.", "The worst employee you’ll never hire.", "Professional couch tester. Also unpaid.", "Hunger level: noodle emergency.", "My fridge light is the only thing working.", "I have a five-year plan. It’s mostly sleeping.", "I eat ramen like it’s a personality.", "Day 1 of my career. Day 1,000 of my nap.", "My bank account is a rumour.", "I’m self-employed. Salary: vibes.", "Lunch is a state of mind. Mine is empty.", "I’m between naps, jobs and meals.", "Cheapest food in America? I’m a regular.", "My cooking skills: boil, wait, regret.", "Plot twist: the noodles were breakfast.", "Not lazy. Just on energy-saving mode.", "I put “napping” under skills. Recruiters agree.", "Currently accepting applications for my next meal."],
+            dodge: ["But no one hired me!", "Please don’t do that!", "I’m lazy.", "My last interview ended with a nap.", "HR still has my cover letter: “hi.”", "I have a degree in ceilings.", "Resume: one line. It says nap.", "My skills: horizontal.", "I’m overqualified for nothing.", "I put “Nap” under Experience.", "Even LinkedIn left me on read.", "I got ghosted by a chatbot.", "My LinkedIn says “Open to nap”.", "I’d work, but it’s Tuesday.", "Every day is a bad day to start.", "Employee of the month: nobody.", "Day 412 of unemployment. Thriving.", "Noodles don’t buy themselves.", "Dinner: noodles. Dessert: hope.", "Salary expectations: noodles.", "Today’s menu: spaghetti, again.", "I’m a $1 pasta connoisseur.", "Cup noodles are my personality.", "My fridge has an echo.", "Rent due. Motivation overdue.", "My bank account is a rumour.", "Career goals: a bigger couch.", "CEO of lying down.", "Founder of Doing Nothing Inc.", "Chief Napping Officer here.", "My KPI is staying horizontal.", "Synergy? I barely have energy.", "Let me circle back never.", "Can this be an email? No.", "Per my last nap...", "Quiet quitting before hiring.", "I’m disrupting employment.", "Even my cat got a promotion.", "My houseplant earns more.", "My goldfish has better prospects.", "I’m not broke. I’m minimalist.", "Stress is for the employed.", "Bills called. I didn’t answer.", "My calendar is empty by design.", "I mastered the art of waiting.", "Sorry, I’m buffering.", "Loading motivation... 3%.", "Low battery. Needs 14 hours.", "Out of office. Always.", "Auto-reply: still resting.", "Job? I thought you said jog.", "The word “job” gives me hives.", "I need a nap after that word.", "Triggered. Brb, napping.", "That’s offensive. Also true.", "Nope. Not in this timeline.", "Job offers go to my spam.", "Will work for noodles. Maybe.", "Will not work for noodles. Yet.", "Even my shadow is lazy.", "My alarm gave up on me.", "I peaked at naptime.", "This is my final form.", "Please pay me to stop.", "Don’t tell my mom you found me.", "Ask me after I wake up.", "Fine, but only horizontally.", "Free trial of me ends today.", "Sorry. Booked by my bed."]
+        };
+        let CFG = Object.assign({}, DEF); try { Object.assign(CFG, JSON.parse(localStorage.getItem("idn_cfg") || "{}")) } catch (e) { }
+        const saveCfg = () => { try { localStorage.setItem("idn_cfg", JSON.stringify(CFG)) } catch (e) { } };
+        const DATA: { entries: LeaderboardEntry[] } = { entries: StorageService.getEntries() };  // verified entries from your backend: {id,name,url,amt,desc,img,t}
+        // =====================================================================================================================
+        const $ = (s: string): any => document.querySelector(s);
+        const $$ = (s: string): any[] => [...document.querySelectorAll(s)];
+        const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+        const toast = t => { if (/^(Add |That |Enter |Type |Wrong |Name and|Couldn)/.test(t)) snd("sad", 300); const e = $("#toast"); e.textContent = t; e.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => e.style.display = "none", 3200) };
 
-const PAGES = Object.keys(PAGE_CONFIG) as AppPage[];
-
-function getPageFromCurrentLocation(): AppPage {
-  // 1. Check legacy hash (e.g. #admin, #about, #rules) and redirect to clean real URL
-  const hash = window.location.hash.replace(/^#/, '').toLowerCase();
-  if (hash) {
-    for (const [key, conf] of Object.entries(PAGE_CONFIG)) {
-      if (key === hash || conf.path.replace(/^\//, '') === hash) {
-        window.history.replaceState(null, '', conf.path);
-        return key as AppPage;
-      }
-    }
-  }
-
-  // 2. Check clean pathname
-  const path = window.location.pathname.replace(/\/+$/, '') || '/';
-  for (const [key, conf] of Object.entries(PAGE_CONFIG)) {
-    if (conf.path === path) return key as AppPage;
-  }
-
-  return 'home';
-}
-
-function route(): void {
-  const currentPage = getPageFromCurrentLocation();
-  const config = PAGE_CONFIG[currentPage] || PAGE_CONFIG.home;
-
-  // Toggle visible page section
-  PAGES.forEach((p) => {
-    const el = $('#' + p);
-    if (el) el.classList.toggle('on', p === currentPage);
-  });
-
-  // Highlight matching navigation link
-  $$('nav a').forEach((a) => {
-    const href = a.getAttribute('href');
-    const isMatch = href === config.path || (config.path === '/' && href === '/');
-    a.classList.toggle('on', Boolean(isMatch));
-  });
-
-  // Dynamic SEO metadata updates
-  document.title = config.title;
-  const metaDesc = $('meta[name="description"]');
-  if (metaDesc) metaDesc.setAttribute('content', config.desc);
-
-  const canonical = $('link[rel="canonical"]');
-  if (canonical) {
-    canonical.setAttribute('href', `https://doingnothing.lol${config.path === '/' ? '/' : config.path}`);
-  }
-
-  closeMobileDrawer();
-
-  if (currentPage !== 'challenge') {
-    challengeStop();
-  }
-
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  renderApp();
-
-  if (currentPage === 'admin') {
-    renderAdmin();
-  }
-
-  sound.play('up', 120);
-  setTimeout(resetDodgeHome, 60);
-}
-
-// Intercept internal link clicks for seamless SPA transitions without page reloads
-document.addEventListener('click', (e) => {
-  const target = (e.target as HTMLElement).closest('a');
-  if (!target) return;
-  const href = target.getAttribute('href');
-  if (
-    href &&
-    href.startsWith('/') &&
-    !href.startsWith('//') &&
-    !target.hasAttribute('download') &&
-    target.getAttribute('target') !== '_blank'
-  ) {
-    e.preventDefault();
-    if (window.location.pathname !== href) {
-      window.history.pushState(null, '', href);
-      route();
-    }
-  }
-});
-
-window.addEventListener('popstate', route);
-window.addEventListener('hashchange', route);
-
-// ==========================================================================
-// Privacy-Friendly Analytics Tracking Helper
-// ==========================================================================
-export function trackEvent(eventName: string, props?: Record<string, unknown>): void {
-  try {
-    // Plausible Analytics integration (if script is added)
-    const win = window as unknown as { plausible?: (event: string, opts?: { props?: Record<string, unknown> }) => void };
-    if (typeof win.plausible === 'function') {
-      win.plausible(eventName, { props });
-    }
-    // Google Analytics 4 integration (if gtag is added)
-    const gWin = window as unknown as { gtag?: (type: string, name: string, data?: Record<string, unknown>) => void };
-    if (typeof gWin.gtag === 'function') {
-      gWin.gtag('event', eventName, props);
-    }
-  } catch {
-    // Fail silently
-  }
-}
-
-function setupMobileNav(): void {
-  const toggleBtn = $('#mobileToggle');
-  const drawer = $('#mobileDrawer');
-  const closeBtn = $('#closeDrawer');
-
-  if (toggleBtn && drawer) {
-    toggleBtn.onclick = () => {
-      drawer.classList.add('open');
-      sound.play('pop');
-    };
-  }
-  if (closeBtn && drawer) {
-    closeBtn.onclick = () => {
-      closeMobileDrawer();
-      sound.play('pop');
-    };
-  }
-  if (drawer) {
-    drawer.onclick = (e) => {
-      if (e.target === drawer) closeMobileDrawer();
-    };
-  }
-}
-
-function closeMobileDrawer(): void {
-  const drawer = $('#mobileDrawer');
-  if (drawer) drawer.classList.remove('open');
-}
-
-// ==========================================================================
-// Dynamic Meal & Hero Rotation
-// ==========================================================================
-let lineIndex = 0;
-function cycleHeroLine(): void {
-  const lineEl = $('#heroSubtitle');
-  if (!lineEl) return;
-  const lines = config.lines && config.lines.length ? config.lines : ROTATING_LINES;
-  lineEl.style.opacity = '0';
-  setTimeout(() => {
-    lineEl.textContent = lines[lineIndex++ % lines.length];
-    lineEl.style.opacity = '1';
-  }, 250);
-}
-
-// ==========================================================================
-// Precision Dodging "Go Get A Job" Button (Restored Original Mechanics)
-// Moves strictly along the horizontal section and avoids overlapping buttons!
-// ==========================================================================
-let px = -999;
-let py = -999;
-let lt = 0;
-let hy = 0;
-
-function resetDodgeHome(): void {
-  const run = $('#run');
-  const hero = $('.hero');
-  const slot = $('#slot');
-  if (!hero || !slot || !run) return;
-  const s = slot.getBoundingClientRect();
-  const h = hero.getBoundingClientRect();
-  run.style.left = (s.left - h.left) + 'px';
-  run.style.top = (s.top - h.top) + 'px';
-  hy = s.top - h.top;
-}
-
-function getProtectedRects(): DOMRect[] {
-  const hero = $('.hero');
-  if (!hero) return [];
-  const list: DOMRect[] = [];
-  hero.querySelectorAll('#fundHeroBtn, #heroTag').forEach((e) => list.push(e.getBoundingClientRect()));
-  ['h1.big', '.line'].forEach((q) => {
-    const el = hero.querySelector(q);
-    if (el) {
-      const rg = document.createRange();
-      rg.selectNodeContents(el);
-      list.push(...Array.from(rg.getClientRects()));
-    }
-  });
-  return list.filter((r) => r.width > 0);
-}
-
-function flee(): void {
-  const run = $('#run');
-  const hero = $('.hero');
-  if (!run || !hero) return;
-
-  const soundsList: Array<'boing' | 'squeak' | 'blorp' | 'honk'> = ['boing', 'squeak', 'blorp', 'honk'];
-  sound.play(soundsList[Math.floor(Math.random() * soundsList.length)], 40);
-
-  const quotes = config.dodgeQuotes && config.dodgeQuotes.length ? config.dodgeQuotes : DODGE_QUOTES;
-  run.textContent = quotes[Math.floor(Math.random() * quotes.length)];
-
-  const h = hero.getBoundingClientRect();
-  const W = run.offsetWidth;
-  const H = run.offsetHeight;
-  const R = getProtectedRects();
-  const pad = 14;
-
-  let best: [number, number] | null = null;
-  let bd = -1;
-
-  for (let i = 0; i < 90; i++) {
-    const x = Math.random() * Math.max(0, h.width - W);
-    const y = Math.min(Math.max(0, hy - 14 + (Math.random() * 32 - 16)), Math.max(0, h.height - H));
-    const L = h.left + x;
-    const T = h.top + y;
-
-    if (R.some((r) => L < r.right + pad && L + W > r.left - pad && T < r.bottom + pad && T + H > r.top - pad)) {
-      continue;
-    }
-
-    const d = Math.hypot(L + W / 2 - px, T + H / 2 - py);
-    if (d > bd) {
-      bd = d;
-      best = [x, y];
-    }
-  }
-
-  if (best) {
-    run.style.left = best[0] + 'px';
-    run.style.top = best[1] + 'px';
-  }
-
-  window.clearTimeout((flee as { t?: number }).t);
-  (flee as { t?: number }).t = window.setTimeout(() => {
-    if (run) run.textContent = 'Go get a job';
-  }, 6000);
-}
-
-const isNearButton = (): boolean => {
-  const run = $('#run');
-  if (!run) return false;
-  const b = run.getBoundingClientRect();
-  const m = 12;
-  const homeEl = $('#home');
-  return !!(homeEl?.classList.contains('on') && px > b.left - m && px < b.right + m && py > b.top - m && py < b.bottom + m);
-};
-
-function setupDodgingButton(): void {
-  window.addEventListener(
-    'pointermove',
-    (e) => {
-      px = e.clientX;
-      py = e.clientY;
-      if (isNearButton()) {
-        const n = performance.now();
-        if (n - lt > 30) {
-          lt = n;
-          flee();
+        // ===== SOUNDS: original effects synthesized in the browser. Real meme clips are copyrighted and can't be loaded here. Mute button in the header. =====
+        let SOUND = true; try { SOUND = localStorage.getItem("idn_snd") !== "off" } catch (e) { }
+        let AC = null, MG = null, welcomed = false; const lastS = {};
+        function ctx() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); MG = AC.createGain(); MG.gain.value = .35; MG.connect(AC.destination) } catch (e) { return null } } if (AC.state === "suspended") AC.resume(); return AC }
+        function tone(f, d, type = "sine", v = .4, to = null, at = 0) { const c = ctx(); if (!c) return; const t = c.currentTime + at, o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (to) o.frequency.exponentialRampToValueAtTime(to, t + d); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(g); g.connect(MG); o.start(t); o.stop(t + d + .02) }
+        function noise(d, v = .3, f = 1500, at = 0) { const c = ctx(); if (!c) return; const t = c.currentTime + at, n = Math.floor(c.sampleRate * d), b = c.createBuffer(1, n, c.sampleRate), a = b.getChannelData(0); for (let i = 0; i < n; i++)a[i] = Math.random() * 2 - 1; const s = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain(); s.buffer = b; fl.type = "bandpass"; fl.frequency.value = f; g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d); s.connect(fl); fl.connect(g); g.connect(MG); s.start(t) }
+        const SND = { pop: () => tone(700, .07, "sine", .4, 300), bonk: () => tone(260, .13, "triangle", .6, 80), squeak: () => tone(1300, .09, "square", .12, 2000), boing: () => { tone(200, .22, "sine", .5, 700); tone(700, .3, "sine", .4, 240, .2) }, blorp: () => tone(150, .22, "sawtooth", .2, 55), honk: () => { tone(233, .3, "sawtooth", .18); tone(247, .3, "sawtooth", .18) }, up: () => tone(300, .25, "sine", .35, 1500), tick: () => tone(1500, .02, "square", .07), kaching: () => { tone(1568, .12, "sine", .4); tone(2093, .35, "sine", .4, null, .1); noise(.08, .15, 6000) }, sad: () => [[293, .3, 0], [277, .3, .32], [261, .3, .64], [233, .9, .96]].forEach(([f, d, a]) => tone(f, d, "sawtooth", .18, f * .92, a)), rim: () => { tone(130, .12, "triangle", .7, 70); tone(110, .12, "triangle", .7, 60, .18); noise(.5, .35, 5000, .4) }, horn: () => { [440, 554, 659].forEach(f => tone(f, .6, "sawtooth", .14, f * .9)); noise(.15, .1, 3000) }, boom: () => { tone(80, .7, "sine", .9, 30); noise(.25, .35, 200) }, alarm: () => { for (let i = 0; i < 4; i++)tone(i % 2 ? 660 : 880, .12, "square", .12, null, i * .14) }, scratch: () => noise(.35, .4, 2500), fan: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, .18, "triangle", .4, null, i * .09)), dun: () => [[196, 0], [196, .28], [165, .6]].forEach(([f, a]) => tone(f, .4, "sawtooth", .2, f * .97, a)), yay: () => { tone(400, .15, "sine", .4, 900); tone(900, .2, "sine", .4, 1300, .14) } };
+        const arp = (n, st, ty = "sine", v = .35, d = .16) => n.forEach((f, i) => tone(f, d, ty, v, null, i * st));
+        const clack = (f = 1) => { noise(.035, .3 * f, 3200 + Math.random() * 1200); tone(120 + Math.random() * 60, .05, "square", .12 * f, 70); tone(2800 + Math.random() * 600, .015, "square", .05, null, .012) };
+        Object.assign(SND, {
+            coin: () => { tone(988, .08, "square", .18); tone(1319, .3, "square", .18, null, .08) }, jump: () => tone(300, .14, "square", .2, 800), laser: () => tone(1800, .22, "sawtooth", .18, 200), zap: () => { noise(.12, .3, 3000); tone(700, .18, "sawtooth", .16, 90) }, whoosh: () => noise(.35, .35, 900),
+            bubble: () => { tone(400, .09, "sine", .4, 900); tone(500, .09, "sine", .35, 1100, .1) }, drip: () => tone(1300, .1, "sine", .4, 500), ding: () => tone(1760, .6, "sine", .35), bell: () => [880, 1320, 1760].forEach((f, i) => tone(f, .9 - i * .15, "sine", .22)), chime: () => arp([784, 988, 1175], .1, "triangle", .3, .5),
+            harp: () => arp([392, 494, 587, 740, 880, 988], .07, "sine", .3, .5), cricket: () => { for (let i = 0; i < 4; i++)tone(4200, .03, "square", .05, null, i * .06) }, meow: () => { tone(600, .14, "sawtooth", .14, 950); tone(950, .32, "sawtooth", .14, 430, .14) }, quack: () => { tone(360, .12, "sawtooth", .22, 270); tone(340, .12, "sawtooth", .22, 260, .15) }, whistle: () => tone(1200, .28, "sine", .3, 1900),
+            slidedown: () => tone(1500, .4, "sine", .35, 200), woo: () => { tone(300, .2, "sine", .4, 620); tone(620, .22, "sine", .4, 300, .2) }, gulp: () => { tone(320, .1, "sine", .5, 120); tone(280, .1, "sine", .5, 110, .14) }, kazoo: () => tone(440, .35, "sawtooth", .14, 470), wah: () => tone(233, .5, "sawtooth", .2, 170),
+            clap: () => [0, .03, .06].forEach(a => noise(.08, .35, 1600, a)), snare: () => { noise(.16, .4, 3000); tone(190, .1, "triangle", .4, 110) }, kick: () => tone(160, .22, "sine", .9, 40), hihat: () => noise(.05, .25, 8500), cymbal: () => noise(.7, .25, 7000),
+            tom: () => tone(220, .28, "sine", .7, 80), cowbell: () => { tone(800, .25, "square", .12); tone(540, .25, "square", .12) }, glock: () => tone(2093, .35, "triangle", .3), xylo: () => { tone(1046, .15, "sine", .4); tone(1318, .2, "sine", .35, null, .1) }, blip: () => tone(880, .05, "square", .12),
+            beep2: () => { tone(1000, .06, "square", .12); tone(1000, .06, "square", .12, null, .09) }, buzz: () => { tone(120, .3, "square", .18); tone(126, .3, "square", .18) }, dingding: () => { tone(1319, .15, "sine", .4); tone(1760, .35, "sine", .4, null, .14) }, powerup: () => arp([262, 330, 392, 523, 659, 784], .05, "square", .14, .1), powerdown: () => arp([784, 659, 523, 392, 330, 262], .06, "square", .14, .1),
+            spring: () => { tone(100, .3, "sine", .5, 1000); tone(1000, .3, "sine", .4, 150, .3) }, squeeze: () => { tone(600, .08, "sine", .4, 900); tone(900, .12, "sine", .4, 500, .08) }, pew: () => tone(1500, .13, "sawtooth", .14, 300), thunder: () => { noise(.9, .5, 140); tone(55, .9, "sine", .7, 30) }, rain: () => noise(.5, .2, 6500),
+            wind: () => noise(.7, .25, 420), rev: () => tone(60, .6, "sawtooth", .25, 220), siren: () => { for (let i = 0; i < 4; i++)tone(i % 2 ? 900 : 600, .22, "sine", .3, i % 2 ? 600 : 900, i * .22) }, ufo: () => { tone(500, .5, "sine", .3, 900); tone(900, .5, "sine", .3, 500, .5) }, robot: () => arp([200, 260, 200, 340, 200], .07, "square", .14, .08),
+            typeding: () => tone(2000, .35, "sine", .3), bubblepop: () => { tone(900, .05, "sine", .4, 300); noise(.03, .2, 4000) }, angels: () => [261, 329, 392, 523].forEach(f => tone(f, 1, "sine", .12)), raspberry: () => { noise(.3, .3, 300); tone(85, .3, "sawtooth", .2, 45) }, snore: () => { noise(.5, .2, 220); tone(70, .5, "triangle", .3, 55) },
+            yawn: () => tone(420, .7, "sine", .3, 240), twinkle: () => tone(2400, .06, "sine", .12, 3300), swish: () => noise(.07, .07, 2400),
+            clack: () => clack(1), spaceclack: () => { noise(.06, .35, 1800); tone(90, .09, "square", .2, 50) }, enterclack: () => { clack(1.3); tone(110, .12, "square", .18, 60, .03) }, tk: () => tone(1800 + Math.random() * 300, .018, "square", .06)
+        });
+        function snd(n, gap = 60) { if (!SOUND || !welcomed) return; const t = performance.now(); if (lastS[n] && t - lastS[n] < gap) return; lastS[n] = t; try { SND[n]() } catch (e) { } }
+        const CLK = ["pop", "bonk", "squeak", "boing", "blorp", "yay", "coin", "bubble", "blip", "drip", "xylo", "glock", "jump", "spring", "squeeze", "pew", "quack", "meow", "kazoo", "clap", "dingding", "gulp", "whistle", "woo", "bubblepop", "cowbell"];
+        const welcome = () => { if (welcomed) return; welcomed = true; snd("fan") };["pointerdown", "keydown", "touchstart"].forEach(v => addEventListener(v, welcome, { passive: true }));
+        document.addEventListener("click", e => { if (e.target.closest("#snd,#mot,#sbg")) return; if (e.target.closest("a,button,.row,.opt,.chip,.rbtn")) snd(CLK[Math.floor(Math.random() * CLK.length)], 30) }, true);
+        let hv = null; document.addEventListener("pointerover", e => { const r = e.target.closest(".row"); if (r && r !== hv) { hv = r; snd("tick", 90) } else if (!r) hv = null });
+        const sb = document.getElementById("snd"); const sbl = () => sb.textContent = "Sound: " + (SOUND ? "on" : "off"); sbl(); sb.onclick = () => { SOUND = !SOUND; try { localStorage.setItem("idn_snd", SOUND ? "on" : "off") } catch (e) { } sbl(); welcomed = true; snd("pop") };
+        const money = n => "$" + (Math.round(n * 100) / 100).toLocaleString();
+        const safeUrl = u => { u = (u || "").trim(); if (!u || u[0] === "@") return ""; try { const x = new URL(/^https?:/i.test(u) ? u : "https://" + u); return /^https?:$/.test(x.protocol) && x.hostname.includes(".") ? x.href : "" } catch (e) { return "" } };
+        const host = u => { try { return new URL(safeUrl(u)).hostname.replace(/^www\./, "") } catch (e) { return "" } };
+        const tz = () => { try { new Intl.DateTimeFormat("en", { timeZone: CFG.tz }); return CFG.tz } catch (e) { return "UTC" } };
+        const dayKey = t => new Date(t).toLocaleDateString("en-CA", { timeZone: tz() });
+        const left = () => { const p = new Intl.DateTimeFormat("en-GB", { timeZone: tz(), hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" }).formatToParts(new Date()), g = t => +p.find(x => x.type === t).value; return 86400 - ((g("hour") % 24) * 3600 + g("minute") * 60 + g("second")) };
+        const COL = ["#2F4BFF", "#E8412C", "#0E9F6E", "#8B3DFF", "#F08A00", "#101010", "#D6246E"]; const hue = s => COL[[...s].reduce((a, c) => a + c.charCodeAt(0), 0) % COL.length];
+        const SOC = { "x.com": ["X", "#101010"], "twitter.com": ["X", "#101010"], "instagram.com": ["IG", "#D6246E"], "linkedin.com": ["in", "#0A66C2"], "github.com": ["GH", "#101010"], "youtube.com": ["YT", "#E00"], "youtu.be": ["YT", "#E00"], "tiktok.com": ["TT", "#101010"], "facebook.com": ["f", "#1877F2"], "producthunt.com": ["P", "#DA552F"], "reddit.com": ["R", "#FF4500"], "threads.net": ["@", "#101010"], "medium.com": ["M", "#101010"] };
+        const soc = u => { const h = host(u), k = Object.keys(SOC).find(k => h === k || h.endsWith("." + k)); return k ? SOC[k] : null };
+        // entries (src: preview | sample | manual). Visitors see preview/sample only in preview mode; manual entries (real payments you recorded) always show.
+        let LOCAL: LeaderboardEntry[] = StorageService.getEntries();
+        const saveLocal = () => { StorageService.saveEntries(LOCAL); };
+        const all = () => DATA.entries.concat(LOCAL.filter(x => CFG.pay ? x.src === "manual" : true));
+        const todays = () => all().filter(x => dayKey(x.t) === dayKey(Date.now())).sort((a, b) => b.amt - a.amt || a.t - b.t);
+        const tagOf = x => x.src === "sample" ? "sample" : x.src === "preview" ? "preview" : "";
+        // routing
+        const pages = ["home", "red", "roast", "hall-of-fame", "challenge", "excuses", "soundboard", "about", "admin"];
+        function route() { snd("up", 150); if (window.shock) shock(innerWidth / 2, innerHeight / 2, .6); let h = location.hash.slice(1); if (!pages.includes(h)) h = "home"; pages.forEach(p => $("#" + p).classList.toggle("on", p === h)); $$("#nav a").forEach(a => a.classList.toggle("on", a.hash === "#" + h)); if (h !== "challenge") stopCh(); scrollTo(0, 0); render(); if (h === "admin") renderAdmin(); setTimeout(home, 60) }
+        addEventListener("hashchange", route);
+        // hero
+        function meal() { const h = new Date().getHours(); return h >= 5 && h < 11 ? "breakfast" : h >= 11 && h < 16 ? "lunch" : h >= 16 && h < 22 ? "dinner" : "a midnight snack" }
+        function setMeal() { $("#fund").innerHTML = esc(CFG.btn + " " + meal()) + `<small>${esc(CFG.sub)}</small>`; $("#tag").textContent = CFG.tag }
+        let li = 0; const showLine = () => { const e = $("#line"), L = CFG.lines.length ? CFG.lines : DEF.lines; e.style.opacity = 0; setTimeout(() => { e.textContent = L[li++ % L.length]; e.style.opacity = 1 }, 300) };
+        // the "Go get a job" button: sits next to the main button, dodges the moment the pointer touches it, stays in a band around its row
+        const run = $("#run"), hero = $(".hero"); let mi = 0, bag = [], px = -999, py = -999, lt = 0, moved = false, hy = 0;
+        const pick = () => { const D = CFG.dodge.length ? CFG.dodge : DEF.dodge; if (mi < 3 && D[mi]) return D[mi]; if (!bag.length) bag = D.slice(3).sort(() => Math.random() - .5); return bag.pop() || D[0] };
+        const prot = () => { const o = []; hero.querySelectorAll("#fund,#tag").forEach(e => o.push(e.getBoundingClientRect()));["h1.big", ".line"].forEach(q => { const rg = document.createRange(); rg.selectNodeContents(hero.querySelector(q));[...rg.getClientRects()].forEach(r => o.push(r)) }); return o.filter(r => r.width > 0) };
+        function home() { if (!hero.offsetParent) return; const s = $("#slot").getBoundingClientRect(), h = hero.getBoundingClientRect(); run.style.left = (s.left - h.left) + "px"; run.style.top = (s.top - h.top) + "px"; hy = s.top - h.top; moved = false }
+        function flee() {
+            snd(["boing", "squeak", "blorp", "honk"][Math.floor(Math.random() * 4)], 40); run.textContent = pick(); mi++; moved = true; const h = hero.getBoundingClientRect(), W = run.offsetWidth, H = run.offsetHeight, R = prot(), pad = 12; let best = null, bd = -1;
+            for (let i = 0; i < 90; i++) { const x = Math.random() * Math.max(0, h.width - W), y = Math.min(Math.max(0, hy - 18 + Math.random() * 60), Math.max(0, h.height - H)), L = h.left + x, T = h.top + y; if (R.some(r => L < r.right + pad && L + W > r.left - pad && T < r.bottom + pad && T + H > r.top - pad)) continue; const d = Math.hypot(L + W / 2 - px, T + H / 2 - py); if (d > bd) { bd = d; best = [x, y] } }
+            if (best) { run.style.left = best[0] + "px"; run.style.top = best[1] + "px" } clearTimeout(flee.t); flee.t = setTimeout(() => run.textContent = "Go get a job", 6000)
         }
-      }
-    },
-    { passive: true }
-  );
-
-  (['pointerdown', 'touchstart'] as const).forEach((v) => {
-    document.addEventListener(
-      v,
-      (e) => {
-        const touch = 'touches' in e && e.touches.length ? e.touches[0] : (e as PointerEvent);
-        px = touch.clientX;
-        py = touch.clientY;
-        if (isNearButton()) {
-          lt = performance.now();
-          flee();
-          if ((e.target as HTMLElement)?.closest('#run')) e.preventDefault();
+        const near = () => { const b = run.getBoundingClientRect(), m = 10; return $("#home").classList.contains("on") && px > b.left - m && px < b.right + m && py > b.top - m && py < b.bottom + m };
+        addEventListener("pointermove", e => { px = e.clientX; py = e.clientY; if (near()) { const n = performance.now(); if (n - lt > 30) { lt = n; flee() } } }, { passive: true });
+        ["pointerdown", "touchstart"].forEach(v => document.addEventListener(v, e => { const t = e.touches ? e.touches[0] : e; px = t.clientX; py = t.clientY; if (near()) { lt = performance.now(); flee(); if (e.target.closest("#run")) e.preventDefault() } }, { passive: false }));
+        run.addEventListener("click", e => { e.preventDefault(); flee() });
+        addEventListener("resize", home); document.fonts && document.fonts.ready.then(home);
+        // counter
+        let shown = 0; function setTotal(to) { const f = shown, s = performance.now(); shown = to; (function a(t) { const p = Math.min(1, (t - s) / 800); $("#tot").textContent = money(f + (to - f) * p); if (p < 1) requestAnimationFrame(a) })(s) }
+        function avatar(x) { const s = soc(x.url); if (x.img) return `<div class="av"><img src="${esc(x.img)}" alt=""></div>`; if (x.anon) return `<div class="av" style="background:#8a877d">?</div>`; if (s) return `<div class="av" style="background:${s[1]}">${esc(s[0])}</div>`; return `<div class="av" style="background:${hue(x.name)}">${esc((x.name[0] || "?").toUpperCase())}</div>` }
+        const tierOf = a => a >= 100 ? ["Legend", "#E8412C"] : a >= 25 ? ["Big spender", "#8B3DFF"] : a >= 5 ? ["Supporter", "#0E9F6E"] : ["Noodle", "#6c6a64"];
+        const chipT = x => { const t = tierOf(x.amt); return `<span class="tc" style="background:${t[1]}">${t[0]}</span>` };
+        const CROWN = '<svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true"><path d="M3 18h18l1-10-5 4-5-8-5 8-5-4z" fill="#FFD23F" stroke="#101010" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+        function lbHTML(L, mode, at) {
+            const mx = Math.max(1, ...L.map(x => x.amt)); let h = "", st = 0;
+            if (mode === "top") { const P = [1, 0, 2].filter(i => L[i]); h += `<div class="pod" style="grid-template-columns:repeat(${P.length},minmax(0,1fr))">` + P.map(i => { const x = L[i]; return `<button class="pc p${i + 1}" ${at}="${i}" style="animation-delay:${i * 90}ms"><span class="medal">${i + 1}</span>${i === 0 ? `<div class="crown">${CROWN}</div><i class="sp s1"></i><i class="sp s2"></i><i class="sp s3"></i>` : ""}${avatar(x)}<h3>${esc(x.name)}</h3>${chipT(x)}<div class="amt"><b class="nv" data-v="${x.amt}">${money(x.amt)}</b></div><span class="go">Details ›</span></button>` }).join("") + `</div>`; st = 3 }
+            return h + L.slice(st).map((x, k) => { const i = k + st, fresh = mode === "recent" && Date.now() - x.t < 12e4; return `<button class="lr ${mode === "recent" && i === 0 ? "hot" : ""}" ${at}="${i}" style="animation-delay:${Math.min(k, 12) * 35}ms"><div class="lk">${mode === "top" ? `<b>${i + 1}</b>` : `<span class="tp ${fresh ? "nw" : ""}">${ago(x.t)}</span>`}</div>${avatar(x)}<div style="min-width:0"><h3>${esc(x.name)} ${chipT(x)}${tagOf(x) ? `<span class="pv">${tagOf(x)}</span>` : ""}</h3><p>${esc(x.desc || "")}</p><div class="d">${esc(host(x.url) || x.url || "")}</div></div><div class="lp"><b class="nv" data-v="${x.amt}">${money(x.amt)}</b><span class="go">Details ›</span></div><i class="lbar" style="width:${Math.max(3, x.amt / mx * 100)}%"></i></button>` }).join("")
         }
-      },
-      { passive: false }
-    );
-  });
-
-  const run = $('#run');
-  if (run) {
-    run.addEventListener('click', (e) => {
-      e.preventDefault();
-      flee();
-    });
-  }
-
-  window.addEventListener('resize', resetDodgeHome);
-  if (document.fonts) {
-    document.fonts.ready.then(resetDodgeHome);
-  }
-}
-
-// ==========================================================================
-// Leaderboard & Today's Board Rendering (with Auto-Fetched Logos/Avatars)
-// ==========================================================================
-
-function renderAvatar(item: LeaderboardEntry): string {
-  if (item.anon) {
-    return `<div class="av" style="background:#8a877d">?</div>`;
-  }
-
-  const avatarUrl = resolveAvatarUrl(item.url, item.img);
-  const colors = ['#2F4BFF', '#E8412C', '#0E9F6E', '#8B3DFF', '#F08A00', '#101010', '#D6246E'];
-  let hash = 0;
-  for (let i = 0; i < item.name.length; i++) hash += item.name.charCodeAt(i);
-  const bg = colors[hash % colors.length];
-  const initial = (item.name[0] || '?').toUpperCase();
-
-  if (avatarUrl) {
-    return `<div class="av" style="background:#ffffff;border:1.5px solid var(--line)"><img src="${AnalyticsService.escapeHtml(avatarUrl)}" alt="" onerror="this.style.display='none';this.parentElement.style.background='${bg}';this.parentElement.textContent='${AnalyticsService.escapeHtml(initial)}'"></div>`;
-  }
-
-  return `<div class="av" style="background:${bg}">${AnalyticsService.escapeHtml(initial)}</div>`;
-}
-
-function formatAgoHtml(t: number): string {
-  const diffMins = Math.floor((Date.now() - t) / 60000);
-  if (diffMins < 1) {
-    return `<div class="ago-box"><span class="ago-num">Just</span><span class="ago-unit">now</span></div>`;
-  }
-  if (diffMins < 60) {
-    return `<div class="ago-box"><span class="ago-num">${diffMins}m</span><span class="ago-unit">ago</span></div>`;
-  }
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) {
-    return `<div class="ago-box"><span class="ago-num">${diffHours}h</span><span class="ago-unit">ago</span></div>`;
-  }
-  return `<div class="ago-box"><span class="ago-num">${Math.floor(diffHours / 24)}d</span><span class="ago-unit">ago</span></div>`;
-}
-
-function renderLeaderboard(): void {
-  const boardEl = $('#boardContainer');
-  const countEl = $('#countToday');
-  const totalEl = $('#totalToday');
-  const topNameEl = $('#topSupporterName');
-
-  if (!boardEl) return;
-
-  const stats = AnalyticsService.calculateDailyStats(entries, config.targetGoal);
-  if (totalEl) totalEl.textContent = AnalyticsService.formatMoney(stats.collectedToday);
-  if (countEl) countEl.textContent = stats.feedersToday.toString();
-  if (topNameEl) topNameEl.textContent = stats.topSupporter || 'Nobody yet';
-
-  const displayList = AnalyticsService.getSortedBoard(entries, currentBoardMode);
-
-  if (displayList.length === 0) {
-    boardEl.innerHTML = `
-      <div class="empty">
-        Nobody has bought me a meal today.<br>
-        <span style="font:500 15px 'DM Sans'">Be the first name on the board. I’m very hungry.</span>
-      </div>
-    `;
-    return;
-  }
-
-  let html = '';
-
-  // Always use plain row list — no podium/card view
-  const maxAmount = Math.max(1, ...displayList.map((i) => i.amt));
-  displayList.forEach((item, idx) => {
-    const rank = idx + 1;
-    const tier = AnalyticsService.getTier(item.amt);
-    const host = AnalyticsService.getHost(item.url);
-    const pct = Math.min(100, Math.max(3, (item.amt / maxAmount) * 100));
-
-    const isTopOne = currentBoardMode === 'top' && rank === 1;
-    const isRecentFirst = currentBoardMode === 'recent' && idx === 0;
-    const tierIcon = tier.name === 'Legend' ? '🔥 ' : tier.name === 'Big Spender' ? '⚡ ' : tier.name === 'Supporter' ? '🌱 ' : '🍜 ';
-    const descHtml = item.desc
-      ? `<p>${AnalyticsService.escapeHtml(item.desc)}</p>`
-      : `<p class="lr-empty-desc">“Silently funding the horizontal lifestyle.”</p>`;
-
-    html += `
-      <button class="lr ${isRecentFirst ? 'hot' : ''} ${isTopOne ? 'is-top-one' : ''}" data-id="${item.id}">
-        <div class="lk">
-          ${
-            currentBoardMode === 'top'
-              ? `<b class="rank-badge ${rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-other'}">#${rank}</b>`
-              : formatAgoHtml(item.t)
-          }
-        </div>
-        ${renderAvatar(item)}
-        <div style="min-width:0">
-          <h3>
-            ${AnalyticsService.escapeHtml(item.name)}
-            <span class="tc" style="background:${tier.color}">${tierIcon}${tier.name}</span>
-          </h3>
-          ${descHtml}
-          ${host ? `<div class="d"><span>↗</span> ${AnalyticsService.escapeHtml(host)}</div>` : ''}
-        </div>
-        <div class="lp">
-          ${AnalyticsService.formatMoney(item.amt)}
-          <span class="go">Details ›</span>
-        </div>
-        <i class="lbar" style="width:${pct}%"></i>
-      </button>
-    `;
-  });
-
-  boardEl.innerHTML = html;
-
-  boardEl.querySelectorAll('[data-id]').forEach((el) => {
-    (el as HTMLElement).onclick = () => {
-      const id = el.getAttribute('data-id');
-      const item = entries.find((x) => x.id === id);
-      if (item) showDetailModal(item);
-    };
-  });
-}
-
-function renderHallOfFame(): void {
-  const hofContainer = $('#hofContainer');
-  if (!hofContainer) return;
-
-  const sortedAll = AnalyticsService.getHallOfFame(entries);
-  const maxAmount = Math.max(1, ...sortedAll.map((i) => i.amt));
-
-  if (sortedAll.length === 0) {
-    hofContainer.innerHTML = `
-      <div class="empty">
-        Nobody in the hall of fame yet.<br>
-        <span style="font:500 15px 'DM Sans'">The biggest payers of all time will live here.</span>
-      </div>
-    `;
-    return;
-  }
-
-  let html = `<p class="hint" style="margin-bottom:10px">${entries.length} payments so far. Showing the top ${sortedAll.length}.</p>`;
-
-  sortedAll.forEach((item, idx) => {
-    const rank = idx + 1;
-    const tier = AnalyticsService.getTier(item.amt);
-    const host = AnalyticsService.getHost(item.url);
-    const pct = Math.min(100, Math.max(3, (item.amt / maxAmount) * 100));
-
-    html += `
-      <button class="lr ${rank <= 3 ? 'hot' : ''}" data-id="${item.id}">
-        <div class="lk"><b>${rank}</b></div>
-        ${renderAvatar(item)}
-        <div style="min-width:0">
-          <h3>
-            ${AnalyticsService.escapeHtml(item.name)}
-            <span class="tc" style="background:${tier.color}">${tier.name}</span>
-          </h3>
-          <p>${AnalyticsService.escapeHtml(item.desc || '')}</p>
-          <div class="d">${AnalyticsService.escapeHtml(host || item.url || '')}</div>
-        </div>
-        <div class="lp">
-          ${AnalyticsService.formatMoney(item.amt)}
-          <span class="go">Details ›</span>
-        </div>
-        <i class="lbar" style="width:${pct}%"></i>
-      </button>
-    `;
-  });
-
-  hofContainer.innerHTML = html;
-  hofContainer.querySelectorAll('[data-id]').forEach((el) => {
-    (el as HTMLElement).onclick = () => {
-      const id = el.getAttribute('data-id');
-      const item = entries.find((x) => x.id === id);
-      if (item) showDetailModal(item);
-    };
-  });
-}
-
-// ==========================================================================
-// Modals & Popups
-// ==========================================================================
-const modalBackdrop = $('#modalBackdrop');
-const modalContent = $('#modalContent');
-
-function closeModal(): void {
-  if (modalBackdrop) modalBackdrop.classList.remove('on');
-}
-
-function showDetailModal(item: LeaderboardEntry): void {
-  if (!modalContent || !modalBackdrop) return;
-  sound.play('pop');
-
-  const url = AnalyticsService.safeUrl(item.url);
-  const host = AnalyticsService.getHost(item.url);
-
-  modalContent.innerHTML = `
-    <div style="display:flex;gap:12px;align-items:center">
-      ${renderAvatar(item)}
-      <div>
-        <h2 style="font-size:24px">${AnalyticsService.escapeHtml(item.name)}</h2>
-        <b>${AnalyticsService.formatMoney(item.amt)}</b>
-      </div>
-    </div>
-    <p style="white-space:pre-wrap;margin:12px 0;font-size:14.5px">${AnalyticsService.escapeHtml(item.desc || 'No description.')}</p>
-    ${
-      url
-        ? `<p><a class="btn sm" href="${AnalyticsService.escapeHtml(url)}" target="_blank" rel="nofollow noopener ugc">Visit ${AnalyticsService.escapeHtml(host)}</a></p>`
-        : item.url
-        ? `<p><b>${AnalyticsService.escapeHtml(item.url)}</b></p>`
-        : ''
-    }
-    <p><button class="chip" id="modalCloseChip">Close</button></p>
-  `;
-
-  modalBackdrop.classList.add('on');
-  const closeChip = $('#modalCloseChip');
-  if (closeChip) closeChip.onclick = closeModal;
-}
-
-function openFundModal(): void {
-  if (!modalContent || !modalBackdrop) return;
-  sound.play('kaching');
-  let uploadedLogo = '';
-
-  const meal = AnalyticsService.getMealName();
-  const presets = config.presets && config.presets.length ? config.presets : [5, 10, 25, 50, 100];
-
-  modalContent.innerHTML = `
-    <h2>${AnalyticsService.escapeHtml(config.buttonText)} ${AnalyticsService.escapeHtml(meal)}</h2>
-    <p style="margin:0;color:var(--mut);font-size:14px">Put your name or product on today’s board, or stay anonymous.</p>
-
-    <label style="display:flex;align-items:center;margin-top:14px;cursor:pointer">
-      <input type="checkbox" id="fundAnon">
-      Pay anonymously (no name, no link, no logo)
-    </label>
-
-    <div id="fundNamedFields">
-      <label for="fundName">Your name or product name</label>
-      <input type="text" id="fundName" maxlength="60" placeholder="e.g. Acme Analytics">
-
-      <label for="fundUrl">One link (website, X, or GitHub profile)</label>
-      <input type="text" id="fundUrl" maxlength="140" placeholder="https://yourproduct.com or https://x.com/username">
-      <div id="avatarAutoPreview" style="display:flex;align-items:center;gap:10px;margin-top:8px">
-        <div id="fundLogoPreview"></div>
-        <p class="hint" id="avatarHint" style="margin:0">Logo & favicon will be automatically fetched from your link.</p>
-      </div>
-
-      <label for="fundLogo" style="margin-top:10px">Custom logo upload (optional)</label>
-      <input type="file" id="fundLogo" accept="image/*">
-    </div>
-
-    <label for="fundAmount">How much do you want to pay? (USD)</label>
-    <div class="chips" id="quickAmountChips">
-      ${presets
-        .map(
-          (amt, idx) =>
-            `<button class="chip ${idx === 1 ? 'on' : ''}" data-amt="${amt}">$${amt}</button>`
-        )
-        .join('')}
-    </div>
-    <input type="number" id="fundAmount" min="${config.minAmount || 1}" step="1" value="${presets[1] || 10}" placeholder="Any amount, $1 or more">
-
-    <label for="fundDesc">Short description or message <span id="fundWordCount" class="hint" style="display:inline">0 / 500 words</span></label>
-    <textarea id="fundDesc" placeholder="What are you building? Or just say hi."></textarea>
-
-    ${
-      config.payUrl
-        ? `<div class="note">You’ll continue to the payment page. You appear on the board once the payment is verified.</div>`
-        : `<div class="note"><b>Live mode:</b> Your contribution connects with Supabase and renders on the board immediately!</div>`
-    }
-
-    <p style="display:flex;gap:10px;margin-top:16px">
-      <button class="btn" id="fundSubmitBtn" style="flex:1;text-align:center">
-        ${config.payUrl ? 'Continue to payment' : 'Add to board'}
-      </button>
-      <button class="btn w" id="fundCancelBtn">Cancel</button>
-    </p>
-  `;
-
-  modalBackdrop.classList.add('on');
-
-  const cancelBtn = $('#fundCancelBtn');
-  if (cancelBtn) cancelBtn.onclick = closeModal;
-
-  const anonCheckbox = $('#fundAnon') as HTMLInputElement | null;
-  const namedFields = $('#fundNamedFields');
-  if (anonCheckbox && namedFields) {
-    anonCheckbox.onchange = () => {
-      namedFields.style.display = anonCheckbox.checked ? 'none' : 'block';
-    };
-  }
-
-  // Auto-fetch logo in real-time as user types link
-  const urlInput = $('#fundUrl') as HTMLInputElement | null;
-  const previewDiv = $('#fundLogoPreview');
-  const avatarHint = $('#avatarHint');
-
-  const updateAutoAvatar = (): void => {
-    if (uploadedLogo) return; // Custom upload takes precedence
-    const raw = urlInput?.value.trim() || '';
-    const autoUrl = resolveAvatarUrl(raw);
-    if (autoUrl && previewDiv) {
-      previewDiv.innerHTML = `<img src="${AnalyticsService.escapeHtml(autoUrl)}" style="width:36px;height:36px;border-radius:9px;border:2px solid var(--ink);object-fit:cover" onerror="this.parentElement.innerHTML=''">`;
-      if (avatarHint) avatarHint.textContent = 'Auto-detected logo / profile image!';
-    } else if (previewDiv) {
-      previewDiv.innerHTML = '';
-      if (avatarHint) avatarHint.textContent = 'Logo & favicon will be automatically fetched from your link.';
-    }
-  };
-
-  if (urlInput) {
-    urlInput.oninput = updateAutoAvatar;
-    urlInput.onblur = updateAutoAvatar;
-  }
-
-  const amountInput = $('#fundAmount') as HTMLInputElement | null;
-  modalContent.querySelectorAll<HTMLButtonElement>('[data-amt]').forEach((chip) => {
-    chip.onclick = () => {
-      modalContent.querySelectorAll('[data-amt]').forEach((c) => c.classList.remove('on'));
-      chip.classList.add('on');
-      if (amountInput) amountInput.value = chip.getAttribute('data-amt') || '10';
-    };
-  });
-
-  const descInput = $('#fundDesc') as HTMLTextAreaElement | null;
-  const wcEl = $('#fundWordCount');
-  if (descInput && wcEl) {
-    descInput.oninput = () => {
-      const words = descInput.value.trim().split(/\s+/).filter(Boolean).length;
-      wcEl.textContent = `${words} / 500 words`;
-    };
-  }
-
-  const fileInput = $('#fundLogo') as HTMLInputElement | null;
-  if (fileInput) {
-    fileInput.onchange = (e) => {
-      const target = e.target as HTMLInputElement;
-      const file = target.files?.[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = () => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = canvas.height = 96;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            const s = Math.min(img.width, img.height);
-            ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 96, 96);
-            uploadedLogo = canvas.toDataURL('image/jpeg', 0.8);
-
-            if (previewDiv) {
-              previewDiv.innerHTML = `<img src="${uploadedLogo}" style="width:36px;height:36px;border-radius:9px;border:2px solid var(--ink);object-fit:cover">`;
-              if (avatarHint) avatarHint.textContent = 'Custom logo loaded.';
+        let bmode = "recent"; const ago = t => { const m = Math.floor((Date.now() - t) / 6e4); return m < 1 ? "now" : m < 60 ? m + "m" : m < 1440 ? Math.floor(m / 60) + "h" : Math.floor(m / 1440) + "d" };
+        const boardList = () => bmode === "recent" ? [...todays()].sort((a, b) => b.t - a.t) : todays();
+        const topAll = () => all().slice().sort((a, b) => b.amt - a.amt || a.t - b.t).slice(0, 100);
+        function render() {
+            setMeal(); if (!moved) home(); const T = todays(); setTotal(T.reduce((a, b) => a + b.amt, 0)); $("#cnt").textContent = T.length; $("#topv").textContent = T[0] ? T[0].name : "Nobody";
+            $("#pvBar").innerHTML = CFG.pay ? "" : `<p class="hint" style="margin-bottom:12px"><b>Preview mode:</b> no real payments are connected. Entries shown here stay in this browser.</p>`;
+            const BL = boardList(); $("#bt").innerHTML = [["recent", "Recent"], ["top", "Top"]].map(([k, l]) => `<button class="chip ${bmode === k ? "on" : ""}" data-bm="${k}">${l}</button>`).join("");
+            $("#board").innerHTML = BL.length ? lbHTML(BL, bmode, "data-i") : ghostHTML();
+            const HF = topAll(); $("#hof").innerHTML = HF.length ? `<p class="hint" style="margin-bottom:10px">${all().length} payments so far. Showing the top ${HF.length}.</p>` + lbHTML(HF, "top", "data-h") : ghostHTML()
+        }
+        setInterval(() => { const s = left(); $("#rst").textContent = [Math.floor(s / 3600), Math.floor(s % 3600 / 60), s % 60].map(n => String(n).padStart(2, "0")).join(":"); if (s === 86399) render() }, 1000);
+        function showDetail(x) { if (!x) return; const u = safeUrl(x.url); $("#mb").innerHTML = `<div style="display:flex;gap:14px;align-items:center">${avatar(x)}<div><h2 style="font-size:28px">${esc(x.name)}</h2><b>${money(x.amt)}</b></div></div><p style="white-space:pre-wrap">${esc(x.desc || "No description.")}</p>${u ? `<p><a class="btn sm" href="${esc(u)}" target="_blank" rel="nofollow noopener ugc">Visit ${esc(host(x.url))}</a></p>` : (x.url ? `<p><b>${esc(x.url)}</b></p>` : "")}<p><button class="chip" id="cl">Close</button></p>`; $("#md").classList.add("on"); $("#cl").onclick = close_ }
+        $("#board").addEventListener("click", e => { const r = e.target.closest("[data-i]"); if (r) showDetail(boardList()[+r.dataset.i]) });
+        $("#hof").addEventListener("click", e => { const r = e.target.closest("[data-h]"); if (r) showDetail(topAll()[+r.dataset.h]) });
+        $("#bt").onclick = e => { const b = e.target.closest("[data-bm]"); if (b) { bmode = b.dataset.bm; render() } };
+        // payment modal
+        const close_ = () => $("#md").classList.remove("on"); let img = "";
+        function openFund() {
+            snd("kaching"); img = ""; $("#mb").innerHTML = `<h2>${esc(CFG.btn + " " + meal())}</h2><p style="margin:0;color:var(--mut)">Put your name or product on today’s board, or stay anonymous.</p>
+<label style="display:flex;align-items:center;margin-top:16px;cursor:pointer"><input type="checkbox" id="an">Pay anonymously (no name, no link, no logo)</label>
+<div id="idf"><label for="f1">Your name or product name</label><input id="f1" maxlength="60" placeholder="Acme Analytics"><label for="f2">One link (website or social profile)</label><input id="f2" maxlength="140" placeholder="https://yourproduct.com or https://x.com/you"><p class="hint">Social links get their platform badge. Websites get a letter avatar unless you upload a logo.</p><label for="f5">Logo or profile picture (optional)</label><input id="f5" type="file" accept="image/*"></div>
+<label for="f3">How much do you want to pay? (USD)</label><input id="f3" type="number" min="1" step="1" inputmode="numeric" placeholder="Any amount, $1 or more"><div class="chips" id="qa"></div>
+<label for="f4">Short description or message <span id="wc" class="hint" style="display:inline">0 / 500 words</span></label><textarea id="f4" placeholder="What are you building? Or just say hi."></textarea>
+${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear on the board once the payment is verified.</div>` : `<div class="note"><b>Preview mode.</b> No money will move. Your entry only shows in this browser, so you can see how the board looks.</div>`}
+<p style="display:flex;gap:10px;margin-top:16px"><button class="btn" id="go" style="flex:1;text-align:center">${CFG.pay ? "Continue to payment" : "Add to board (preview)"}</button><button class="btn w" id="cl">Cancel</button></p>`;
+            $("#md").classList.add("on"); $("#cl").onclick = close_;
+            $("#an").onchange = () => { $("#idf").style.display = $("#an").checked ? "none" : "block" };
+            $("#qa").innerHTML = [1, 5, 10, 25, 50].map(a => `<button class="chip" data-a="${a}">$${a}</button>`).join(""); $("#qa").onclick = e => { const c = e.target.closest("[data-a]"); if (c) $("#f3").value = c.dataset.a };
+            const wc = () => $("#f4").value.trim().split(/\s+/).filter(Boolean).length; $("#f4").oninput = () => { $("#wc").textContent = wc() + " / 500 words" };
+            $("#f5").onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const i = new Image(); i.onload = () => { const c = document.createElement("canvas"); c.width = c.height = 96; const s = Math.min(i.width, i.height); c.getContext("2d").drawImage(i, (i.width - s) / 2, (i.height - s) / 2, s, s, 0, 0, 96, 96); img = c.toDataURL("image/jpeg", .8) }; i.src = r.result }; r.readAsDataURL(f) };
+            $("#go").onclick = () => {
+                const anon = $("#an").checked, n = anon ? "Anonymous legend" : $("#f1").value.trim(), u = anon ? "" : $("#f2").value.trim(), a = Math.round((+$("#f3").value) * 100) / 100, d = $("#f4").value.trim();
+                if (!n) return toast("Add your name or product name, or tick “Pay anonymously”."); if (u && !safeUrl(u) && u[0] !== "@") return toast("That link doesn’t look valid. Use https://…"); if (!(a >= 1)) return toast("Enter an amount of $1 or more."); if (wc() > 500) return toast("That’s over 500 words.");
+                if (CFG.pay) { window.open(CFG.pay, "_blank", "noopener"); close_(); return toast("Complete the payment. You’ll appear once it’s verified.") }
+                const newEntry: LeaderboardEntry = { id: "p" + Date.now(), name: n, url: safeUrl(u) || u, amt: a, desc: d, img: anon ? "" : img, anon, t: Date.now(), src: CFG.pay ? "live" : "preview" };
+                LOCAL.unshift(newEntry);
+                saveLocal();
+                StorageService.addEntry(newEntry).then(() => {
+                    DATA.entries = StorageService.getEntries();
+                    render();
+                });
+                snd("horn");
+                close_();
+                render();
+                toast(CFG.pay ? "Added to the board!" : "Preview only: added to the board. No money moved.");
+                location.hash = "home";
             }
-          }
-        };
-        img.src = reader.result as string;
-      };
-      reader.readAsDataURL(file);
-    };
-  }
-
-  const submitBtn = $('#fundSubmitBtn');
-  if (submitBtn) {
-    submitBtn.onclick = async () => {
-      const isAnon = anonCheckbox?.checked ?? false;
-      const nameInput = $('#fundName') as HTMLInputElement | null;
-      const name = isAnon ? 'Anonymous legend' : (nameInput?.value.trim() || '');
-      const rawUrl = isAnon ? '' : (urlInput?.value.trim() || '');
-      const amt = parseFloat(amountInput?.value || '0');
-      const desc = descInput?.value.trim() || '';
-
-      if (!name) {
-        showToast('Add your name or product name, or tick “Pay anonymously”.');
-        sound.play('sad');
-        return;
-      }
-      if (rawUrl && !AnalyticsService.safeUrl(rawUrl) && rawUrl[0] !== '@') {
-        showToast('That link doesn’t look valid. Use https://…');
-        sound.play('sad');
-        return;
-      }
-      if (isNaN(amt) || amt < (config.minAmount || 1)) {
-        showToast(`Enter an amount of $${config.minAmount || 1} or more.`);
-        sound.play('sad');
-        return;
-      }
-
-      // If user didn't upload a custom file, auto-resolve their logo from their link!
-      const finalAvatar = isAnon ? '' : (uploadedLogo || resolveAvatarUrl(rawUrl));
-
-      trackEvent('submit_contribution', { amount: amt, is_anon: isAnon });
-
-      const result = await PaymentService.processPayment({
-        name,
-        url: rawUrl,
-        amount: amt,
-        desc,
-        img: finalAvatar,
-        anon: isAnon,
-        gateway: 'stripe'
-      });
-
-      if (result.redirectUrl) {
-        window.open(result.redirectUrl, '_blank', 'noopener');
-        closeModal();
-        showToast('Complete the payment. You’ll appear once it’s verified.');
-        return;
-      }
-
-      if (result.success && result.entry) {
-        entries = StorageService.getEntries();
-        closeModal();
-        renderApp();
-        renderLeaderboard();
-        sound.play('fanfare');
-        confetti.fire(95);
-        showToast("Added to the board! Thank you for the meal.");
-        location.hash = 'home';
-      }
-    };
-  }
-}
-
-if (modalBackdrop) {
-  modalBackdrop.onclick = (e) => {
-    if (e.target === modalBackdrop) closeModal();
-  };
-}
-window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeModal();
-});
-
-// ==========================================================================
-// Mini-Apps: Red Button, Roaster, Challenge, Excuses
-// ==========================================================================
-let redPressCount = 0;
-const RED_PHRASES: readonly string[] = [
-  'bro i said don\'t press it',
-  'why are you still clicking this',
-  'you really have nothing better to do huh',
-  'leave the button alone',
-  'click one more time and see what happens',
-  'go drink some water instead',
-  'every click adds 1 hour to my afternoon nap'
-];
-
-function setupRedButton(): void {
-  const redBtn = $('#bigRedBtn');
-  const msgEl = $('#redMessage');
-  const counterEl = $('#redPressCounter');
-  if (!redBtn) return;
-
-  redBtn.onclick = () => {
-    redPressCount++;
-    sound.play(redPressCount === 5 ? 'alarm' : redPressCount % 2 === 0 ? 'boom' : 'horn');
-
-    if (counterEl) counterEl.textContent = `Presses: ${redPressCount}`;
-
-    if (redPressCount === 5) {
-      triggerInternetDeletion();
-      return;
-    }
-
-    if (msgEl) {
-      msgEl.textContent = RED_PHRASES[Math.floor(Math.random() * RED_PHRASES.length)];
-    }
-  };
-}
-
-function triggerInternetDeletion(): void {
-  if (!modalContent || !modalBackdrop) return;
-  sound.play('alarm');
-
-  modalContent.innerHTML = `
-    <h2>Deleting the internet…</h2>
-    <div class="bar2">
-      <i id="deleteProgressBar"></i>
-    </div>
-    <p id="deleteStatusText" class="hint">Starting…</p>
-    <p class="hint">(not real, obviously)</p>
-  `;
-  modalBackdrop.classList.add('on');
-
-  const steps = [
-    'Removing cat videos…',
-    'Deleting group chats… you’re welcome',
-    'Cancelling Mondays…',
-    'Unsubscribing from newsletters…',
-    'Deleting the noodle recipes… no, wait'
-  ];
-
-  let progress = 0;
-  let stepIdx = 0;
-  const bar = $('#deleteProgressBar');
-  const text = $('#deleteStatusText');
-
-  const interval = window.setInterval(() => {
-    progress += Math.random() * 9 + 3;
-    sound.play('tick', 20);
-
-    if (progress >= 99) {
-      progress = 99;
-      window.clearInterval(interval);
-      sound.play('scratch');
-      if (text) text.textContent = 'Wait. That’s a lot of work.';
-
-      setTimeout(() => {
-        sound.play('sad');
-        if (!modalContent) return;
-        modalContent.innerHTML = `
-          <h2>Cancelled.</h2>
-          <p>I’m too lazy to finish deleting the internet. You’re welcome.</p>
-          <p style="display:flex;gap:10px">
-            <button class="btn" id="redMealBtn" style="flex:1;text-align:center">Buy me a noodle</button>
-            <button class="btn w" id="redCloseBtn">Phew</button>
-          </p>
-        `;
-        const mealBtn = $('#redMealBtn');
-        const closeB = $('#redCloseBtn');
-        if (mealBtn) mealBtn.onclick = openFundModal;
-        if (closeB) closeB.onclick = closeModal;
-      }, 1500);
-    } else {
-      if (bar) bar.style.width = progress + '%';
-      if (text && Math.random() < 0.5) {
-        text.textContent = steps[stepIdx++ % steps.length];
-      }
-    }
-  }, 350);
-}
-
-// 2. Roast Machine
-let lastRoastIdx = -1;
-function setupRoastMachine(): void {
-  const roastBtn = $('#generateRoastBtn');
-  const roastInput = $('#roastInput') as HTMLInputElement | null;
-  const roastOutput = $('#roastOutput');
-  const roastActions = $('#roastActions');
-  const copyRoastBtn = $('#copyRoastBtn');
-  const tweetRoastBtn = $('#tweetRoastBtn');
-
-  if (!roastBtn) return;
-
-  roastBtn.onclick = () => {
-    const name = roastInput?.value.trim() || '';
-    if (!name) {
-      showToast('Type a name or product first.');
-      sound.play('sad');
-      return;
-    }
-
-    const templates = config.roastTemplates && config.roastTemplates.length ? config.roastTemplates : ROAST_TEMPLATES;
-    let nextIdx: number;
-    do {
-      nextIdx = Math.floor(Math.random() * templates.length);
-    } while (nextIdx === lastRoastIdx);
-    lastRoastIdx = nextIdx;
-
-    sound.play('rim');
-    const roastText = templates[nextIdx].replace(/\{n\}/g, name);
-    if (roastOutput) roastOutput.textContent = roastText;
-    if (roastActions) roastActions.style.display = 'block';
-  };
-
-  if (copyRoastBtn && roastOutput) {
-    copyRoastBtn.onclick = async () => {
-      try {
-        await navigator.clipboard.writeText(roastOutput.textContent || '');
-        showToast('Roast copied.');
-        sound.play('pop');
-      } catch {
-        showToast('Couldn’t copy.');
-      }
-    };
-  }
-
-  if (tweetRoastBtn && roastOutput) {
-    tweetRoastBtn.onclick = () => {
-      const text = encodeURIComponent(`"${roastOutput.textContent}" — roasted by https://doingnothing.lol`);
-      window.open(`https://x.com/intent/tweet?text=${text}`, '_blank');
-    };
-  }
-}
-
-// 3. Do-Nothing Challenge
-let challengeStartTime = 0;
-let challengeActive = false;
-let challengeRafId: number | null = null;
-
-function challengeStop(failed: boolean = false): void {
-  if (!challengeActive) return;
-  challengeActive = false;
-  if (challengeRafId) cancelAnimationFrame(challengeRafId);
-
-  const durationSec = (performance.now() - challengeStartTime) / 1000;
-  StorageService.saveBestStillness(durationSec);
-  const best = StorageService.getBestStillness();
-
-  const timerEl = $('#challengeTimer');
-  const msgEl = $('#challengeMessage');
-  const bestEl = $('#challengeBest');
-  const startBtn = $('#startChallengeBtn');
-
-  if (timerEl) timerEl.textContent = durationSec.toFixed(1) + 's';
-
-  if (failed) {
-    sound.play('sad');
-    if (msgEl) {
-      if (durationSec < 5) msgEl.textContent = 'You lasted about as long as a New Year’s resolution.';
-      else if (durationSec < 15) msgEl.textContent = 'Decent. Your phone is judging you.';
-      else if (durationSec < 30) msgEl.textContent = 'Impressive. A true beginner of nothing.';
-      else if (durationSec < 60) msgEl.textContent = 'Elite stillness. Please consider a career in nothing.';
-      else msgEl.textContent = 'Legendary. I’m honestly a little jealous.';
-    }
-    if (bestEl) bestEl.textContent = `Your best: ${best.toFixed(1)}s (stored on this device)`;
-    if (startBtn) {
-      startBtn.textContent = 'Try again';
-      startBtn.style.visibility = 'visible';
-    }
-  }
-}
-
-function challengeTick(): void {
-  if (!challengeActive) return;
-  const currentSec = (performance.now() - challengeStartTime) / 1000;
-  const timerEl = $('#challengeTimer');
-  if (timerEl) timerEl.textContent = currentSec.toFixed(1) + 's';
-  challengeRafId = requestAnimationFrame(challengeTick);
-}
-
-function setupChallenge(): void {
-  const startBtn = $('#startChallengeBtn');
-  const msgEl = $('#challengeMessage');
-  if (!startBtn) return;
-
-  startBtn.onclick = (e) => {
-    e.preventDefault();
-    sound.play('dun');
-    if (msgEl) msgEl.textContent = 'Don’t touch anything...';
-    startBtn.style.visibility = 'hidden';
-
-    setTimeout(() => {
-      challengeActive = true;
-      challengeStartTime = performance.now();
-      challengeTick();
-
-      let moves = 0;
-      const failEvents = ['pointermove', 'keydown', 'touchstart', 'pointerdown', 'wheel', 'scroll'];
-      const onMove = (ev: Event): void => {
-        if (ev.type === 'pointermove' && ++moves < 4) return;
-        failEvents.forEach((t) => window.removeEventListener(t, onMove, true));
-        startBtn.style.visibility = 'visible';
-        challengeStop(true);
-      };
-
-      failEvents.forEach((t) => window.addEventListener(t, onMove, true));
-    }, 500);
-  };
-}
-
-// 4. Excuse Generator
-let lastExcuseIdx = -1;
-function setupExcuseMachine(): void {
-  const btn = $('#generateExcuseBtn');
-  const copyBtn = $('#copyExcuseBtn');
-  const output = $('#excuseOutput');
-  if (!btn) return;
-
-  btn.onclick = () => {
-    const list = config.excusesList && config.excusesList.length ? config.excusesList : EXCUSES_LIST;
-    let next: number;
-    do {
-      next = Math.floor(Math.random() * list.length);
-    } while (next === lastExcuseIdx);
-    lastExcuseIdx = next;
-
-    sound.play('boing');
-    if (output) output.textContent = list[next];
-  };
-
-  if (copyBtn && output) {
-    copyBtn.onclick = async () => {
-      try {
-        await navigator.clipboard.writeText(output.textContent || '');
-        showToast('Copied. Use it wisely.');
-        sound.play('pop');
-      } catch {
-        showToast('Couldn’t copy.');
-      }
-    };
-  }
-}
-
-// ==========================================================================
-// Hidden Admin Command Center (Accessible directly via #admin)
-// ==========================================================================
-let adminUnlocked = false;
-type AdminTab = 'entries' | 'hero' | 'dodge' | 'roasts' | 'pricing' | 'database' | 'backup';
-let adminTab: AdminTab = 'entries';
-
-function renderAdmin(): void {
-  const adminEl = $('#adminDashboard');
-  if (!adminEl) return;
-
-  if (!adminUnlocked) {
-    adminEl.innerHTML = `
-      <div class="panel" style="max-width:400px">
-        <label for="adminPass">Passcode</label>
-        <input type="password" id="adminPass" placeholder="Enter admin passcode">
-        <p style="margin-top:12px"><button class="btn sm" id="adminUnlockBtn">Unlock</button></p>
-        <p class="hint">Passcode: <code>admin123</code></p>
-      </div>
-    `;
-
-    const unlockBtn = $('#adminUnlockBtn');
-    if (unlockBtn) {
-      unlockBtn.onclick = () => {
-        const pass = ($('#adminPass') as HTMLInputElement | null)?.value || '';
-        if (pass === config.adminPasscode) {
-          adminUnlocked = true;
-          sound.play('fanfare');
-          renderAdmin();
-        } else {
-          showToast('Wrong passcode.');
-          sound.play('sad');
         }
-      };
-    }
-    return;
-  }
-
-  adminEl.innerHTML = `
-    <div class="chips" style="margin-bottom:12px">
-      <button class="chip ${adminTab === 'entries' ? 'on' : ''}" data-at="entries">Entries (${entries.length})</button>
-      <button class="chip ${adminTab === 'hero' ? 'on' : ''}" data-at="hero">Hero Lines</button>
-      <button class="chip ${adminTab === 'dodge' ? 'on' : ''}" data-at="dodge">Dodge Quotes</button>
-      <button class="chip ${adminTab === 'roasts' ? 'on' : ''}" data-at="roasts">Roasts & Excuses</button>
-      <button class="chip ${adminTab === 'pricing' ? 'on' : ''}" data-at="pricing">Settings</button>
-      <button class="chip ${adminTab === 'database' ? 'on' : ''}" data-at="database">Supabase</button>
-      <button class="chip ${adminTab === 'backup' ? 'on' : ''}" data-at="backup">Backup</button>
-    </div>
-
-    ${
-      adminTab === 'entries'
-        ? `
-        <div class="panel">
-          <h3>Record an entry</h3>
-          <p class="hint">Record payments received outside the site (UPI, PayPal, cash).</p>
-          <label>Name or product</label>
-          <input type="text" id="mName" placeholder="Acme Inc">
-          <label>Link</label>
-          <input type="text" id="mUrl" placeholder="https://...">
-          <label>Amount (USD)</label>
-          <input type="number" id="mAmt" step="0.01" value="25">
-          <label>Description</label>
-          <textarea id="mDesc" placeholder="Note"></textarea>
-          <p style="margin-top:12px"><button class="btn sm" id="mSaveBtn">Add entry</button></p>
-        </div>
-
-        <div class="chips" style="margin:12px 0">
-          <button class="chip" id="adminExportCsv">Show CSV</button>
-          <button class="chip" id="adminResetSample">Restart Board (Reset to 0)</button>
-          <button class="chip" id="adminClearAll">Delete all entries</button>
-        </div>
-        <div id="adminCsvOutput"></div>
-
-        <h3 style="margin-top:16px">${entries.length} entries</h3>
-        ${entries
-          .map(
-            (item) => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1.5px solid var(--line);gap:8px;flex-wrap:wrap">
-            <span style="font-size:13.5px"><b>${AnalyticsService.escapeHtml(item.name)}</b> · ${AnalyticsService.formatMoney(item.amt)} · ${new Date(item.t).toLocaleDateString()}</span>
-            <div style="display:flex;gap:4px">
-              <button class="chip" data-edit="${item.id}" style="padding:3px 8px;font-size:11.5px">Edit</button>
-              <button class="chip" data-del="${item.id}" style="padding:3px 8px;font-size:11.5px">Delete</button>
-            </div>
-          </div>
-        `
-          )
-          .join('')}
-      `
-        : adminTab === 'hero'
-        ? `
-        <div class="panel">
-          <label>Hero Tag</label>
-          <input type="text" id="cfgTag" value="${AnalyticsService.escapeHtml(config.tagline)}">
-          <label>Main Button Text</label>
-          <input type="text" id="cfgBtn" value="${AnalyticsService.escapeHtml(config.buttonText)}">
-          <label>Small Subtitle Under Main Button</label>
-          <input type="text" id="cfgSub" value="${AnalyticsService.escapeHtml(config.subText)}">
-          <label>Rotating Hero Lines (one per line)</label>
-          <textarea id="cfgLines" style="min-height:180px">${AnalyticsService.escapeHtml((config.lines || ROTATING_LINES).join('\n'))}</textarea>
-          <p style="margin-top:12px"><button class="btn sm" id="cfgSaveHeroBtn">Save Hero Lines</button></p>
-        </div>
-      `
-        : adminTab === 'dodge'
-        ? `
-        <div class="panel">
-          <label>“Go get a job” button texts (one per line)</label>
-          <textarea id="cfgDodgeQuotes" style="min-height:220px">${AnalyticsService.escapeHtml((config.dodgeQuotes || DODGE_QUOTES).join('\n'))}</textarea>
-          <p style="margin-top:12px"><button class="btn sm" id="cfgSaveDodgeBtn">Save Dodge Quotes</button></p>
-        </div>
-      `
-        : adminTab === 'roasts'
-        ? `
-        <div class="panel">
-          <label>Roast templates (use {n} for name, one per line)</label>
-          <textarea id="cfgRoasts" style="min-height:160px">${AnalyticsService.escapeHtml((config.roastTemplates || ROAST_TEMPLATES).join('\n'))}</textarea>
-          <label style="margin-top:12px">Excuses (one per line)</label>
-          <textarea id="cfgExcuses" style="min-height:160px">${AnalyticsService.escapeHtml((config.excusesList || EXCUSES_LIST).join('\n'))}</textarea>
-          <p style="margin-top:12px"><button class="btn sm" id="cfgSaveRoastsBtn">Save Roasts & Excuses</button></p>
-        </div>
-      `
-        : adminTab === 'pricing'
-        ? `
-        <div class="panel">
-          <label>Payment link (empty = preview mode)</label>
-          <input type="text" id="cfgPayUrl" value="${AnalyticsService.escapeHtml(config.payUrl)}" placeholder="https://...">
-          <label>Presets (comma separated)</label>
-          <input type="text" id="cfgPresets" value="${(config.presets || [5, 10, 25, 50, 100]).join(', ')}">
-          <label>Admin passcode</label>
-          <input type="text" id="cfgPass" value="${AnalyticsService.escapeHtml(config.adminPasscode)}">
-          <p style="margin-top:12px"><button class="btn sm" id="cfgSavePricingBtn">Save settings</button></p>
-        </div>
-      `
-        : adminTab === 'database'
-        ? `
-        <div class="panel">
-          <h3>Supabase Database</h3>
-          <p class="hint">URL: <code>https://upnbvommgourlstrilsa.supabase.co</code></p>
-          <div class="chips" style="margin:10px 0">
-            <button class="chip" id="btnTestSupabase">Test Connection</button>
-            <button class="chip" id="btnPushSupabase">Push Local to Supabase</button>
-            <button class="chip" id="btnPullSupabase">Pull from Supabase</button>
-          </div>
-          <div id="supabaseTestResult" style="margin-top:6px"></div>
-
-          <label style="margin-top:14px">SQL Schema for Supabase Editor</label>
-          <textarea style="min-height:120px;font-family:monospace;font-size:11.5px" readonly>${AnalyticsService.escapeHtml(SupabaseService.getCreateSqlSchema())}</textarea>
-          <p style="margin-top:8px"><button class="chip" id="btnCopySql">Copy SQL</button></p>
-        </div>
-      `
-        : `
-        <div class="panel">
-          <label>Export (copy this)</label>
-          <textarea style="min-height:120px;font-family:monospace;font-size:11.5px" readonly>${AnalyticsService.escapeHtml(JSON.stringify({ config, entries }))}</textarea>
-          <label style="margin-top:12px">Import (paste here)</label>
-          <textarea id="importJsonBox" style="min-height:100px;font-family:monospace;font-size:11.5px"></textarea>
-          <p style="margin-top:8px"><button class="btn sm" id="importJsonBtn">Import</button></p>
-        </div>
-      `
-    }
-  `;
-
-  adminEl.querySelectorAll<HTMLElement>('[data-at]').forEach((b) => {
-    b.onclick = () => {
-      adminTab = (b.getAttribute('data-at') as AdminTab) || 'entries';
-      renderAdmin();
-    };
-  });
-
-  if (adminTab === 'entries') {
-    const saveBtn = $('#mSaveBtn');
-    if (saveBtn) {
-      saveBtn.onclick = async () => {
-        const name = ($('#mName') as HTMLInputElement | null)?.value.trim() || '';
-        const amt = parseFloat(($('#mAmt') as HTMLInputElement | null)?.value || '0');
-        if (!name || isNaN(amt) || amt <= 0) {
-          showToast('Name and a positive amount are required.');
-          return;
+        $("#fund").onclick = () => openFund();
+        $("#md").addEventListener("click", e => { if (e.target.id === "md") close_() }); addEventListener("keydown", e => { if (e.key === "Escape") close_() });
+        // do-nothing challenge
+        let chT = 0, chOn = false, chRaf; const cs = $("#cs");
+        const tier = s => s < 5 ? "You lasted about as long as a New Year’s resolution." : s < 15 ? "Decent. Your phone is judging you." : s < 30 ? "Impressive. A true beginner of nothing." : s < 60 ? "Elite stillness. Please consider a career in nothing." : "Legendary. I’m honestly a little jealous.";
+        function stopCh(fail) { if (!chOn) return; chOn = false; cancelAnimationFrame(chRaf); const s = (performance.now() - chT) / 1000; let b = 0; try { b = +localStorage.getItem("idn_best") || 0; if (s > b) { b = s; localStorage.setItem("idn_best", s) } } catch (e) { } $("#ct").textContent = s.toFixed(1) + "s"; if (fail) { snd("sad"); $("#cm").textContent = tier(s); $("#cb").textContent = "Your best: " + b.toFixed(1) + "s (stored on this device)"; cs.textContent = "Try again" } }
+        function tick() { if (!chOn) return; $("#ct").textContent = ((performance.now() - chT) / 1000).toFixed(1) + "s"; chRaf = requestAnimationFrame(tick) }
+        cs.onclick = e => { e.preventDefault(); snd("dun"); $("#cm").textContent = "Don’t touch anything..."; cs.style.visibility = "hidden"; setTimeout(() => { chOn = true; chT = performance.now(); tick(); let mv = 0; const E = ["pointermove", "keydown", "touchstart", "pointerdown", "wheel", "scroll", "visibilitychange"], f = ev => { if (ev.type === "pointermove" && ++mv < 4) return; E.forEach(t => removeEventListener(t, f, true)); cs.style.visibility = "visible"; stopCh(true) }; E.forEach(t => addEventListener(t, f, true)) }, 500) };
+        // the big red button
+        let rn = 0; const R1 = ["I said don’t.", "Wow. Rude.", "That was my one rule.", "Okay. Last warning."], R2 = ["Still here? The internet isn’t. Kidding, it’s fine.", "You have the self-control of a dropped ice cream.", "Nothing happened. You did that.", "Go outside. Or at least stand up.", "Impressive commitment to a bad decision.", "I’ve seen your browser history. Keep pressing."];
+        function bomb() { const L = ["Removing cat videos…", "Deleting group chats… you’re welcome", "Cancelling Mondays…", "Unsubscribing from newsletters…", "Erasing your browser history… we saw it", "Shutting down the wifi…", "Deleting the noodle recipes… no, wait"]; $("#mb").innerHTML = `<h2>Deleting the internet…</h2><div class="bar2"><i id="pb"></i></div><p id="pl" class="hint">Starting…</p><p class="hint">(not real, obviously)</p>`; $("#md").classList.add("on"); let p = 0, k = 0; const t = setInterval(() => { p += Math.random() * 9 + 3; snd("tick", 20); if (p >= 99) { p = 99; clearInterval(t); snd("scratch"); $("#pl").textContent = "Wait. That’s a lot of work."; setTimeout(() => { snd("sad"); $("#mb").innerHTML = `<h2>Cancelled.</h2><p>I’m too lazy to finish deleting the internet. You’re welcome.</p><p style="display:flex;gap:10px"><button class="btn" id="b1" style="flex:1;text-align:center">Buy me a noodle</button><button class="btn w" id="b2">Phew</button></p>`; $("#b1").onclick = () => openFund(); $("#b2").onclick = close_ }, 1500) } else if (Math.random() < .5) $("#pl").textContent = L[k++ % L.length]; $("#pb").style.width = p + "%" }, 350) }
+        $("#rb").onclick = () => { rn++; snd(rn === 5 ? "alarm" : rn % 2 ? "horn" : "boom"); $("#rc").textContent = "Presses: " + rn; if (rn === 5) return bomb(); $("#rm").textContent = rn < 5 ? R1[rn - 1] : R2[Math.floor(Math.random() * R2.length)] };
+        // roast machine (roasts the name, never the person)
+        const RO = ["{n} sounds like a startup with 3 users. Two of them are you.", "I looked up {n}. Even my search engine yawned.", "{n} has the energy of a Monday email.", "The roadmap for {n} is a screenshot in a Notes app.", "{n} pivoted so many times it forgot where it started.", "If {n} were a snack, it’d be the last rice cake in the pack.", "{n} is why “coming soon” exists.", "Bold to call it {n}. Bolder to launch on a Friday.", "{n} is doing great. In the founder’s head.", "I’m unemployed and even I’d ask {n} for a business plan.", "{n} has a five-year plan. Year one is still loading.", "{n}: 12 features, 0 users, 100% confidence.", "People say {n} is ahead of its time. Time is not interested.", "{n} walked so that someone else could run it properly.", "{n} is the kind of name that sounds funded. It isn’t."];
+        let rl = -1; $("#rg").onclick = () => { const n = $("#ri").value.trim(); if (!n) return toast("Type a name or product first."); let k; do { k = Math.floor(Math.random() * RO.length) } while (k === rl); rl = k; snd("rim"); $("#ro").textContent = RO[k].replace(/\{n\}/g, n); $("#ra").style.display = "block"; $("#rf").textContent = CFG.btn + " a noodle to thank me" };
+        $("#rs").onclick = async () => { try { await navigator.clipboard.writeText($("#ro").textContent + " " + location.href); toast("Roast copied.") } catch (e) { toast("Couldn’t copy.") } }; $("#rf").onclick = () => openFund();
+        // excuses
+        const EX = ["I had a plan. The plan had a nap in it.", "The inbox and I are on a break.", "I was about to start, then lunch got in the way.", "There is one deadline. It’s next year.", "My to-do list is a work of fiction.", "Productivity is a lifestyle. I’m exploring other lifestyles.", "I’m waiting for the right moment. It’s been a while.", "I do my best work later. Much later.", "I could, but the couch has seniority.", "I’m saving my energy for something important. Not found yet.", "The wifi was too comfortable to leave.", "I’m not late. I’m early for tomorrow.", "I was going to start, but the noodles needed me.", "I can’t work on an empty stomach. Or a full one."];
+        let xi = -1; $("#exb").onclick = () => { snd("boing"); let n; do { n = Math.floor(Math.random() * EX.length) } while (n === xi); xi = n; $("#ex").textContent = EX[n] };
+        $("#exc").onclick = async () => { try { await navigator.clipboard.writeText($("#ex").textContent); toast("Copied. Use it wisely.") } catch (e) { toast("Couldn’t copy.") } };
+        // exit intent (once)
+        let ex1 = false; document.addEventListener("mouseout", e => { if (!e.relatedTarget && e.clientY <= 0 && !ex1 && !$("#md").classList.contains("on")) { ex1 = true; snd("dun"); $("#mb").innerHTML = `<h2>Wait, you’re leaving?</h2><p>I did nothing the entire time you were here. The least you could do is buy me a noodle.</p><p style="display:flex;gap:10px"><button class="btn" id="a1" style="flex:1;text-align:center">Fine, buy the noodle</button><button class="btn w" id="a2">I have no heart</button></p>`; $("#md").classList.add("on"); $("#a1").onclick = () => openFund(); $("#a2").onclick = () => { close_(); toast("Wow. Okay. Noted.") } } });
+        // ===== ADMIN (client-side only: it is NOT secure, and changes live in this browser) =====
+        let unlocked = false, atab = "entries", editing = null;
+        const dt = t => { const d = new Date(t - new Date().getTimezoneOffset() * 6e4); return d.toISOString().slice(0, 16) };
+        function renderAdmin() {
+            const A = $("#adm");
+            if (!unlocked) { A.innerHTML = `<div class="panel" style="max-width:420px"><label for="pw">Passcode</label><input id="pw" type="password"><p><button class="btn" id="pgo">Unlock</button></p><p class="hint">This passcode only hides the screen. It is visible in the page source, so it is not real security. A real admin needs a backend login.</p></div>`; $("#pgo").onclick = () => { if ($("#pw").value === CFG.pass) { unlocked = true; renderAdmin() } else toast("Wrong passcode.") }; return }
+            const tabs = [["entries", "Entries"], ["lines", "Lines"], ["settings", "Settings"], ["backup", "Backup"]];
+            let h = `<div class="note" style="margin:0 0 14px">Everything here is saved in <b>this browser only</b>. To apply changes for all visitors, use Backup > Export and paste the result into the file, or connect a backend.</div><div class="chips">${tabs.map(t => `<button class="chip ${atab === t[0] ? "on" : ""}" data-tab="${t[0]}">${t[1]}</button>`).join("")}</div>`;
+            if (atab === "entries") {
+                const e = editing || {}; h += `<div class="panel"><h3>${editing && editing.id ? "Edit entry" : "Record an entry"}</h3><p class="hint">Use this to record payments you actually received outside the site (UPI, PayPal, cash). These show to visitors with no tag, so only add real ones.</p>
+<label>Name or product</label><input id="e1" value="${esc(e.name || "")}"><label>Link</label><input id="e2" value="${esc(e.url || "")}"><label>Amount (USD)</label><input id="e3" type="number" min="0" step="0.01" value="${e.amt || ""}"><label>Description</label><textarea id="e4">${esc(e.desc || "")}</textarea><label>Date and time</label><input id="e5" type="datetime-local" value="${dt(e.t || Date.now())}"><label><input type="checkbox" id="e6" ${e.anon ? "checked" : ""}>Show as anonymous</label>
+<p><button class="btn sm" id="esv">${editing && editing.id ? "Save changes" : "Add entry"}</button> ${editing ? `<button class="btn sm w" id="ecn">Cancel</button>` : ""}</p></div>
+<div class="chips"><button class="chip" id="smp">Add 5 labelled samples (private preview)</button><button class="chip" id="rms">Remove samples</button><button class="chip" id="csv">Show CSV</button><button class="chip" id="cla">Delete all entries</button></div><p class="hint">Samples are always tagged “sample” and are hidden from visitors once a payment link is set.</p><div id="csvo"></div>
+<h3 style="margin-top:20px">${LOCAL.length} entries in this browser</h3>${[...LOCAL].sort((a, b) => b.t - a.t).map(x => `<div class="arow"><span><b>${esc(x.name)}</b> · ${money(x.amt)} · ${new Date(x.t).toLocaleString()} · ${esc(x.src)}</span><button class="chip" data-ed="${x.id}">Edit</button><button class="chip" data-dl="${x.id}">Delete</button></div>`).join("")}`
+            }
+            if (atab === "lines") { h += `<div class="panel"><label>Rotating hero lines (one per line)</label><textarea id="l1" style="min-height:240px">${esc(CFG.lines.join("\n"))}</textarea><label>“Go get a job” button texts (one per line; the first three play in order)</label><textarea id="l2" style="min-height:240px">${esc(CFG.dodge.join("\n"))}</textarea><p><button class="btn sm" id="lsv">Save lines</button> <button class="btn sm w" id="lrs">Reset to defaults</button></p></div>` }
+            if (atab === "settings") { h += `<div class="panel"><label>Payment link (empty = preview mode)</label><input id="s1" value="${esc(CFG.pay)}" placeholder="https://..."><label>Timezone for the daily reset</label><input id="s2" value="${esc(CFG.tz)}"><label>Hero tag</label><input id="s3" value="${esc(CFG.tag)}"><label>Main button text (the meal is added after it)</label><input id="s4" value="${esc(CFG.btn)}"><label>Small text under the main button</label><input id="s5" value="${esc(CFG.sub)}"><label>Admin passcode</label><input id="s6" value="${esc(CFG.pass)}"><p><button class="btn sm" id="ssv">Save settings</button></p></div>` }
+            if (atab === "backup") { h += `<div class="panel"><label>Export (copy this)</label><textarea id="b1" style="min-height:160px">${esc(JSON.stringify({ cfg: CFG, entries: LOCAL }))}</textarea><label>Import (paste an export here)</label><textarea id="b2"></textarea><p><button class="btn sm" id="bim">Import</button></p></div>` }
+            A.innerHTML = h;
+            $$("[data-tab]").forEach(b => b.onclick = () => { atab = b.dataset.tab; editing = null; renderAdmin() });
+            const on = (i, f) => { const el = $("#" + i); if (el) el.onclick = f };
+            on("esv", () => { const n = $("#e1").value.trim(), a = +$("#e3").value; if (!n || !(a > 0)) return toast("Name and a positive amount are required."); const o = { name: n, url: safeUrl($("#e2").value) || $("#e2").value.trim(), amt: a, desc: $("#e4").value.trim(), t: new Date($("#e5").value).getTime() || Date.now(), anon: $("#e6").checked, src: "manual" }; const newM: LeaderboardEntry = { id: (editing && editing.id) ? editing.id : "m" + Date.now(), img: "", anon: o.anon || false, ...o };
+                if (editing && editing.id) {
+                    const idx = LOCAL.findIndex(x => x.id === editing.id);
+                    if (idx !== -1) LOCAL[idx] = newM;
+                    StorageService.updateEntry(editing.id, newM);
+                } else {
+                    LOCAL.unshift(newM);
+                    StorageService.addEntry(newM);
+                }
+                editing = null;
+                saveLocal();
+                renderAdmin();
+                render();
+                toast("Saved.") });
+            on("ecn", () => { editing = null; renderAdmin() });
+            $$("[data-ed]").forEach(b => b.onclick = () => { editing = LOCAL.find(x => x.id === b.dataset.ed); renderAdmin(); scrollTo(0, 0) });
+            $$("[data-dl]").forEach(b => b.onclick = () => { const delId = b.dataset.dl; LOCAL = LOCAL.filter(x => x.id !== delId); StorageService.deleteEntry(delId); saveLocal(); renderAdmin(); render() });
+            on("smp", () => { [["Sample Studio", 120, "Sample entry to preview the board."], ["Sample SaaS", 60, "Another sample entry."], ["@samplehandle", 25, "Sample social profile."], ["Sample Game", 10, "Sample entry."], ["Sample Anonymous", 3, "Sample entry."]].forEach(([n, a, d], i) => LOCAL.push({ id: "s" + Date.now() + i, name: n, url: "", amt: a, desc: d, img: "", t: Date.now(), src: "sample" })); saveLocal(); renderAdmin(); render() });
+            on("rms", () => { LOCAL = LOCAL.filter(x => x.src !== "sample"); saveLocal(); renderAdmin(); render() });
+            on("cla", () => { if (confirm("Delete all entries in this browser?")) { LOCAL = []; saveLocal(); renderAdmin(); render() } });
+            on("csv", () => { $("#csvo").innerHTML = `<textarea style="min-height:140px">${esc("name,url,amount,date,source\n" + LOCAL.map(x => [x.name, x.url, x.amt, new Date(x.t).toISOString(), x.src].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(",")).join("\n"))}</textarea>` });
+            on("lsv", () => { CFG.lines = $("#l1").value.split("\n").map(s => s.trim()).filter(Boolean); CFG.dodge = $("#l2").value.split("\n").map(s => s.trim()).filter(Boolean); bag = []; mi = 0; saveCfg(); toast("Lines saved.") });
+            on("lrs", () => { CFG.lines = DEF.lines.slice(); CFG.dodge = DEF.dodge.slice(); saveCfg(); bag = []; mi = 0; renderAdmin() });
+            on("ssv", () => { CFG.pay = $("#s1").value.trim(); CFG.tz = $("#s2").value.trim() || "Asia/Kolkata"; CFG.tag = $("#s3").value; CFG.btn = $("#s4").value.trim() || "Buy me"; CFG.sub = $("#s5").value; CFG.pass = $("#s6").value || "admin123"; saveCfg(); render(); toast("Settings saved.") });
+            on("bim", () => { try { const j = JSON.parse($("#b2").value); if (j.cfg) Object.assign(CFG, j.cfg); if (Array.isArray(j.entries)) LOCAL = j.entries; saveCfg(); saveLocal(); renderAdmin(); render(); toast("Imported.") } catch (e) { toast("That isn’t valid JSON.") } })
         }
-        const rawUrl = ($('#mUrl') as HTMLInputElement | null)?.value || '';
-        const newManual: LeaderboardEntry = {
-          id: 'm-' + Date.now(),
-          name,
-          url: AnalyticsService.safeUrl(rawUrl),
-          amt: Math.round(amt * 100) / 100,
-          desc: ($('#mDesc') as HTMLTextAreaElement | null)?.value.trim() || '',
-          img: resolveAvatarUrl(rawUrl),
-          anon: false,
-          t: Date.now(),
-          src: 'manual'
-        };
-        entries = await StorageService.addEntry(newManual);
-        renderAdmin();
-        renderLeaderboard();
-        showToast('Saved.');
-      };
-    }
 
-    adminEl.querySelectorAll<HTMLElement>('[data-del]').forEach((b) => {
-      b.onclick = async () => {
-        const delId = b.getAttribute('data-del');
-        if (delId) {
-          entries = await StorageService.deleteEntry(delId);
-          renderAdmin();
-          renderLeaderboard();
+        // ===== CLICK EFFECTS: every click, even on empty space, bursts and shakes the 3D scene =====
+        let RM2 = false; try { RM2 = localStorage.getItem("idn_motion") === "off" } catch (e) { }
+        document.documentElement.classList.toggle("nomo", RM2);
+        const mb = document.getElementById("mot"); const mbl = () => mb.textContent = "Motion: " + (RM2 ? "off" : "on"); mbl(); mb.onclick = () => { RM2 = !RM2; try { localStorage.setItem("idn_motion", RM2 ? "off" : "on") } catch (e) { } document.documentElement.classList.toggle("nomo", RM2); mbl() };
+        (function () {
+            const CL = ["#2F4BFF", "#FFD23F", "#101010", "#E8412C", "#0E9F6E"], WD = ["zzz", "nothing.", "nap?", "meh", "+0", "bruh", "nope", "lol", "still here?", "no work"];
+            function burst(x, y) {
+                if (RM2 || document.querySelectorAll(".cb").length > 140) return;
+                const add = (el, kf, o) => { el.className += " cb"; el.style.left = x + "px"; el.style.top = y + "px"; document.body.appendChild(el); el.animate(kf, o).onfinish = () => el.remove() };
+                const glow = document.createElement("div"); glow.style.cssText = "width:40px;height:40px;border-radius:50%;background:" + CL[Math.floor(Math.random() * 2)] + "55"; add(glow, [{ transform: "translate(-50%,-50%) scale(.3)", opacity: 1 }, { transform: "translate(-50%,-50%) scale(6)", opacity: 0 }], { duration: 600, easing: "ease-out" });
+                for (let k = 0; k < 2; k++) { const r = document.createElement("div"); r.className = "cr"; add(r, [{ transform: "translate(-50%,-50%) scale(.4)", opacity: .9 }, { transform: "translate(-50%,-50%) scale(" + (9 + k * 5) + ")", opacity: 0 }], { duration: 600 + k * 250, delay: k * 90, easing: "ease-out", fill: "backwards" }) }
+                for (let i = 0; i < 22; i++) {
+                    const p = document.createElement("div"), a = Math.random() * 6.283, d = 60 + Math.random() * 130, z = 7 + Math.random() * 10; p.style.cssText = `width:${z}px;height:${z}px;background:${CL[i % 5]};border:2px solid #101010;border-radius:${i % 3 ? "50%" : "3px"}`;
+                    add(p, [{ transform: "translate(-50%,-50%) scale(1) rotate(0)", opacity: 1 }, { transform: `translate(calc(-50% + ${Math.cos(a) * d}px),calc(-50% + ${Math.sin(a) * d + 60}px)) scale(.3) rotate(${Math.random() * 540}deg)`, opacity: 0 }], { duration: 700 + Math.random() * 600, easing: "cubic-bezier(.15,.8,.25,1)" })
+                }
+                if (Math.random() < .6) { const w = document.createElement("div"); w.className = "cw"; w.textContent = WD[Math.floor(Math.random() * WD.length)]; add(w, [{ transform: "translate(-50%,-30%) scale(.5) rotate(-6deg)", opacity: 0 }, { transform: "translate(-50%,-110%) scale(1.1) rotate(3deg)", opacity: 1, offset: .25 }, { transform: "translate(-50%,-230%) scale(1) rotate(0)", opacity: 0 }], { duration: 1300, easing: "ease-out" }) }
+            }
+            window.burstAt = burst; addEventListener("pointerdown", e => { burst(e.clientX, e.clientY); if (window.shock) shock(e.clientX, e.clientY, 1); if (!e.target.closest("a,button,.row,.lr,.pc,.opt,.chip,.rbtn,input,textarea,select")) snd(CLK[Math.floor(Math.random() * CLK.length)], 30) }, { passive: true })
+        })();
+        // ===== 3D BACKGROUND (Three.js): floating shapes that drift with scroll, follow the mouse and get knocked around by clicks =====
+        (function () {
+            try {
+                const cv = document.getElementById("gl"), R = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true }); R.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+                const S = new THREE.Scene(), C = new THREE.PerspectiveCamera(45, 1, .1, 100); C.position.z = 14;
+                S.add(new THREE.AmbientLight(0xffffff, .85)); const dl = new THREE.DirectionalLight(0xffffff, .9); dl.position.set(4, 6, 8); S.add(dl);
+                const COLS = [0x2F4BFF, 0xFFD23F, 0x101010, 0xE8412C, 0x0E9F6E, 0xffffff];
+                const GEO = [() => new THREE.IcosahedronGeometry(1, 0), () => new THREE.OctahedronGeometry(1, 0), () => new THREE.BoxGeometry(1.4, 1.4, 1.4), () => new THREE.TorusGeometry(.9, .34, 12, 24), () => new THREE.ConeGeometry(.9, 1.6, 5), () => new THREE.SphereGeometry(1, 14, 10), () => new THREE.DodecahedronGeometry(1, 0), () => new THREE.TorusKnotGeometry(.7, .24, 64, 8)];
+                let HW = 8, HH = 5.8, P = 35; const sh = [], N = innerWidth < 700 ? 16 : 26, mob = () => innerWidth < 700;
+                function dims() { const w = innerWidth, h = innerHeight; R.setSize(w, h, false); C.aspect = w / h; C.updateProjectionMatrix(); HH = Math.tan(C.fov * Math.PI / 360) * C.position.z; HW = HH * C.aspect; P = 6 * HH } dims();
+                for (let i = 0; i < N; i++) {
+                    const m = new THREE.Mesh(GEO[i % GEO.length](), new THREE.MeshStandardMaterial({ color: COLS[i % COLS.length], flatShading: true, roughness: .55, metalness: .05 })); S.add(m);
+                    const side = Math.random() < .5 ? -1 : 1; sh.push({ m, x: side * (.45 + Math.random() * .55), f: i / N, z: -4 + Math.random() * 6, s: .9 + Math.random() * 1.2, rx: (Math.random() - .5) * 1.6, ry: (Math.random() - .5) * 2, o: [0, 0, 0], v: [0, 0, 0], pulse: 0, sp: 0 })
+                }
+                // one big hero shape, top right
+                sh[7].x = .55; sh[7].f = .99; sh[7].z = -1; sh[7].s = 2.8; sh[0].x = -.7;
+                let px = 0, py = 0, cy = 0, last = performance.now();
+                addEventListener("pointermove", e => { px = e.clientX / innerWidth * 2 - 1; py = -(e.clientY / innerHeight * 2 - 1) }, { passive: true });
+                addEventListener("resize", () => { dims(); frame(0, performance.now()) });
+                window.shock = (cx, cyp, k = 1) => { if (RM2) return; const wx = (cx / innerWidth * 2 - 1) * HW, wy = cy + (-(cyp / innerHeight * 2 - 1)) * HH; sh.forEach(s => { const p = s.m.position, dx = p.x - wx, dy = p.y - wy, d = Math.hypot(dx, dy) || .01, f = k * 9 / (1 + d * d * .07); s.v[0] += dx / d * f; s.v[1] += dy / d * f; s.v[2] += (Math.random() - .4) * f * .5; s.sp += (Math.random() - .5) * f * 1.2; s.pulse = Math.max(s.pulse, Math.min(1, f / 6)) }) };
+                function frame(dt, t) {
+                    cy = -scrollY / innerHeight * 2 * HH; C.position.set(px * .5, cy + py * .35, 14); C.lookAt(px * .2, cy, 0);
+                    sh.forEach(s => {
+                        const base = -s.f * P, off = (((base - cy) % P) + P) % P - P / 2;
+                        for (let a = 0; a < 3; a++) { s.v[a] += -3 * s.o[a] * dt; s.v[a] *= Math.pow(.04, dt); s.o[a] += s.v[a] * dt }
+                        s.sp *= Math.pow(.15, dt); s.pulse *= Math.pow(.02, dt);
+                        s.m.position.set(s.x * HW * (mob() ? .9 : 1) + Math.cos(t * .0008 + s.f * 13) * .6 + s.o[0], cy + off + Math.sin(t * .0012 + s.f * 20) * .8 + s.o[1], s.z + s.o[2]);
+                        s.m.rotation.x += (s.rx + s.sp) * dt; s.m.rotation.y += (s.ry + s.sp * .7) * dt;
+                        const k = (mob() ? .7 : 1) * s.s * (1 + s.pulse * .35); s.m.scale.setScalar(k)
+                    });
+                    R.render(S, C)
+                }
+                (function loop(now) { requestAnimationFrame(loop); if (document.hidden) { last = now; return } const dt = RM2 ? 0 : Math.min(.05, (now - last) / 1000); last = now; frame(dt, RM2 ? 0 : now) })(performance.now());
+            } catch (e) { const c = document.getElementById("gl"); if (c) c.style.display = "none" }
+        })();
+
+        // ===== SOUNDBOARD, cursor effects, tap tag, leaderboard polish, easter eggs =====
+        const ghostHTML = () => `<div class="pod gp">${[1, 0, 2].map(i => `<button class="pc gh p${i + 1}" data-fund style="animation-delay:${i * 120}ms"><span class="medal">${i + 1}</span>${i === 0 ? `<div class="crown">${CROWN}</div>` : ""}<div class="av gq">?</div><h3>Up for grabs</h3><div class="amt">$?</div><span class="go">Take it ›</span></button>`).join("")}</div><p class="hint" style="text-align:center;margin-bottom:6px">Nobody on the board yet. Tap a spot and claim it.</p>`;
+        document.addEventListener("click", e => { if (e.target.closest("[data-fund]")) openFund() });
+        $("#sbn").textContent = Object.keys(SND).length;
+        $("#sbg").innerHTML = Object.keys(SND).map(n => `<button class="chip" data-sn="${n}">${n}</button>`).join("");
+        $("#sbg").onclick = e => { const b = e.target.closest("[data-sn]"); if (!b) return; if (!SOUND) return toast("Sound is off. Turn it on in the header."); welcomed = true; try { SND[b.dataset.sn]() } catch (x) { } };
+        // typing + scrolling sounds
+        addEventListener("keydown", e => { if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || /^(Shift|Control|Alt|Meta|CapsLock)$/.test(e.key)) return; snd(e.key === " " ? "spaceclack" : e.key === "Enter" ? "enterclack" : "clack", 15) });
+        let sy0 = scrollY, sacc = 0; addEventListener("scroll", () => { sacc += Math.abs(scrollY - sy0); sy0 = scrollY; if (sacc > 70) { sacc = 0; snd("tk", 25) } }, { passive: true });
+        // leaderboard: 3D tilt on hover + amounts count up
+        const tilt = e => { const c = e.target.closest(".pc:not(.gh),.lr"); if (!c || RM2) return; const r = c.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5; c.style.transform = `perspective(700px) rotateX(${-y * 9}deg) rotateY(${x * 11}deg) translateY(-3px)` };
+        ["#board", "#hof"].forEach(q => { $(q).addEventListener("pointermove", tilt); $(q).addEventListener("pointerout", e => { const c = e.target.closest(".pc,.lr"); if (c) c.style.transform = "" }) });
+        let lastSig = ""; const countUp = () => { const els = $$(".nv"), sig = bmode + location.hash + els.length; if (sig === lastSig) return; lastSig = sig; if (RM2) return; els.forEach(el => { const v = +el.dataset.v, t0 = performance.now(); (function f(t) { const p = Math.min(1, (t - t0) / 800), q = 1 - Math.pow(1 - p, 3); el.textContent = money(v * q); if (p < 1) requestAnimationFrame(f) })(t0) }) };
+        ["#board", "#hof"].forEach(q => new MutationObserver(countUp).observe($(q), { childList: true }));
+        // cursor: star trail, swish sound and a spinning 3D cube that follows the pointer
+        (function () {
+            const cube = $("#cube"), fine = matchMedia("(pointer:fine)").matches, CL = ["#2F4BFF", "#FFD23F", "#E8412C", "#0E9F6E", "#101010"];
+            let lx = -1, ly = -1, tx = -100, ty = -100, cx = -100, cy = -100, vx = 0, vy = 0, ax = 20, ay = 30, a1 = 0, a2 = 0;
+            function spark(x, y) { if (document.querySelectorAll(".sk").length > 50) return; const p = document.createElement("div"), z = 8 + Math.random() * 9; p.className = "cb sk"; p.style.cssText = `left:${x}px;top:${y}px;width:${z}px;height:${z}px;background:${CL[Math.floor(Math.random() * 5)]}`; document.body.appendChild(p); p.animate([{ transform: "translate(-50%,-50%) scale(1) rotate(0)", opacity: 1 }, { transform: `translate(calc(-50% + ${(Math.random() - .5) * 50}px),calc(-50% + ${30 + Math.random() * 50}px)) scale(.1) rotate(${Math.random() * 360}deg)`, opacity: 0 }], { duration: 700 + Math.random() * 300, easing: "ease-out" }).onfinish = () => p.remove() }
+            addEventListener("pointermove", e => {
+                const x = e.clientX, y = e.clientY; if (lx < 0) { lx = x; ly = y } const dx = x - lx, dy = y - ly, d = Math.hypot(dx, dy); lx = x; ly = y; vx = dx; vy = dy; tx = x + 22; ty = y + 22;
+                if (e.pointerType === "mouse") { a1 += d; if (a1 > 24 && !RM2) { a1 = 0; spark(x, y) } a2 += d; if (a2 > 150) { a2 = 0; snd("swish", 60) } if (fine && !RM2) cube.style.display = "block" }
+            }, { passive: true });
+            (function loop() { requestAnimationFrame(loop); if (RM2) { cube.style.display = "none"; return } cx += (tx - cx) * .2; cy += (ty - cy) * .2; ax += vy * .5 + .9; ay += vx * .5 + 1.6; vx *= .88; vy *= .88; cube.style.transform = `translate3d(${cx}px,${cy}px,0) perspective(300px) rotateX(${ax}deg) rotateY(${ay}deg)` })()
+        })();
+        // tap tag + milestones
+        let taps = 0; const TM = { 10: "10 taps. Impressive dedication to nothing.", 25: "25 taps. You should be working.", 50: "50 taps. We’re basically friends.", 75: "75 taps. Your finger needs a nap.", 100: "100 taps. Please buy me a noodle." };
+        addEventListener("pointerdown", () => {
+            taps++; $("#tapT").textContent = taps === 1 ? "nice. keep tapping · 1" : "taps: " + taps; if (!RM2) $("#tapTag").animate([{ transform: "scale(1.3)" }, { transform: "scale(1)" }], { duration: 220 });
+            if (TM[taps]) { toast(TM[taps]); snd("fan"); if (!RM2) for (let i = 0; i < 6; i++)setTimeout(() => window.burstAt(Math.random() * innerWidth, Math.random() * innerHeight * .8), i * 140) }
+        }, { passive: true });
+        // easter eggs: konami code, and poking the sleeper
+        const KN = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"]; let ki = 0;
+        addEventListener("keydown", e => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; ki = k === KN[ki] ? ki + 1 : (k === KN[0] ? 1 : 0); if (ki === KN.length) { ki = 0; snd("fan"); toast("Party mode. Absolutely nothing was achieved."); if (!RM2) for (let i = 0; i < 10; i++)setTimeout(() => { const x = Math.random() * innerWidth, y = Math.random() * innerHeight; window.burstAt(x, y); if (window.shock) shock(x, y, 1.6) }, i * 160) } });
+        const slp = document.querySelector(".sleeper"); if (slp) slp.addEventListener("click", () => { toast("Huh? I wasn’t sleeping. I was resting my eyes."); snd("yawn") });
+        route(); showLine(); setInterval(showLine, 3800);
+    
+// Supabase Backend Sync
+(async () => {
+    try {
+        const remote = await StorageService.syncFromSupabase();
+        if (remote && remote.length) {
+            LOCAL = remote;
+            DATA.entries = remote;
+            render();
         }
-      };
-    });
-
-    adminEl.querySelectorAll<HTMLElement>('[data-edit]').forEach((b) => {
-      b.onclick = () => {
-        const editId = b.getAttribute('data-edit');
-        const item = entries.find((x) => x.id === editId);
-        if (!item || !modalContent || !modalBackdrop) return;
-
-        modalContent.innerHTML = `
-          <h2>Edit entry</h2>
-          <label>Name</label>
-          <input type="text" id="edName" value="${AnalyticsService.escapeHtml(item.name)}">
-          <label>Amount (USD)</label>
-          <input type="number" id="edAmt" value="${item.amt}">
-          <label>Link</label>
-          <input type="text" id="edUrl" value="${AnalyticsService.escapeHtml(item.url)}">
-          <label>Description</label>
-          <textarea id="edDesc">${AnalyticsService.escapeHtml(item.desc)}</textarea>
-          <p style="display:flex;gap:10px;margin-top:14px">
-            <button class="btn sm" id="edSaveBtn">Save changes</button>
-            <button class="btn sm w" id="edCancelBtn">Cancel</button>
-          </p>
-        `;
-        modalBackdrop.classList.add('on');
-        $('#edCancelBtn')!.onclick = closeModal;
-        $('#edSaveBtn')!.onclick = async () => {
-          const updName = ($('#edName') as HTMLInputElement).value.trim();
-          const updAmt = parseFloat(($('#edAmt') as HTMLInputElement).value);
-          const updUrl = ($('#edUrl') as HTMLInputElement).value.trim();
-          const updDesc = ($('#edDesc') as HTMLTextAreaElement).value.trim();
-
-          entries = await StorageService.updateEntry(item.id, {
-            name: updName,
-            amt: updAmt,
-            url: AnalyticsService.safeUrl(updUrl),
-            desc: updDesc,
-            img: resolveAvatarUrl(updUrl, item.img)
-          });
-          closeModal();
-          renderAdmin();
-          renderLeaderboard();
-          showToast('Saved.');
-        };
-      };
-    });
-
-    const exportBtn = $('#adminExportCsv');
-    if (exportBtn) {
-      exportBtn.onclick = () => {
-        const rows = [
-          ['name', 'url', 'amount', 'date', 'source'],
-          ...entries.map((x) => [x.name, x.url, x.amt, new Date(x.t).toISOString(), x.src || ''])
-        ];
-        const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-        const csvOut = $('#adminCsvOutput');
-        if (csvOut) {
-          csvOut.innerHTML = `<textarea style="min-height:120px;margin-top:10px">${AnalyticsService.escapeHtml(csv)}</textarea>`;
-        }
-      };
+    } catch (err) {
+        console.warn('Initial Supabase sync fallback:', err);
     }
 
-    const resetBtn = $('#adminResetSample');
-    if (resetBtn) {
-      resetBtn.onclick = async () => {
-        if (confirm('Restart daily board? This will clear today\'s entries and reset everything to zero.')) {
-          // Delete all today's entries from Supabase too
-          const todayStr = AnalyticsService.getTodayDateString();
-          const todayEntries = entries.filter((e) => {
-            const d = new Date(e.t);
-            const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            return dStr === todayStr;
-          });
-          for (const e of todayEntries) {
-            await SupabaseService.deleteEntry(e.id);
-          }
-          entries = entries.filter((e) => {
-            const d = new Date(e.t);
-            const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            return dStr !== todayStr;
-          });
-          StorageService.saveEntries(entries);
-          renderAdmin();
-          renderLeaderboard();
-          showToast('Board restarted — today\'s stats are now zero.');
-        }
-      };
+    try {
+        SupabaseService.subscribeToEntries(async () => {
+            const updated = await StorageService.syncFromSupabase();
+            LOCAL = updated;
+            DATA.entries = updated;
+            render();
+        });
+    } catch (err) {
+        console.warn('Supabase realtime subscription fallback:', err);
     }
-
-    const clearBtn = $('#adminClearAll');
-    if (clearBtn) {
-      clearBtn.onclick = () => {
-        if (confirm('Delete all entries?')) {
-          entries = [];
-          StorageService.saveEntries(entries);
-          renderAdmin();
-          renderLeaderboard();
-          showToast('Cleared.');
-        }
-      };
-    }
-  } else if (adminTab === 'hero') {
-    $('#cfgSaveHeroBtn')!.onclick = () => {
-      config.tagline = ($('#cfgTag') as HTMLInputElement).value.trim();
-      config.buttonText = ($('#cfgBtn') as HTMLInputElement).value.trim();
-      config.subText = ($('#cfgSub') as HTMLInputElement).value.trim();
-
-      const linesRaw = ($('#cfgLines') as HTMLTextAreaElement).value;
-      config.lines = linesRaw.split('\n').map((s) => s.trim()).filter(Boolean);
-
-      StorageService.saveConfig(config);
-      renderApp();
-      showToast('Lines saved.');
-    };
-  } else if (adminTab === 'dodge') {
-    $('#cfgSaveDodgeBtn')!.onclick = () => {
-      const dodgeRaw = ($('#cfgDodgeQuotes') as HTMLTextAreaElement).value;
-      config.dodgeQuotes = dodgeRaw.split('\n').map((s) => s.trim()).filter(Boolean);
-      StorageService.saveConfig(config);
-      showToast('Saved.');
-    };
-  } else if (adminTab === 'roasts') {
-    $('#cfgSaveRoastsBtn')!.onclick = () => {
-      const roastsRaw = ($('#cfgRoasts') as HTMLTextAreaElement).value;
-      const excusesRaw = ($('#cfgExcuses') as HTMLTextAreaElement).value;
-      config.roastTemplates = roastsRaw.split('\n').map((s) => s.trim()).filter(Boolean);
-      config.excusesList = excusesRaw.split('\n').map((s) => s.trim()).filter(Boolean);
-      StorageService.saveConfig(config);
-      showToast('Saved.');
-    };
-  } else if (adminTab === 'pricing') {
-    $('#cfgSavePricingBtn')!.onclick = () => {
-      config.payUrl = ($('#cfgPayUrl') as HTMLInputElement).value.trim();
-      const presetsRaw = ($('#cfgPresets') as HTMLInputElement).value;
-      config.presets = presetsRaw
-        .split(',')
-        .map((n) => parseFloat(n.trim()))
-        .filter((n) => !isNaN(n) && n > 0);
-      config.adminPasscode = ($('#cfgPass') as HTMLInputElement).value.trim() || 'admin123';
-      StorageService.saveConfig(config);
-      renderApp();
-      showToast('Settings saved.');
-    };
-  } else if (adminTab === 'database') {
-    $('#btnTestSupabase')!.onclick = async () => {
-      const out = $('#supabaseTestResult');
-      if (out) out.innerHTML = `<span class="hint">Testing...</span>`;
-      const res = await SupabaseService.testConnection();
-      if (out) {
-        out.innerHTML = `<div class="note" style="background:${res.ok ? '#DCFCE7' : '#FEE2E2'}">${AnalyticsService.escapeHtml(res.message)}</div>`;
-      }
-    };
-
-    $('#btnPushSupabase')!.onclick = async () => {
-      let count = 0;
-      for (const entry of entries) {
-        const ok = await SupabaseService.insertEntry(entry);
-        if (ok) count++;
-      }
-      showToast(`Pushed ${count} to Supabase.`);
-    };
-
-    $('#btnPullSupabase')!.onclick = async () => {
-      const fresh = await StorageService.syncFromSupabase();
-      entries = fresh;
-      renderLeaderboard();
-      renderAdmin();
-      showToast(`Pulled ${fresh.length} entries.`);
-    };
-
-    $('#btnCopySql')!.onclick = async () => {
-      try {
-        await navigator.clipboard.writeText(SupabaseService.getCreateSqlSchema());
-        showToast('Copied.');
-      } catch {
-        showToast('Couldn’t copy.');
-      }
-    };
-  } else if (adminTab === 'backup') {
-    $('#importJsonBtn')!.onclick = () => {
-      try {
-        const val = ($('#importJsonBox') as HTMLTextAreaElement).value || '';
-        const parsed = JSON.parse(val);
-        if (parsed.entries && Array.isArray(parsed.entries)) {
-          entries = parsed.entries;
-          StorageService.saveEntries(entries);
-        }
-        if (parsed.config) {
-          config = { ...config, ...parsed.config };
-          StorageService.saveConfig(config);
-        }
-        renderAdmin();
-        renderApp();
-        showToast('Imported.');
-      } catch {
-        showToast('Invalid JSON.');
-      }
-    };
-  }
-}
-
-// ==========================================================================
-// Master App Render & Initializer
-// ==========================================================================
-function renderApp(): void {
-  const meal = AnalyticsService.getMealName();
-  const mainBtn = $('#fundHeroBtn');
-  const tagEl = $('#heroTag');
-
-  if (mainBtn) {
-    mainBtn.innerHTML = `
-      ${AnalyticsService.escapeHtml(config.buttonText)} ${AnalyticsService.escapeHtml(meal)}
-      <small>${AnalyticsService.escapeHtml(config.subText)}</small>
-    `;
-  }
-  if (tagEl) tagEl.textContent = config.tagline;
-
-  renderLeaderboard();
-  renderHallOfFame();
-}
-
-async function initApp(): Promise<void> {
-  const soundBtn = $('#soundToggleBtn');
-  if (soundBtn) {
-    soundBtn.onclick = () => {
-      const isSoundOn = sound.toggle();
-      soundBtn.textContent = 'Sound: ' + (isSoundOn ? 'on' : 'off');
-    };
-  }
-
-  $$<HTMLElement>('[data-board-mode]').forEach((btn) => {
-    btn.onclick = () => {
-      $$('[data-board-mode]').forEach((b) => b.classList.remove('on'));
-      btn.classList.add('on');
-      currentBoardMode = (btn.getAttribute('data-board-mode') as BoardFilterMode) || 'recent';
-      sound.play('pop');
-      renderLeaderboard();
-    };
-  });
-
-  const fundHeroBtn = $('#fundHeroBtn');
-  if (fundHeroBtn) {
-    fundHeroBtn.onclick = () => {
-      trackEvent('click_buy_meal_button', { location: 'hero' });
-      openFundModal();
-    };
-  }
-
-  document.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement | null;
-    if (target?.closest('.btn, .chip, .lr, .pc, .rbtn')) {
-      sound.randomClick();
-    }
-  });
-
-  setupMobileNav();
-  setupDodgingButton();
-  setupRedButton();
-  setupRoastMachine();
-  setupChallenge();
-  setupExcuseMachine();
-
-  cycleHeroLine();
-  window.setInterval(cycleHeroLine, 3800);
-
-  window.setInterval(() => {
-    const stats = AnalyticsService.calculateDailyStats(entries, config.targetGoal);
-    const rstEl = $('#resetCountdown');
-    if (rstEl) rstEl.textContent = stats.resetCountdownFormatted;
-
-    // Automatic midnight rollover: re-render board when date changes (strict daily boundary)
-    const newDay = AnalyticsService.getTodayDateString();
-    if ((window as unknown as Record<string,string>).__lastDay && (window as unknown as Record<string,string>).__lastDay !== newDay) {
-      renderLeaderboard();
-      renderHallOfFame();
-      showToast('New day — board reset to zero. Fresh start!');
-    }
-    (window as unknown as Record<string,string>).__lastDay = newDay;
-  }, 1000);
-
-  // Supabase background sync and realtime subscription
-  try {
-    const remoteEntries = await StorageService.syncFromSupabase();
-    if (remoteEntries && remoteEntries.length > 0) {
-      entries = remoteEntries;
-      renderLeaderboard();
-    }
-    SupabaseService.subscribeToEntries(async () => {
-      const updated = await StorageService.syncFromSupabase();
-      entries = updated;
-      renderLeaderboard();
-      renderHallOfFame();
-    });
-  } catch (err) {
-    console.warn('Initial Supabase sync fallback:', err);
-  }
-
-  route();
-}
-
-window.addEventListener('DOMContentLoaded', initApp);
+})();

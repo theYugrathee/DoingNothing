@@ -1,0 +1,2018 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Doing Nothing: a full-time career</title>
+    <meta name="description"
+        content="doingnothing.lol: I do nothing for a living. Buy me a meal and put your name or product on today’s board.">
+    <link rel="canonical" href="https://doingnothing.lol/">
+    <meta property="og:title" content="Doing Nothing: a full-time career">
+    <meta property="og:description" content="I do nothing. You can buy me a meal and get on today’s board.">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --paper: #F6F4EE;
+            --ink: #101010;
+            --blue: #2F4BFF;
+            --sun: #FFD23F;
+            --bt: #E4E9FF;
+            --mut: #6c6a64;
+            --line: #e3e0d6;
+            --card: #fff;
+            box-sizing: border-box;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            color-scheme: light
+        }
+
+        *,
+        *:before,
+        *:after {
+            box-sizing: inherit
+        }
+
+        body {
+            margin: 0;
+            background: var(--paper);
+            color: var(--ink);
+            font: 16px/1.5 'DM Sans', system-ui, sans-serif;
+            overflow-x: hidden
+        }
+
+        h1,
+        h2,
+        h3,
+        .disp {
+            font-family: 'Bricolage Grotesque', sans-serif;
+            margin: 0;
+            letter-spacing: -.04em
+        }
+
+        .wrap {
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: 0 20px
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: var(--paper);
+            border-bottom: 1.5px solid var(--ink)
+        }
+
+        .hd {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: calc(12px + env(safe-area-inset-top, 0px)) 20px 12px;
+            max-width: 1040px;
+            margin: 0 auto
+        }
+
+        .logo {
+            font: 800 22px 'Bricolage Grotesque';
+            letter-spacing: -.04em;
+            text-decoration: none;
+            color: var(--ink);
+            white-space: nowrap
+        }
+
+        .logo i {
+            font-style: normal;
+            color: var(--blue)
+        }
+
+        nav {
+            display: flex;
+            gap: 2px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            margin-left: auto
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--ink);
+            font-weight: 500;
+            font-size: 15px;
+            padding: 7px 13px;
+            border-radius: 99px;
+            white-space: nowrap
+        }
+
+        nav a.on {
+            background: var(--ink);
+            color: var(--paper)
+        }
+
+        .btn {
+            font: 700 16px 'DM Sans';
+            border: 2px solid var(--ink);
+            border-radius: 14px;
+            padding: 15px 26px;
+            background: var(--blue);
+            color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 4px 4px 0 var(--ink);
+            transition: transform .1s, box-shadow .1s;
+            text-align: left
+        }
+
+        .btn:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 var(--ink)
+        }
+
+        .btn:active {
+            transform: translate(4px, 4px);
+            box-shadow: 0 0 0 var(--ink)
+        }
+
+        .btn.w {
+            background: var(--card);
+            color: var(--ink)
+        }
+
+        .btn.y {
+            background: var(--sun);
+            color: var(--ink)
+        }
+
+        .btn.sm {
+            padding: 8px 14px;
+            font-size: 14px;
+            box-shadow: 3px 3px 0 var(--ink)
+        }
+
+        .btn small {
+            display: block;
+            font-weight: 500;
+            font-size: 12.5px;
+            opacity: .85
+        }
+
+        .btn:focus-visible,
+        a:focus-visible,
+        input:focus-visible,
+        textarea:focus-visible,
+        select:focus-visible,
+        button:focus-visible {
+            outline: 3px solid var(--blue);
+            outline-offset: 3px
+        }
+
+        .pg {
+            display: none
+        }
+
+        .pg.on {
+            display: block;
+            animation: in .35s
+        }
+
+        @keyframes in {
+            from {
+                opacity: 0;
+                transform: translateY(10px)
+            }
+        }
+
+        .hero {
+            padding: 3vh 0 36px;
+            position: relative
+        }
+
+        .tag {
+            display: inline-block;
+            background: var(--sun);
+            border: 2px solid var(--ink);
+            border-radius: 99px;
+            padding: 4px 14px;
+            font-weight: 700;
+            font-size: 13px;
+            transform: rotate(-2deg)
+        }
+
+        h1.big {
+            font-size: clamp(50px, 10.5vw, 116px);
+            line-height: .9;
+            font-weight: 800;
+            margin: 14px 0 6px
+        }
+
+        .hl {
+            background: linear-gradient(transparent 60%, var(--sun) 60%);
+            padding: 0 .04em
+        }
+
+        .line {
+            font: 700 clamp(17px, 2.2vw, 24px)/1.25 'Bricolage Grotesque';
+            letter-spacing: -.03em;
+            min-height: 2.4em;
+            max-width: 24em;
+            transition: opacity .3s
+        }
+
+        .cta {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 10px
+        }
+
+        .mq {
+            margin: 26px -20px 0;
+            background: var(--ink);
+            color: var(--paper);
+            overflow: hidden;
+            white-space: nowrap;
+            padding: 6px 0
+        }
+
+        .mq div {
+            display: inline-block;
+            animation: mq 30s linear infinite;
+            font: 700 14px 'Bricolage Grotesque'
+        }
+
+        @keyframes mq {
+            to {
+                transform: translateX(-50%)
+            }
+        }
+
+        .arena {
+            position: relative;
+            width: 100%;
+            height: 240px;
+            margin-top: 6px
+        }
+
+        .arena .cz {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            color: #b8b4a6;
+            font-size: 13px;
+            pointer-events: none
+        }
+
+        #run {
+            position: absolute;
+            left: 0;
+            top: 0;
+            transition: left .08s, top .08s;
+            white-space: nowrap;
+            max-width: 100%;
+            padding: 12px 18px;
+            font-size: 15px
+        }
+
+        #runmsg {
+            color: var(--mut);
+            font-size: 14px;
+            margin: 0 0 8px
+        }
+
+        .strip {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            border: 2px solid var(--ink);
+            border-radius: 22px;
+            background: var(--card);
+            margin: 20px 0
+        }
+
+        .strip>div {
+            padding: 12px 16px
+        }
+
+        .strip>div+div {
+            border-left: 2px solid var(--ink)
+        }
+
+        .strip .k {
+            font-weight: 700;
+            font-size: 13px;
+            color: var(--mut);
+            text-transform: uppercase;
+            letter-spacing: .06em
+        }
+
+        .strip .v {
+            font: 800 clamp(20px, 3vw, 28px)/1.1 'Bricolage Grotesque';
+            letter-spacing: -.04em
+        }
+
+        .strip .v.m {
+            font-size: clamp(34px, 5.5vw, 52px);
+            color: var(--blue)
+        }
+
+        .sec h2 {
+            font-size: clamp(24px, 3.6vw, 34px);
+            margin: 18px 0 4px
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 40px 52px 1fr auto;
+            gap: 14px;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 18px;
+            margin-bottom: 8px;
+            background: var(--card);
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: transform .12s, box-shadow .12s;
+            text-align: left;
+            width: 100%;
+            font: inherit;
+            color: inherit
+        }
+
+        .row:hover {
+            border-color: var(--ink);
+            transform: translateY(-3px);
+            box-shadow: 4px 4px 0 var(--ink)
+        }
+
+        .row.st:hover {
+            transform: none;
+            box-shadow: none;
+            border-color: transparent
+        }
+
+        .go {
+            display: block;
+            font: 700 12px 'DM Sans';
+            color: var(--mut);
+            margin-top: 2px;
+            text-align: right;
+            letter-spacing: 0
+        }
+
+        .row:hover .go {
+            color: var(--blue)
+        }
+
+        .row.r1 {
+            background: var(--sun)
+        }
+
+        .row.r2 {
+            background: var(--bt)
+        }
+
+        .row.r3 {
+            background: #f0f2ff
+        }
+
+        .rk.s {
+            font: 700 13px 'DM Sans';
+            color: var(--mut);
+            letter-spacing: 0
+        }
+
+        .rk {
+            font: 800 24px 'Bricolage Grotesque';
+            letter-spacing: -.04em
+        }
+
+        .av {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            color: #fff;
+            font: 800 24px 'Bricolage Grotesque';
+            overflow: hidden
+        }
+
+        .av img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover
+        }
+
+        .row h3 {
+            font-size: 17px;
+            letter-spacing: -.02em
+        }
+
+        .row p {
+            margin: 2px 0 0;
+            color: #3b3a36;
+            font-size: 14.5px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden
+        }
+
+        .row .d {
+            font-size: 12.5px;
+            color: var(--mut)
+        }
+
+        .row .a {
+            font: 800 clamp(18px, 2.6vw, 24px) 'Bricolage Grotesque';
+            letter-spacing: -.04em
+        }
+
+        .pv {
+            background: var(--ink);
+            color: var(--paper);
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 99px;
+            padding: 2px 8px;
+            margin-left: 6px;
+            vertical-align: middle
+        }
+
+        .empty {
+            border: 2px dashed var(--ink);
+            border-radius: 22px;
+            padding: 34px;
+            text-align: center;
+            font: 700 24px 'Bricolage Grotesque';
+            letter-spacing: -.03em
+        }
+
+        .panel {
+            background: var(--card);
+            border: 2px solid var(--ink);
+            border-radius: 22px;
+            padding: 24px;
+            margin: 20px 0
+        }
+
+        .big2 {
+            font: 800 clamp(32px, 5.5vw, 56px)/1 'Bricolage Grotesque';
+            letter-spacing: -.05em
+        }
+
+        .opt {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: var(--card);
+            border: 2px solid var(--ink);
+            border-radius: 14px;
+            padding: 13px 16px;
+            margin: 8px 0;
+            font: 500 16px 'DM Sans';
+            color: var(--ink);
+            cursor: pointer
+        }
+
+        .opt:hover {
+            background: var(--bt)
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: #101010b8;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            padding: 14px
+        }
+
+        .modal.on {
+            display: flex
+        }
+
+        .mbox {
+            background: var(--paper);
+            border: 2px solid var(--ink);
+            border-radius: 26px;
+            max-width: 520px;
+            width: 100%;
+            max-height: 94vh;
+            overflow: auto;
+            padding: 26px;
+            box-shadow: 8px 8px 0 var(--ink)
+        }
+
+        .mbox h2 {
+            font-size: 34px;
+            margin-bottom: 4px
+        }
+
+        label {
+            font-weight: 700;
+            font-size: 14px;
+            display: block;
+            margin-top: 14px
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            font: inherit;
+            padding: 12px 14px;
+            border: 2px solid var(--ink);
+            border-radius: 12px;
+            background: var(--card);
+            color: var(--ink);
+            margin-top: 5px
+        }
+
+        input[type=checkbox] {
+            width: auto;
+            margin-right: 8px
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical
+        }
+
+        .hint {
+            font-size: 13px;
+            color: var(--mut);
+            margin: 4px 0 0
+        }
+
+        .note {
+            background: var(--sun);
+            border: 2px solid var(--ink);
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 14px;
+            margin-top: 14px
+        }
+
+        .chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 6px
+        }
+
+        .chip {
+            font: 700 14px 'DM Sans';
+            border: 2px solid var(--ink);
+            background: var(--card);
+            border-radius: 99px;
+            padding: 6px 14px;
+            cursor: pointer;
+            color: var(--ink)
+        }
+
+        .chip.on {
+            background: var(--ink);
+            color: var(--paper)
+        }
+
+        .arow {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1.5px solid var(--line);
+            flex-wrap: wrap
+        }
+
+        .arow span {
+            flex: 1 1 160px
+        }
+
+        #toast {
+            position: fixed;
+            left: 50%;
+            bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+            transform: translateX(-50%);
+            background: var(--ink);
+            color: var(--paper);
+            padding: 12px 20px;
+            border-radius: 99px;
+            display: none;
+            z-index: 70;
+            max-width: 90vw;
+            text-align: center;
+            font-size: 15px
+        }
+
+        .pgx {
+            padding: 3vh 0 6vh
+        }
+
+        .pgx h1 {
+            font-size: clamp(32px, 5.5vw, 56px);
+            line-height: .95;
+            margin-bottom: 10px
+        }
+
+        .day {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 14px;
+            padding: 16px 0;
+            border-bottom: 2px solid var(--ink)
+        }
+
+        .day b {
+            font: 800 24px 'Bricolage Grotesque'
+        }
+
+        .rbtn {
+            width: 170px;
+            height: 170px;
+            border-radius: 50%;
+            background: #e8222a;
+            color: #fff;
+            font: 800 19px 'Bricolage Grotesque';
+            border: 4px solid var(--ink);
+            box-shadow: 0 8px 0 #8d1218;
+            cursor: pointer;
+            transition: transform .08s, box-shadow .08s
+        }
+
+        .rbtn:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #8d1218
+        }
+
+        .bar2 {
+            height: 18px;
+            border: 2px solid var(--ink);
+            border-radius: 99px;
+            overflow: hidden;
+            margin: 14px 0
+        }
+
+        .bar2 i {
+            display: block;
+            height: 100%;
+            width: 0;
+            background: var(--blue);
+            transition: width .3s
+        }
+
+        #bt {
+            display: inline-flex;
+            gap: 0;
+            border: 2px solid var(--ink);
+            border-radius: 99px;
+            padding: 3px;
+            background: var(--card)
+        }
+
+        #bt .chip {
+            border: 0;
+            background: transparent;
+            padding: 7px 18px
+        }
+
+        #bt .chip.on {
+            background: var(--ink);
+            color: var(--paper)
+        }
+
+        @keyframes rise {
+            from {
+                opacity: 0;
+                transform: translateY(14px)
+            }
+        }
+
+        @keyframes pl {
+            50% {
+                opacity: .25
+            }
+        }
+
+        .pod {
+            display: grid;
+            gap: 12px;
+            align-items: end;
+            margin: 8px 0 22px
+        }
+
+        .pc {
+            position: relative;
+            border: 2px solid var(--ink);
+            border-radius: 24px;
+            padding: 22px 10px 14px;
+            text-align: center;
+            cursor: pointer;
+            background: var(--card);
+            transition: transform .15s, box-shadow .15s;
+            font: inherit;
+            color: inherit;
+            display: block;
+            width: 100%;
+            animation: rise .55s both;
+            min-width: 0
+        }
+
+        .pc:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 8px 0 var(--ink)
+        }
+
+        .pc.p1 {
+            background: linear-gradient(180deg, #ffe27a, #fff3bd);
+            padding-top: 34px;
+            min-height: 270px;
+            box-shadow: 0 6px 0 var(--ink)
+        }
+
+        .pc.p2 {
+            background: linear-gradient(180deg, #dbe2ff, #f3f5ff);
+            min-height: 228px
+        }
+
+        .pc.p3 {
+            background: linear-gradient(180deg, #ffdcc6, #fff2e9);
+            min-height: 208px
+        }
+
+        .pc .av {
+            margin: 0 auto 8px;
+            width: 62px;
+            height: 62px
+        }
+
+        .pc.p1 .av {
+            width: 80px;
+            height: 80px;
+            border: 3px solid var(--ink)
+        }
+
+        .pc h3 {
+            font-size: 16px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px
+        }
+
+        .pc .amt {
+            font: 800 24px 'Bricolage Grotesque';
+            letter-spacing: -.04em;
+            margin-top: 6px
+        }
+
+        .pc.p1 .amt {
+            font-size: 34px
+        }
+
+        .medal {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 2px solid var(--ink);
+            display: grid;
+            place-items: center;
+            font: 800 15px 'Bricolage Grotesque';
+            background: #fff
+        }
+
+        .p1 .medal {
+            background: var(--sun)
+        }
+
+        .p2 .medal {
+            background: #d8deee
+        }
+
+        .p3 .medal {
+            background: #f2b48a
+        }
+
+        .crown {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-6deg);
+            filter: drop-shadow(0 2px 0 #101010)
+        }
+
+        .lr {
+            position: relative;
+            display: grid;
+            grid-template-columns: 46px 52px 1fr auto;
+            gap: 14px;
+            align-items: center;
+            width: 100%;
+            text-align: left;
+            font: inherit;
+            color: inherit;
+            background: var(--card);
+            border: 2px solid var(--line);
+            border-radius: 18px;
+            padding: 12px 16px 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            overflow: hidden;
+            transition: transform .15s, box-shadow .15s, border-color .15s;
+            animation: rise .5s both
+        }
+
+        .lr:hover {
+            transform: translateY(-3px);
+            border-color: var(--ink);
+            box-shadow: 5px 5px 0 var(--ink)
+        }
+
+        .lr.hot {
+            background: linear-gradient(90deg, #eaeeff, var(--card));
+            border-color: var(--blue)
+        }
+
+        .lr h3 {
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap
+        }
+
+        .lr p {
+            margin: 2px 0 0;
+            color: #3b3a36;
+            font-size: 14px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden
+        }
+
+        .lr .d {
+            font-size: 12px;
+            color: var(--mut)
+        }
+
+        .lk {
+            text-align: center
+        }
+
+        .lk b {
+            display: grid;
+            place-items: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--ink);
+            color: var(--paper);
+            font: 800 15px 'Bricolage Grotesque'
+        }
+
+        .tp {
+            font: 700 12px 'DM Sans';
+            color: var(--mut);
+            background: var(--paper);
+            border-radius: 99px;
+            padding: 4px 9px;
+            display: inline-block
+        }
+
+        .tp.nw {
+            background: #dcfce7;
+            color: #15803d
+        }
+
+        .tp.nw:before {
+            content: "";
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #16a34a;
+            margin-right: 5px;
+            animation: pl 1.2s infinite
+        }
+
+        .lp {
+            font: 800 20px 'Bricolage Grotesque';
+            letter-spacing: -.04em;
+            text-align: right
+        }
+
+        .lbar {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--blue), var(--sun))
+        }
+
+        .tc {
+            font: 700 10.5px 'DM Sans';
+            color: #fff;
+            border-radius: 99px;
+            padding: 2px 8px;
+            letter-spacing: .02em;
+            white-space: nowrap
+        }
+
+        .lr:hover .go,
+        .pc:hover .go {
+            color: var(--blue)
+        }
+
+        .pc .go {
+            text-align: center
+        }
+
+        @media(max-width:600px) {
+            .lr {
+                grid-template-columns: 38px 46px 1fr
+            }
+
+            .lr .lp {
+                grid-column: 2/4;
+                text-align: left
+            }
+
+            .lr .av {
+                width: 46px;
+                height: 46px
+            }
+
+            .pc .amt {
+                font-size: 18px
+            }
+
+            .pc.p1 .amt {
+                font-size: 24px
+            }
+
+            .pc h3 {
+                font-size: 13px
+            }
+
+            .pc .av {
+                width: 48px;
+                height: 48px
+            }
+
+            .pc.p1 .av {
+                width: 60px;
+                height: 60px
+            }
+
+            .pc {
+                padding-left: 6px;
+                padding-right: 6px
+            }
+        }
+
+        .lbx {
+            background: var(--card);
+            border: 2px solid var(--ink);
+            border-radius: 28px;
+            padding: 16px;
+            margin: 8px 0 30px;
+            box-shadow: 6px 6px 0 var(--ink)
+        }
+
+        .lbx .strip {
+            border: 2px solid var(--line);
+            background: var(--paper);
+            margin: 0 0 14px
+        }
+
+        .lbx .strip>div+div {
+            border-color: var(--line)
+        }
+
+        .lbx .sec h2 {
+            margin: 4px 0 4px
+        }
+
+        .lbx .pod {
+            margin-top: 14px
+        }
+
+        @media(max-width:600px) {
+            .lbx {
+                padding: 10px;
+                border-radius: 22px
+            }
+        }
+
+        #gl {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none
+        }
+
+        .wrap {
+            position: relative;
+            z-index: 1
+        }
+
+        footer {
+            position: relative;
+            z-index: 1
+        }
+
+        .cb {
+            position: fixed;
+            left: 0;
+            top: 0;
+            pointer-events: none;
+            z-index: 9999;
+            will-change: transform, opacity
+        }
+
+        .cr {
+            width: 12px;
+            height: 12px;
+            border: 3px solid var(--blue);
+            border-radius: 50%
+        }
+
+        .cw {
+            font: 800 15px 'Bricolage Grotesque', sans-serif;
+            letter-spacing: -.02em;
+            background: var(--sun);
+            color: var(--ink);
+            border: 2px solid var(--ink);
+            border-radius: 99px;
+            padding: 2px 10px;
+            white-space: nowrap
+        }
+
+        body:after {
+            content: "";
+            position: fixed;
+            inset: -40px;
+            z-index: -1;
+            pointer-events: none;
+            background-image: radial-gradient(#10101020 1.5px, transparent 1.5px);
+            background-size: 26px 26px;
+            animation: drift 14s linear infinite
+        }
+
+        @keyframes drift {
+            to {
+                transform: translate(26px, 26px)
+            }
+        }
+
+        .hero>.tag,
+        .hero>h1,
+        .hero>.line,
+        .hero>.cta {
+            position: relative;
+            z-index: 1
+        }
+
+        #run {
+            z-index: 2
+        }
+
+        .tag:before {
+            content: "";
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--blue);
+            margin-right: 7px;
+            animation: pl 1.4s infinite
+        }
+
+        .sleeper {
+            position: absolute;
+            right: 0;
+            top: 3vh;
+            width: min(340px, 34vw);
+            pointer-events: none;
+            z-index: 0;
+            overflow: visible
+        }
+
+        .br {
+            transform-box: fill-box;
+            transform-origin: 50% 100%;
+            animation: br 3.2s ease-in-out infinite
+        }
+
+        @keyframes br {
+            50% {
+                transform: scale(1.03, 1.08)
+            }
+        }
+
+        .sh {
+            transform-box: fill-box;
+            transform-origin: center;
+            animation: shd 3.2s ease-in-out infinite
+        }
+
+        @keyframes shd {
+            50% {
+                transform: scaleX(1.07)
+            }
+        }
+
+        .zz {
+            font: 800 30px 'Bricolage Grotesque', sans-serif;
+            fill: #2F4BFF;
+            opacity: 0;
+            transform-box: fill-box;
+            animation: zz 3.6s ease-in infinite
+        }
+
+        @keyframes zz {
+            0% {
+                opacity: 0;
+                transform: translate(0, 0) scale(.6)
+            }
+
+            25% {
+                opacity: 1
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(30px, -80px) scale(1.5)
+            }
+        }
+
+        .dr {
+            transform-box: fill-box;
+            animation: dr 4s infinite
+        }
+
+        @keyframes dr {
+
+            0%,
+            55% {
+                transform: translateY(0) scale(.2);
+                opacity: 0
+            }
+
+            65% {
+                opacity: 1;
+                transform: translateY(0) scale(1)
+            }
+
+            100% {
+                transform: translateY(40px) scale(1);
+                opacity: 0
+            }
+        }
+
+        #fund {
+            animation: wig 5s infinite
+        }
+
+        #fund:hover {
+            animation: none
+        }
+
+        @keyframes wig {
+
+            0%,
+            90%,
+            100% {
+                transform: none
+            }
+
+            92% {
+                transform: rotate(-3deg)
+            }
+
+            94% {
+                transform: rotate(3deg)
+            }
+
+            96% {
+                transform: rotate(-2deg)
+            }
+
+            98% {
+                transform: rotate(1deg)
+            }
+        }
+
+        .crown {
+            animation: cr2 1.8s ease-in-out infinite
+        }
+
+        @keyframes cr2 {
+
+            0%,
+            100% {
+                transform: translateX(-50%) rotate(-6deg) translateY(0)
+            }
+
+            50% {
+                transform: translateX(-50%) rotate(6deg) translateY(-7px)
+            }
+        }
+
+        .pc.p1 {
+            animation: rise .55s both, flt 3.6s ease-in-out .7s infinite
+        }
+
+        @keyframes flt {
+            50% {
+                translate: 0 -6px
+            }
+        }
+
+        @media(max-width:700px) {
+            .sleeper {
+                display: none
+            }
+        }
+
+        .sb {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+            gap: 10px;
+            margin-top: 16px
+        }
+
+        .sb .chip {
+            padding: 10px 8px;
+            text-align: center
+        }
+
+        .sb .chip:active {
+            background: var(--sun)
+        }
+
+        #cube {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 24px;
+            height: 24px;
+            margin: -12px 0 0 -12px;
+            transform-style: preserve-3d;
+            pointer-events: none;
+            z-index: 9998;
+            display: none
+        }
+
+        #cube i {
+            position: absolute;
+            inset: 0;
+            border: 2px solid #101010;
+            opacity: .95
+        }
+
+        #cube i:nth-child(1) {
+            transform: translateZ(12px);
+            background: #2F4BFF
+        }
+
+        #cube i:nth-child(2) {
+            transform: rotateY(180deg) translateZ(12px);
+            background: #FFD23F
+        }
+
+        #cube i:nth-child(3) {
+            transform: rotateY(-90deg) translateZ(12px);
+            background: #E8412C
+        }
+
+        #cube i:nth-child(4) {
+            transform: rotateY(90deg) translateZ(12px);
+            background: #0E9F6E
+        }
+
+        #cube i:nth-child(5) {
+            transform: rotateX(90deg) translateZ(12px);
+            background: #fff
+        }
+
+        #cube i:nth-child(6) {
+            transform: rotateX(-90deg) translateZ(12px);
+            background: #101010
+        }
+
+        .sk {
+            clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)
+        }
+
+        #tapTag {
+            position: fixed;
+            left: 14px;
+            bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+            z-index: 60;
+            background: var(--ink);
+            color: var(--paper);
+            font: 700 13px 'DM Sans';
+            padding: 7px 14px 7px 12px;
+            border-radius: 99px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+            animation: tagf 2.4s ease-in-out infinite;
+            box-shadow: 3px 3px 0 var(--blue)
+        }
+
+        #tapTag i {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--sun);
+            animation: pl 1.2s infinite
+        }
+
+        @keyframes tagf {
+            50% {
+                transform: translateY(-5px)
+            }
+        }
+
+        @property --ang {
+            syntax: "<angle>";
+            initial-value: 0deg;
+            inherits: false
+        }
+
+        @keyframes angs {
+            to {
+                --ang: 360deg
+            }
+        }
+
+        .pc {
+            isolation: isolate
+        }
+
+        .pc.p1:before {
+            content: "";
+            position: absolute;
+            inset: -4px;
+            border-radius: 28px;
+            z-index: -1;
+            background: conic-gradient(from var(--ang), #FFD23F, #2F4BFF, #E8412C, #0E9F6E, #FFD23F);
+            animation: angs 3.5s linear infinite
+        }
+
+        .pod {
+            position: relative;
+            isolation: isolate
+        }
+
+        .pod:before {
+            content: "";
+            position: absolute;
+            left: 18%;
+            right: 18%;
+            top: -30px;
+            bottom: 10px;
+            background: radial-gradient(closest-side, #FFD23F77, transparent);
+            z-index: -1;
+            animation: glow 3s ease-in-out infinite
+        }
+
+        @keyframes glow {
+            50% {
+                opacity: .4;
+                transform: scale(1.08)
+            }
+        }
+
+        .sp {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: #FFD23F;
+            clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            animation: tw 1.6s ease-in-out infinite;
+            pointer-events: none
+        }
+
+        .sp.s1 {
+            left: 12%;
+            top: 10px
+        }
+
+        .sp.s2 {
+            right: 10%;
+            top: 34px;
+            width: 10px;
+            height: 10px;
+            animation-delay: .5s
+        }
+
+        .sp.s3 {
+            left: 20%;
+            bottom: 70px;
+            width: 9px;
+            height: 9px;
+            animation-delay: 1s
+        }
+
+        @keyframes tw {
+
+            0%,
+            100% {
+                transform: scale(.3) rotate(0);
+                opacity: .2
+            }
+
+            50% {
+                transform: scale(1.2) rotate(45deg);
+                opacity: 1
+            }
+        }
+
+        .lr:after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -60%;
+            width: 40%;
+            height: 100%;
+            background: linear-gradient(100deg, transparent, #ffffffaa, transparent);
+            transform: skewX(-20deg);
+            transition: left .7s;
+            pointer-events: none
+        }
+
+        .lr:hover:after {
+            left: 130%
+        }
+
+        .lr.hot {
+            animation: rise .5s both, hotp 2s ease-in-out infinite
+        }
+
+        @keyframes hotp {
+            50% {
+                box-shadow: 0 0 0 5px #2F4BFF33
+            }
+        }
+
+        .nv {
+            font: inherit
+        }
+
+        .pc.gh {
+            background: transparent !important;
+            border-style: dashed;
+            box-shadow: none !important;
+            animation: rise .55s both, flt 3.2s ease-in-out infinite
+        }
+
+        .pc.gh:hover {
+            background: var(--bt) !important
+        }
+
+        .pc.gh:before {
+            display: none
+        }
+
+        .gq {
+            margin: 0 auto 8px;
+            background: var(--line) !important;
+            color: var(--mut) !important;
+            border: 2px dashed var(--mut)
+        }
+
+        .sleeper {
+            pointer-events: auto;
+            cursor: pointer
+        }
+
+        footer {
+            border-top: 1.5px solid var(--ink);
+            padding: 22px 20px 44px;
+            text-align: center;
+            color: var(--mut);
+            font-size: 14px
+        }
+
+        footer a {
+            color: var(--mut)
+        }
+
+        @media(max-width:760px) {
+            .strip {
+                grid-template-columns: 1fr 1fr
+            }
+
+            .strip>div:first-child {
+                grid-column: 1/3
+            }
+
+            .strip>div+div {
+                border-left: 0;
+                border-top: 2px solid var(--ink)
+            }
+
+            .strip>div:nth-child(3) {
+                border-left: 2px solid var(--ink)
+            }
+
+            .row {
+                grid-template-columns: 34px 52px 1fr
+            }
+
+            .row .a {
+                grid-column: 3
+            }
+
+            .hd {
+                flex-wrap: wrap;
+                gap: 6px
+            }
+
+            nav {
+                width: 100%;
+                margin: 0
+            }
+
+            .arena {
+                height: 210px
+            }
+
+            .day {
+                grid-template-columns: 1fr
+            }
+        }
+
+        html.nomo *,
+        html.nomo *:before,
+        html.nomo *:after {
+            animation: none !important;
+            transition: none !important
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="gl" aria-hidden="true"></canvas>
+    <header>
+        <div class="hd"><a class="logo" href="#home">doingnothing<i>.lol</i></a>
+            <nav id="nav"><a href="#home">Home</a><a href="#red">Don’t press</a><a href="#roast">Get roasted</a><a
+                    href="#hall-of-fame">Hall of fame</a><a href="#challenge">Challenge</a><a
+                    href="#excuses">Excuses</a><a href="#soundboard">Soundboard</a><a href="#about">About</a></nav>
+            <button class="chip" id="snd">Sound: on</button><button class="chip" id="mot">Motion: on</button>
+        </div>
+    </header>
+    <div class="wrap">
+
+        <section class="pg" id="home">
+            <div class="hero"><svg class="sleeper" viewBox="0 0 320 250" aria-hidden="true">
+                    <ellipse class="sh" cx="160" cy="228" rx="122" ry="14" fill="#10101022" />
+                    <rect x="36" y="168" width="248" height="54" rx="27" fill="#FFD23F" stroke="#101010"
+                        stroke-width="4" />
+                    <g class="br">
+                        <path d="M52 172c0-64 50-98 108-98s108 34 108 98z" fill="#2F4BFF" stroke="#101010"
+                            stroke-width="4" />
+                        <path d="M104 128q12 11 24 0M192 128q12 11 24 0M146 148q14 12 28 0" fill="none" stroke="#fff"
+                            stroke-width="5" stroke-linecap="round" />
+                        <circle class="dr" cx="174" cy="154" r="4.5" fill="#cfdcff" />
+                    </g><text class="zz" x="236" y="72">Z</text><text class="zz" x="254" y="52"
+                        style="animation-delay:1.2s">Z</text><text class="zz" x="272" y="32"
+                        style="animation-delay:2.4s">z</text>
+                </svg><span class="tag" id="tag"></span>
+                <h1 class="big">I do<br><span class="hl">nothing.</span></h1>
+                <div class="line" id="line"></div>
+                <div class="cta"><button class="btn" id="fund"></button><span id="slot"
+                        style="display:inline-block;width:150px;height:52px"></span></div>
+                <button class="btn w" id="run">Go get a job</button>
+            </div>
+
+            <div class="lbx">
+                <div class="strip">
+                    <div>
+                        <div class="k">Collected today</div>
+                        <div class="v m" id="tot">$0</div>
+                    </div>
+                    <div>
+                        <div class="k">Feeders today</div>
+                        <div class="v" id="cnt">0</div>
+                    </div>
+                    <div>
+                        <div class="k">Top today</div>
+                        <div class="v" id="topv" style="font-size:24px;word-break:break-word">Nobody</div>
+                    </div>
+                    <div>
+                        <div class="k">Board resets in</div>
+                        <div class="v" id="rst">--:--:--</div>
+                    </div>
+                </div>
+                <div class="sec">
+                    <h2>Today’s board</h2>
+                    <p style="margin:0 0 16px;color:var(--mut)">Switch between the newest supporters and the biggest
+                        ones. Pay any amount you like. The board resets every day. <b>Tap any card for details.</b></p>
+                    <div class="chips" id="bt" style="margin:0 0 12px"></div>
+                    <div id="pvBar"></div>
+                    <div id="board"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="pg" id="red">
+            <div class="pgx">
+                <h1>Don’t press <span class="hl">it.</span></h1>
+                <p style="color:var(--mut);max-width:30em">Seriously. Nothing good happens. I’m only telling you once.
+                </p>
+                <div class="panel" style="text-align:center"><button class="rbtn" id="rb">DO NOT PRESS</button>
+                    <p id="rm" style="font-weight:700;min-height:1.6em;margin-top:18px"></p>
+                    <p class="hint" id="rc"></p>
+                </div>
+            </div>
+        </section>
+
+        <section class="pg" id="roast">
+            <div class="pgx">
+                <h1>Get <span class="hl">roasted.</span></h1>
+                <p style="color:var(--mut);max-width:30em">Type your name or product. I’ll be rude. Lovingly.</p>
+                <div class="panel"><input id="ri" maxlength="40" placeholder="Your name or product"
+                        style="margin:0 0 12px"><button class="btn" id="rg">Roast me</button>
+                    <div class="disp" id="ro"
+                        style="font-size:clamp(22px,3.4vw,34px);line-height:1.15;margin-top:18px;min-height:3em"></div>
+                    <p id="ra" style="display:none"><button class="btn y sm" id="rs">Copy roast</button> <button
+                            class="btn sm" id="rf"></button></p>
+                </div>
+            </div>
+        </section>
+
+        <section class="pg" id="hall-of-fame">
+            <div class="pgx">
+                <h1>Hall of <span class="hl">fame.</span></h1>
+                <p style="color:var(--mut);max-width:34em">The 100 biggest payments of all time, highest first. Tap a
+                    card for details.</p>
+                <div id="hof"></div>
+            </div>
+        </section>
+
+        <section class="pg" id="challenge">
+            <div class="pgx">
+                <h1>The do-nothing <span class="hl">challenge.</span></h1>
+                <p style="max-width:32em">Press start, then touch nothing. No mouse, no keys, no scrolling, no tapping.
+                    The clock stops the moment you do anything.</p>
+                <div class="panel" style="text-align:center">
+                    <div class="big2" id="ct">0.0s</div>
+                    <p id="cm" style="font-weight:700;min-height:1.6em"></p><button class="btn" id="cs">Start doing
+                        nothing</button>
+                    <p class="hint" id="cb"></p>
+                </div>
+            </div>
+        </section>
+
+        <section class="pg" id="excuses">
+            <div class="pgx">
+                <h1>The excuse <span class="hl">machine.</span></h1>
+                <p style="color:var(--mut)">For when you have to explain why it isn’t done.</p>
+                <div class="panel">
+                    <div class="disp" style="font-size:clamp(30px,5vw,54px);line-height:1.05;min-height:3.2em" id="ex">
+                        Press the button. I won’t.</div><button class="btn" id="exb">Generate my reason</button> <button
+                        class="btn w" id="exc">Copy</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="pg" id="soundboard">
+            <div class="pgx">
+                <h1>The <span class="hl">soundboard.</span></h1>
+                <p style="color:var(--mut);max-width:34em"><b id="sbn">0</b> sounds, every one built from scratch in
+                    your browser. Press any of them. Turn Sound on in the header first.</p>
+                <div class="sb" id="sbg"></div>
+            </div>
+        </section>
+
+        <section class="pg" id="about">
+            <div class="pgx">
+                <h1>About <span class="hl">nothing.</span></h1>
+                <p style="max-width:34em;font-size:20px">I do nothing and I’m honest about it. If that makes you smile,
+                    buy me a meal. If you have a product, a page or a profile, put it on today’s board while you’re at
+                    it.</p>
+                <h3 style="font-size:28px;margin-top:26px">The rules</h3>
+                <ol style="max-width:36em">
+                    <li>Payments are voluntary and go to the founder personally. It isn’t charity.</li>
+                    <li>Pay any amount you like. The board ranks by amount, highest first.</li>
+                    <li>The board resets every day. Daily winners go to the Hall of fame.</li>
+                    <li>Placement is recognition. No promises about traffic or sales.</li>
+                    <li>Spam, scams and unsafe links are removed.</li>
+                </ol>
+            </div>
+        </section>
+
+        <section class="pg" id="admin">
+            <div class="pgx">
+                <h1>Admin.</h1>
+                <div id="adm"></div>
+            </div>
+        </section>
+    </div>
+    <footer>doingnothing.lol · built while doing nothing · <a href="#admin">admin</a></footer>
+    <div class="modal" id="md">
+        <div class="mbox" id="mb"></div>
+    </div>
+    <div id="toast"></div>
+    <div id="cube" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div id="tapTag" aria-hidden="true"><i></i><span id="tapT">tap anywhere</span></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // ===== DEFAULTS (the Admin page can override these in this browser; use Backup > Export to bake them in for everyone) =====
+        const DEF = {
+            pay: "", tz: "Asia/Kolkata", pass: "admin123", tag: "Unemployed since 2026. Proud of it.", btn: "Buy me", sub: "and get on today’s board",
+            lines: ["Today I ate: nothing. Yesterday: instant noodles. Progress.", "Employee of the month at my own couch.", "Unemployed, undefeated, underfed.", "My diet is 80% noodles, 20% excuses.", "Current net worth: one cup of noodles.", "Last meal: spaghetti with ketchup. Michelin-adjacent.", "I’m not unemployed. I’m pre-productive.", "The cheapest meal in Europe? I’ve had it. Twice.", "My LinkedIn says open to nothing.", "I once tried to work. It was a weekend.", "Hustle culture called. I let it go to voicemail.", "I’m the reason the word “lazy” exists.", "Dinner tonight: cup noodles. Dessert: water.", "The worst employee you’ll never hire.", "Professional couch tester. Also unpaid.", "Hunger level: noodle emergency.", "My fridge light is the only thing working.", "I have a five-year plan. It’s mostly sleeping.", "I eat ramen like it’s a personality.", "Day 1 of my career. Day 1,000 of my nap.", "My bank account is a rumour.", "I’m self-employed. Salary: vibes.", "Lunch is a state of mind. Mine is empty.", "I’m between naps, jobs and meals.", "Cheapest food in America? I’m a regular.", "My cooking skills: boil, wait, regret.", "Plot twist: the noodles were breakfast.", "Not lazy. Just on energy-saving mode.", "I put “napping” under skills. Recruiters agree.", "Currently accepting applications for my next meal."],
+            dodge: ["But no one hired me!", "Please don’t do that!", "I’m lazy.", "My last interview ended with a nap.", "HR still has my cover letter: “hi.”", "I have a degree in ceilings.", "Resume: one line. It says nap.", "My skills: horizontal.", "I’m overqualified for nothing.", "I put “Nap” under Experience.", "Even LinkedIn left me on read.", "I got ghosted by a chatbot.", "My LinkedIn says “Open to nap”.", "I’d work, but it’s Tuesday.", "Every day is a bad day to start.", "Employee of the month: nobody.", "Day 412 of unemployment. Thriving.", "Noodles don’t buy themselves.", "Dinner: noodles. Dessert: hope.", "Salary expectations: noodles.", "Today’s menu: spaghetti, again.", "I’m a $1 pasta connoisseur.", "Cup noodles are my personality.", "My fridge has an echo.", "Rent due. Motivation overdue.", "My bank account is a rumour.", "Career goals: a bigger couch.", "CEO of lying down.", "Founder of Doing Nothing Inc.", "Chief Napping Officer here.", "My KPI is staying horizontal.", "Synergy? I barely have energy.", "Let me circle back never.", "Can this be an email? No.", "Per my last nap...", "Quiet quitting before hiring.", "I’m disrupting employment.", "Even my cat got a promotion.", "My houseplant earns more.", "My goldfish has better prospects.", "I’m not broke. I’m minimalist.", "Stress is for the employed.", "Bills called. I didn’t answer.", "My calendar is empty by design.", "I mastered the art of waiting.", "Sorry, I’m buffering.", "Loading motivation... 3%.", "Low battery. Needs 14 hours.", "Out of office. Always.", "Auto-reply: still resting.", "Job? I thought you said jog.", "The word “job” gives me hives.", "I need a nap after that word.", "Triggered. Brb, napping.", "That’s offensive. Also true.", "Nope. Not in this timeline.", "Job offers go to my spam.", "Will work for noodles. Maybe.", "Will not work for noodles. Yet.", "Even my shadow is lazy.", "My alarm gave up on me.", "I peaked at naptime.", "This is my final form.", "Please pay me to stop.", "Don’t tell my mom you found me.", "Ask me after I wake up.", "Fine, but only horizontally.", "Free trial of me ends today.", "Sorry. Booked by my bed."]
+        };
+        let CFG = Object.assign({}, DEF); try { Object.assign(CFG, JSON.parse(localStorage.getItem("idn_cfg") || "{}")) } catch (e) { }
+        const saveCfg = () => { try { localStorage.setItem("idn_cfg", JSON.stringify(CFG)) } catch (e) { } };
+        const DATA = { entries: [] };  // verified entries from your backend: {id,name,url,amt,desc,img,t}
+        // =====================================================================================================================
+        const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+        const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+        const toast = t => { if (/^(Add |That |Enter |Type |Wrong |Name and|Couldn)/.test(t)) snd("sad", 300); const e = $("#toast"); e.textContent = t; e.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => e.style.display = "none", 3200) };
+
+        // ===== SOUNDS: original effects synthesized in the browser. Real meme clips are copyrighted and can't be loaded here. Mute button in the header. =====
+        let SOUND = true; try { SOUND = localStorage.getItem("idn_snd") !== "off" } catch (e) { }
+        let AC = null, MG = null, welcomed = false; const lastS = {};
+        function ctx() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); MG = AC.createGain(); MG.gain.value = .35; MG.connect(AC.destination) } catch (e) { return null } } if (AC.state === "suspended") AC.resume(); return AC }
+        function tone(f, d, type = "sine", v = .4, to = null, at = 0) { const c = ctx(); if (!c) return; const t = c.currentTime + at, o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (to) o.frequency.exponentialRampToValueAtTime(to, t + d); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(g); g.connect(MG); o.start(t); o.stop(t + d + .02) }
+        function noise(d, v = .3, f = 1500, at = 0) { const c = ctx(); if (!c) return; const t = c.currentTime + at, n = Math.floor(c.sampleRate * d), b = c.createBuffer(1, n, c.sampleRate), a = b.getChannelData(0); for (let i = 0; i < n; i++)a[i] = Math.random() * 2 - 1; const s = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain(); s.buffer = b; fl.type = "bandpass"; fl.frequency.value = f; g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d); s.connect(fl); fl.connect(g); g.connect(MG); s.start(t) }
+        const SND = { pop: () => tone(700, .07, "sine", .4, 300), bonk: () => tone(260, .13, "triangle", .6, 80), squeak: () => tone(1300, .09, "square", .12, 2000), boing: () => { tone(200, .22, "sine", .5, 700); tone(700, .3, "sine", .4, 240, .2) }, blorp: () => tone(150, .22, "sawtooth", .2, 55), honk: () => { tone(233, .3, "sawtooth", .18); tone(247, .3, "sawtooth", .18) }, up: () => tone(300, .25, "sine", .35, 1500), tick: () => tone(1500, .02, "square", .07), kaching: () => { tone(1568, .12, "sine", .4); tone(2093, .35, "sine", .4, null, .1); noise(.08, .15, 6000) }, sad: () => [[293, .3, 0], [277, .3, .32], [261, .3, .64], [233, .9, .96]].forEach(([f, d, a]) => tone(f, d, "sawtooth", .18, f * .92, a)), rim: () => { tone(130, .12, "triangle", .7, 70); tone(110, .12, "triangle", .7, 60, .18); noise(.5, .35, 5000, .4) }, horn: () => { [440, 554, 659].forEach(f => tone(f, .6, "sawtooth", .14, f * .9)); noise(.15, .1, 3000) }, boom: () => { tone(80, .7, "sine", .9, 30); noise(.25, .35, 200) }, alarm: () => { for (let i = 0; i < 4; i++)tone(i % 2 ? 660 : 880, .12, "square", .12, null, i * .14) }, scratch: () => noise(.35, .4, 2500), fan: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, .18, "triangle", .4, null, i * .09)), dun: () => [[196, 0], [196, .28], [165, .6]].forEach(([f, a]) => tone(f, .4, "sawtooth", .2, f * .97, a)), yay: () => { tone(400, .15, "sine", .4, 900); tone(900, .2, "sine", .4, 1300, .14) } };
+        const arp = (n, st, ty = "sine", v = .35, d = .16) => n.forEach((f, i) => tone(f, d, ty, v, null, i * st));
+        const clack = (f = 1) => { noise(.035, .3 * f, 3200 + Math.random() * 1200); tone(120 + Math.random() * 60, .05, "square", .12 * f, 70); tone(2800 + Math.random() * 600, .015, "square", .05, null, .012) };
+        Object.assign(SND, {
+            coin: () => { tone(988, .08, "square", .18); tone(1319, .3, "square", .18, null, .08) }, jump: () => tone(300, .14, "square", .2, 800), laser: () => tone(1800, .22, "sawtooth", .18, 200), zap: () => { noise(.12, .3, 3000); tone(700, .18, "sawtooth", .16, 90) }, whoosh: () => noise(.35, .35, 900),
+            bubble: () => { tone(400, .09, "sine", .4, 900); tone(500, .09, "sine", .35, 1100, .1) }, drip: () => tone(1300, .1, "sine", .4, 500), ding: () => tone(1760, .6, "sine", .35), bell: () => [880, 1320, 1760].forEach((f, i) => tone(f, .9 - i * .15, "sine", .22)), chime: () => arp([784, 988, 1175], .1, "triangle", .3, .5),
+            harp: () => arp([392, 494, 587, 740, 880, 988], .07, "sine", .3, .5), cricket: () => { for (let i = 0; i < 4; i++)tone(4200, .03, "square", .05, null, i * .06) }, meow: () => { tone(600, .14, "sawtooth", .14, 950); tone(950, .32, "sawtooth", .14, 430, .14) }, quack: () => { tone(360, .12, "sawtooth", .22, 270); tone(340, .12, "sawtooth", .22, 260, .15) }, whistle: () => tone(1200, .28, "sine", .3, 1900),
+            slidedown: () => tone(1500, .4, "sine", .35, 200), woo: () => { tone(300, .2, "sine", .4, 620); tone(620, .22, "sine", .4, 300, .2) }, gulp: () => { tone(320, .1, "sine", .5, 120); tone(280, .1, "sine", .5, 110, .14) }, kazoo: () => tone(440, .35, "sawtooth", .14, 470), wah: () => tone(233, .5, "sawtooth", .2, 170),
+            clap: () => [0, .03, .06].forEach(a => noise(.08, .35, 1600, a)), snare: () => { noise(.16, .4, 3000); tone(190, .1, "triangle", .4, 110) }, kick: () => tone(160, .22, "sine", .9, 40), hihat: () => noise(.05, .25, 8500), cymbal: () => noise(.7, .25, 7000),
+            tom: () => tone(220, .28, "sine", .7, 80), cowbell: () => { tone(800, .25, "square", .12); tone(540, .25, "square", .12) }, glock: () => tone(2093, .35, "triangle", .3), xylo: () => { tone(1046, .15, "sine", .4); tone(1318, .2, "sine", .35, null, .1) }, blip: () => tone(880, .05, "square", .12),
+            beep2: () => { tone(1000, .06, "square", .12); tone(1000, .06, "square", .12, null, .09) }, buzz: () => { tone(120, .3, "square", .18); tone(126, .3, "square", .18) }, dingding: () => { tone(1319, .15, "sine", .4); tone(1760, .35, "sine", .4, null, .14) }, powerup: () => arp([262, 330, 392, 523, 659, 784], .05, "square", .14, .1), powerdown: () => arp([784, 659, 523, 392, 330, 262], .06, "square", .14, .1),
+            spring: () => { tone(100, .3, "sine", .5, 1000); tone(1000, .3, "sine", .4, 150, .3) }, squeeze: () => { tone(600, .08, "sine", .4, 900); tone(900, .12, "sine", .4, 500, .08) }, pew: () => tone(1500, .13, "sawtooth", .14, 300), thunder: () => { noise(.9, .5, 140); tone(55, .9, "sine", .7, 30) }, rain: () => noise(.5, .2, 6500),
+            wind: () => noise(.7, .25, 420), rev: () => tone(60, .6, "sawtooth", .25, 220), siren: () => { for (let i = 0; i < 4; i++)tone(i % 2 ? 900 : 600, .22, "sine", .3, i % 2 ? 600 : 900, i * .22) }, ufo: () => { tone(500, .5, "sine", .3, 900); tone(900, .5, "sine", .3, 500, .5) }, robot: () => arp([200, 260, 200, 340, 200], .07, "square", .14, .08),
+            typeding: () => tone(2000, .35, "sine", .3), bubblepop: () => { tone(900, .05, "sine", .4, 300); noise(.03, .2, 4000) }, angels: () => [261, 329, 392, 523].forEach(f => tone(f, 1, "sine", .12)), raspberry: () => { noise(.3, .3, 300); tone(85, .3, "sawtooth", .2, 45) }, snore: () => { noise(.5, .2, 220); tone(70, .5, "triangle", .3, 55) },
+            yawn: () => tone(420, .7, "sine", .3, 240), twinkle: () => tone(2400, .06, "sine", .12, 3300), swish: () => noise(.07, .07, 2400),
+            clack: () => clack(1), spaceclack: () => { noise(.06, .35, 1800); tone(90, .09, "square", .2, 50) }, enterclack: () => { clack(1.3); tone(110, .12, "square", .18, 60, .03) }, tk: () => tone(1800 + Math.random() * 300, .018, "square", .06)
+        });
+        function snd(n, gap = 60) { if (!SOUND || !welcomed) return; const t = performance.now(); if (lastS[n] && t - lastS[n] < gap) return; lastS[n] = t; try { SND[n]() } catch (e) { } }
+        const CLK = ["pop", "bonk", "squeak", "boing", "blorp", "yay", "coin", "bubble", "blip", "drip", "xylo", "glock", "jump", "spring", "squeeze", "pew", "quack", "meow", "kazoo", "clap", "dingding", "gulp", "whistle", "woo", "bubblepop", "cowbell"];
+        const welcome = () => { if (welcomed) return; welcomed = true; snd("fan") };["pointerdown", "keydown", "touchstart"].forEach(v => addEventListener(v, welcome, { passive: true }));
+        document.addEventListener("click", e => { if (e.target.closest("#snd,#mot,#sbg")) return; if (e.target.closest("a,button,.row,.opt,.chip,.rbtn")) snd(CLK[Math.floor(Math.random() * CLK.length)], 30) }, true);
+        let hv = null; document.addEventListener("pointerover", e => { const r = e.target.closest(".row"); if (r && r !== hv) { hv = r; snd("tick", 90) } else if (!r) hv = null });
+        const sb = document.getElementById("snd"); const sbl = () => sb.textContent = "Sound: " + (SOUND ? "on" : "off"); sbl(); sb.onclick = () => { SOUND = !SOUND; try { localStorage.setItem("idn_snd", SOUND ? "on" : "off") } catch (e) { } sbl(); welcomed = true; snd("pop") };
+        const money = n => "$" + (Math.round(n * 100) / 100).toLocaleString();
+        const safeUrl = u => { u = (u || "").trim(); if (!u || u[0] === "@") return ""; try { const x = new URL(/^https?:/i.test(u) ? u : "https://" + u); return /^https?:$/.test(x.protocol) && x.hostname.includes(".") ? x.href : "" } catch (e) { return "" } };
+        const host = u => { try { return new URL(safeUrl(u)).hostname.replace(/^www\./, "") } catch (e) { return "" } };
+        const tz = () => { try { new Intl.DateTimeFormat("en", { timeZone: CFG.tz }); return CFG.tz } catch (e) { return "UTC" } };
+        const dayKey = t => new Date(t).toLocaleDateString("en-CA", { timeZone: tz() });
+        const left = () => { const p = new Intl.DateTimeFormat("en-GB", { timeZone: tz(), hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" }).formatToParts(new Date()), g = t => +p.find(x => x.type === t).value; return 86400 - ((g("hour") % 24) * 3600 + g("minute") * 60 + g("second")) };
+        const COL = ["#2F4BFF", "#E8412C", "#0E9F6E", "#8B3DFF", "#F08A00", "#101010", "#D6246E"]; const hue = s => COL[[...s].reduce((a, c) => a + c.charCodeAt(0), 0) % COL.length];
+        const SOC = { "x.com": ["X", "#101010"], "twitter.com": ["X", "#101010"], "instagram.com": ["IG", "#D6246E"], "linkedin.com": ["in", "#0A66C2"], "github.com": ["GH", "#101010"], "youtube.com": ["YT", "#E00"], "youtu.be": ["YT", "#E00"], "tiktok.com": ["TT", "#101010"], "facebook.com": ["f", "#1877F2"], "producthunt.com": ["P", "#DA552F"], "reddit.com": ["R", "#FF4500"], "threads.net": ["@", "#101010"], "medium.com": ["M", "#101010"] };
+        const soc = u => { const h = host(u), k = Object.keys(SOC).find(k => h === k || h.endsWith("." + k)); return k ? SOC[k] : null };
+        // entries (src: preview | sample | manual). Visitors see preview/sample only in preview mode; manual entries (real payments you recorded) always show.
+        let LOCAL = []; try { LOCAL = JSON.parse(localStorage.getItem("idn_entries") || "[]") } catch (e) { }
+        const saveLocal = () => { try { localStorage.setItem("idn_entries", JSON.stringify(LOCAL)) } catch (e) { } };
+        const all = () => DATA.entries.concat(LOCAL.filter(x => CFG.pay ? x.src === "manual" : true));
+        const todays = () => all().filter(x => dayKey(x.t) === dayKey(Date.now())).sort((a, b) => b.amt - a.amt || a.t - b.t);
+        const tagOf = x => x.src === "sample" ? "sample" : x.src === "preview" ? "preview" : "";
+        // routing
+        const pages = ["home", "red", "roast", "hall-of-fame", "challenge", "excuses", "soundboard", "about", "admin"];
+        function route() { snd("up", 150); if (window.shock) shock(innerWidth / 2, innerHeight / 2, .6); let h = location.hash.slice(1); if (!pages.includes(h)) h = "home"; pages.forEach(p => $("#" + p).classList.toggle("on", p === h)); $$("#nav a").forEach(a => a.classList.toggle("on", a.hash === "#" + h)); if (h !== "challenge") stopCh(); scrollTo(0, 0); render(); if (h === "admin") renderAdmin(); setTimeout(home, 60) }
+        addEventListener("hashchange", route);
+        // hero
+        function meal() { const h = new Date().getHours(); return h >= 5 && h < 11 ? "breakfast" : h >= 11 && h < 16 ? "lunch" : h >= 16 && h < 22 ? "dinner" : "a midnight snack" }
+        function setMeal() { $("#fund").innerHTML = esc(CFG.btn + " " + meal()) + `<small>${esc(CFG.sub)}</small>`; $("#tag").textContent = CFG.tag }
+        let li = 0; const showLine = () => { const e = $("#line"), L = CFG.lines.length ? CFG.lines : DEF.lines; e.style.opacity = 0; setTimeout(() => { e.textContent = L[li++ % L.length]; e.style.opacity = 1 }, 300) };
+        // the "Go get a job" button: sits next to the main button, dodges the moment the pointer touches it, stays in a band around its row
+        const run = $("#run"), hero = $(".hero"); let mi = 0, bag = [], px = -999, py = -999, lt = 0, moved = false, hy = 0;
+        const pick = () => { const D = CFG.dodge.length ? CFG.dodge : DEF.dodge; if (mi < 3 && D[mi]) return D[mi]; if (!bag.length) bag = D.slice(3).sort(() => Math.random() - .5); return bag.pop() || D[0] };
+        const prot = () => { const o = []; hero.querySelectorAll("#fund,#tag").forEach(e => o.push(e.getBoundingClientRect()));["h1.big", ".line"].forEach(q => { const rg = document.createRange(); rg.selectNodeContents(hero.querySelector(q));[...rg.getClientRects()].forEach(r => o.push(r)) }); return o.filter(r => r.width > 0) };
+        function home() { if (!hero.offsetParent) return; const s = $("#slot").getBoundingClientRect(), h = hero.getBoundingClientRect(); run.style.left = (s.left - h.left) + "px"; run.style.top = (s.top - h.top) + "px"; hy = s.top - h.top; moved = false }
+        function flee() {
+            snd(["boing", "squeak", "blorp", "honk"][Math.floor(Math.random() * 4)], 40); run.textContent = pick(); mi++; moved = true; const h = hero.getBoundingClientRect(), W = run.offsetWidth, H = run.offsetHeight, R = prot(), pad = 12; let best = null, bd = -1;
+            for (let i = 0; i < 90; i++) { const x = Math.random() * Math.max(0, h.width - W), y = Math.min(Math.max(0, hy - 18 + Math.random() * 60), Math.max(0, h.height - H)), L = h.left + x, T = h.top + y; if (R.some(r => L < r.right + pad && L + W > r.left - pad && T < r.bottom + pad && T + H > r.top - pad)) continue; const d = Math.hypot(L + W / 2 - px, T + H / 2 - py); if (d > bd) { bd = d; best = [x, y] } }
+            if (best) { run.style.left = best[0] + "px"; run.style.top = best[1] + "px" } clearTimeout(flee.t); flee.t = setTimeout(() => run.textContent = "Go get a job", 6000)
+        }
+        const near = () => { const b = run.getBoundingClientRect(), m = 10; return $("#home").classList.contains("on") && px > b.left - m && px < b.right + m && py > b.top - m && py < b.bottom + m };
+        addEventListener("pointermove", e => { px = e.clientX; py = e.clientY; if (near()) { const n = performance.now(); if (n - lt > 30) { lt = n; flee() } } }, { passive: true });
+        ["pointerdown", "touchstart"].forEach(v => document.addEventListener(v, e => { const t = e.touches ? e.touches[0] : e; px = t.clientX; py = t.clientY; if (near()) { lt = performance.now(); flee(); if (e.target.closest("#run")) e.preventDefault() } }, { passive: false }));
+        run.addEventListener("click", e => { e.preventDefault(); flee() });
+        addEventListener("resize", home); document.fonts && document.fonts.ready.then(home);
+        // counter
+        let shown = 0; function setTotal(to) { const f = shown, s = performance.now(); shown = to; (function a(t) { const p = Math.min(1, (t - s) / 800); $("#tot").textContent = money(f + (to - f) * p); if (p < 1) requestAnimationFrame(a) })(s) }
+        function avatar(x) { const s = soc(x.url); if (x.img) return `<div class="av"><img src="${esc(x.img)}" alt=""></div>`; if (x.anon) return `<div class="av" style="background:#8a877d">?</div>`; if (s) return `<div class="av" style="background:${s[1]}">${esc(s[0])}</div>`; return `<div class="av" style="background:${hue(x.name)}">${esc((x.name[0] || "?").toUpperCase())}</div>` }
+        const tierOf = a => a >= 100 ? ["Legend", "#E8412C"] : a >= 25 ? ["Big spender", "#8B3DFF"] : a >= 5 ? ["Supporter", "#0E9F6E"] : ["Noodle", "#6c6a64"];
+        const chipT = x => { const t = tierOf(x.amt); return `<span class="tc" style="background:${t[1]}">${t[0]}</span>` };
+        const CROWN = '<svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true"><path d="M3 18h18l1-10-5 4-5-8-5 8-5-4z" fill="#FFD23F" stroke="#101010" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+        function lbHTML(L, mode, at) {
+            const mx = Math.max(1, ...L.map(x => x.amt)); let h = "", st = 0;
+            if (mode === "top") { const P = [1, 0, 2].filter(i => L[i]); h += `<div class="pod" style="grid-template-columns:repeat(${P.length},minmax(0,1fr))">` + P.map(i => { const x = L[i]; return `<button class="pc p${i + 1}" ${at}="${i}" style="animation-delay:${i * 90}ms"><span class="medal">${i + 1}</span>${i === 0 ? `<div class="crown">${CROWN}</div><i class="sp s1"></i><i class="sp s2"></i><i class="sp s3"></i>` : ""}${avatar(x)}<h3>${esc(x.name)}</h3>${chipT(x)}<div class="amt"><b class="nv" data-v="${x.amt}">${money(x.amt)}</b></div><span class="go">Details ›</span></button>` }).join("") + `</div>`; st = 3 }
+            return h + L.slice(st).map((x, k) => { const i = k + st, fresh = mode === "recent" && Date.now() - x.t < 12e4; return `<button class="lr ${mode === "recent" && i === 0 ? "hot" : ""}" ${at}="${i}" style="animation-delay:${Math.min(k, 12) * 35}ms"><div class="lk">${mode === "top" ? `<b>${i + 1}</b>` : `<span class="tp ${fresh ? "nw" : ""}">${ago(x.t)}</span>`}</div>${avatar(x)}<div style="min-width:0"><h3>${esc(x.name)} ${chipT(x)}${tagOf(x) ? `<span class="pv">${tagOf(x)}</span>` : ""}</h3><p>${esc(x.desc || "")}</p><div class="d">${esc(host(x.url) || x.url || "")}</div></div><div class="lp"><b class="nv" data-v="${x.amt}">${money(x.amt)}</b><span class="go">Details ›</span></div><i class="lbar" style="width:${Math.max(3, x.amt / mx * 100)}%"></i></button>` }).join("")
+        }
+        let bmode = "recent"; const ago = t => { const m = Math.floor((Date.now() - t) / 6e4); return m < 1 ? "now" : m < 60 ? m + "m" : m < 1440 ? Math.floor(m / 60) + "h" : Math.floor(m / 1440) + "d" };
+        const boardList = () => bmode === "recent" ? [...todays()].sort((a, b) => b.t - a.t) : todays();
+        const topAll = () => all().slice().sort((a, b) => b.amt - a.amt || a.t - b.t).slice(0, 100);
+        function render() {
+            setMeal(); if (!moved) home(); const T = todays(); setTotal(T.reduce((a, b) => a + b.amt, 0)); $("#cnt").textContent = T.length; $("#topv").textContent = T[0] ? T[0].name : "Nobody";
+            $("#pvBar").innerHTML = CFG.pay ? "" : `<p class="hint" style="margin-bottom:12px"><b>Preview mode:</b> no real payments are connected. Entries shown here stay in this browser.</p>`;
+            const BL = boardList(); $("#bt").innerHTML = [["recent", "Recent"], ["top", "Top"]].map(([k, l]) => `<button class="chip ${bmode === k ? "on" : ""}" data-bm="${k}">${l}</button>`).join("");
+            $("#board").innerHTML = BL.length ? lbHTML(BL, bmode, "data-i") : ghostHTML();
+            const HF = topAll(); $("#hof").innerHTML = HF.length ? `<p class="hint" style="margin-bottom:10px">${all().length} payments so far. Showing the top ${HF.length}.</p>` + lbHTML(HF, "top", "data-h") : ghostHTML()
+        }
+        setInterval(() => { const s = left(); $("#rst").textContent = [Math.floor(s / 3600), Math.floor(s % 3600 / 60), s % 60].map(n => String(n).padStart(2, "0")).join(":"); if (s === 86399) render() }, 1000);
+        function showDetail(x) { if (!x) return; const u = safeUrl(x.url); $("#mb").innerHTML = `<div style="display:flex;gap:14px;align-items:center">${avatar(x)}<div><h2 style="font-size:28px">${esc(x.name)}</h2><b>${money(x.amt)}</b></div></div><p style="white-space:pre-wrap">${esc(x.desc || "No description.")}</p>${u ? `<p><a class="btn sm" href="${esc(u)}" target="_blank" rel="nofollow noopener ugc">Visit ${esc(host(x.url))}</a></p>` : (x.url ? `<p><b>${esc(x.url)}</b></p>` : "")}<p><button class="chip" id="cl">Close</button></p>`; $("#md").classList.add("on"); $("#cl").onclick = close_ }
+        $("#board").addEventListener("click", e => { const r = e.target.closest("[data-i]"); if (r) showDetail(boardList()[+r.dataset.i]) });
+        $("#hof").addEventListener("click", e => { const r = e.target.closest("[data-h]"); if (r) showDetail(topAll()[+r.dataset.h]) });
+        $("#bt").onclick = e => { const b = e.target.closest("[data-bm]"); if (b) { bmode = b.dataset.bm; render() } };
+        // payment modal
+        const close_ = () => $("#md").classList.remove("on"); let img = "";
+        function openFund() {
+            snd("kaching"); img = ""; $("#mb").innerHTML = `<h2>${esc(CFG.btn + " " + meal())}</h2><p style="margin:0;color:var(--mut)">Put your name or product on today’s board, or stay anonymous.</p>
+<label style="display:flex;align-items:center;margin-top:16px;cursor:pointer"><input type="checkbox" id="an">Pay anonymously (no name, no link, no logo)</label>
+<div id="idf"><label for="f1">Your name or product name</label><input id="f1" maxlength="60" placeholder="Acme Analytics"><label for="f2">One link (website or social profile)</label><input id="f2" maxlength="140" placeholder="https://yourproduct.com or https://x.com/you"><p class="hint">Social links get their platform badge. Websites get a letter avatar unless you upload a logo.</p><label for="f5">Logo or profile picture (optional)</label><input id="f5" type="file" accept="image/*"></div>
+<label for="f3">How much do you want to pay? (USD)</label><input id="f3" type="number" min="1" step="1" inputmode="numeric" placeholder="Any amount, $1 or more"><div class="chips" id="qa"></div>
+<label for="f4">Short description or message <span id="wc" class="hint" style="display:inline">0 / 500 words</span></label><textarea id="f4" placeholder="What are you building? Or just say hi."></textarea>
+${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear on the board once the payment is verified.</div>` : `<div class="note"><b>Preview mode.</b> No money will move. Your entry only shows in this browser, so you can see how the board looks.</div>`}
+<p style="display:flex;gap:10px;margin-top:16px"><button class="btn" id="go" style="flex:1;text-align:center">${CFG.pay ? "Continue to payment" : "Add to board (preview)"}</button><button class="btn w" id="cl">Cancel</button></p>`;
+            $("#md").classList.add("on"); $("#cl").onclick = close_;
+            $("#an").onchange = () => { $("#idf").style.display = $("#an").checked ? "none" : "block" };
+            $("#qa").innerHTML = [1, 5, 10, 25, 50].map(a => `<button class="chip" data-a="${a}">$${a}</button>`).join(""); $("#qa").onclick = e => { const c = e.target.closest("[data-a]"); if (c) $("#f3").value = c.dataset.a };
+            const wc = () => $("#f4").value.trim().split(/\s+/).filter(Boolean).length; $("#f4").oninput = () => { $("#wc").textContent = wc() + " / 500 words" };
+            $("#f5").onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const i = new Image(); i.onload = () => { const c = document.createElement("canvas"); c.width = c.height = 96; const s = Math.min(i.width, i.height); c.getContext("2d").drawImage(i, (i.width - s) / 2, (i.height - s) / 2, s, s, 0, 0, 96, 96); img = c.toDataURL("image/jpeg", .8) }; i.src = r.result }; r.readAsDataURL(f) };
+            $("#go").onclick = () => {
+                const anon = $("#an").checked, n = anon ? "Anonymous legend" : $("#f1").value.trim(), u = anon ? "" : $("#f2").value.trim(), a = Math.round((+$("#f3").value) * 100) / 100, d = $("#f4").value.trim();
+                if (!n) return toast("Add your name or product name, or tick “Pay anonymously”."); if (u && !safeUrl(u) && u[0] !== "@") return toast("That link doesn’t look valid. Use https://…"); if (!(a >= 1)) return toast("Enter an amount of $1 or more."); if (wc() > 500) return toast("That’s over 500 words.");
+                if (CFG.pay) { window.open(CFG.pay, "_blank", "noopener"); close_(); return toast("Complete the payment. You’ll appear once it’s verified.") }
+                LOCAL.push({ id: "p" + Date.now(), name: n, url: safeUrl(u) || u, amt: a, desc: d, img: anon ? "" : img, anon, t: Date.now(), src: "preview" }); snd("horn"); saveLocal(); close_(); render(); toast("Preview only: added to the board. No money moved."); location.hash = "home"
+            }
+        }
+        $("#fund").onclick = () => openFund();
+        $("#md").addEventListener("click", e => { if (e.target.id === "md") close_() }); addEventListener("keydown", e => { if (e.key === "Escape") close_() });
+        // do-nothing challenge
+        let chT = 0, chOn = false, chRaf; const cs = $("#cs");
+        const tier = s => s < 5 ? "You lasted about as long as a New Year’s resolution." : s < 15 ? "Decent. Your phone is judging you." : s < 30 ? "Impressive. A true beginner of nothing." : s < 60 ? "Elite stillness. Please consider a career in nothing." : "Legendary. I’m honestly a little jealous.";
+        function stopCh(fail) { if (!chOn) return; chOn = false; cancelAnimationFrame(chRaf); const s = (performance.now() - chT) / 1000; let b = 0; try { b = +localStorage.getItem("idn_best") || 0; if (s > b) { b = s; localStorage.setItem("idn_best", s) } } catch (e) { } $("#ct").textContent = s.toFixed(1) + "s"; if (fail) { snd("sad"); $("#cm").textContent = tier(s); $("#cb").textContent = "Your best: " + b.toFixed(1) + "s (stored on this device)"; cs.textContent = "Try again" } }
+        function tick() { if (!chOn) return; $("#ct").textContent = ((performance.now() - chT) / 1000).toFixed(1) + "s"; chRaf = requestAnimationFrame(tick) }
+        cs.onclick = e => { e.preventDefault(); snd("dun"); $("#cm").textContent = "Don’t touch anything..."; cs.style.visibility = "hidden"; setTimeout(() => { chOn = true; chT = performance.now(); tick(); let mv = 0; const E = ["pointermove", "keydown", "touchstart", "pointerdown", "wheel", "scroll", "visibilitychange"], f = ev => { if (ev.type === "pointermove" && ++mv < 4) return; E.forEach(t => removeEventListener(t, f, true)); cs.style.visibility = "visible"; stopCh(true) }; E.forEach(t => addEventListener(t, f, true)) }, 500) };
+        // the big red button
+        let rn = 0; const R1 = ["I said don’t.", "Wow. Rude.", "That was my one rule.", "Okay. Last warning."], R2 = ["Still here? The internet isn’t. Kidding, it’s fine.", "You have the self-control of a dropped ice cream.", "Nothing happened. You did that.", "Go outside. Or at least stand up.", "Impressive commitment to a bad decision.", "I’ve seen your browser history. Keep pressing."];
+        function bomb() { const L = ["Removing cat videos…", "Deleting group chats… you’re welcome", "Cancelling Mondays…", "Unsubscribing from newsletters…", "Erasing your browser history… we saw it", "Shutting down the wifi…", "Deleting the noodle recipes… no, wait"]; $("#mb").innerHTML = `<h2>Deleting the internet…</h2><div class="bar2"><i id="pb"></i></div><p id="pl" class="hint">Starting…</p><p class="hint">(not real, obviously)</p>`; $("#md").classList.add("on"); let p = 0, k = 0; const t = setInterval(() => { p += Math.random() * 9 + 3; snd("tick", 20); if (p >= 99) { p = 99; clearInterval(t); snd("scratch"); $("#pl").textContent = "Wait. That’s a lot of work."; setTimeout(() => { snd("sad"); $("#mb").innerHTML = `<h2>Cancelled.</h2><p>I’m too lazy to finish deleting the internet. You’re welcome.</p><p style="display:flex;gap:10px"><button class="btn" id="b1" style="flex:1;text-align:center">Buy me a noodle</button><button class="btn w" id="b2">Phew</button></p>`; $("#b1").onclick = () => openFund(); $("#b2").onclick = close_ }, 1500) } else if (Math.random() < .5) $("#pl").textContent = L[k++ % L.length]; $("#pb").style.width = p + "%" }, 350) }
+        $("#rb").onclick = () => { rn++; snd(rn === 5 ? "alarm" : rn % 2 ? "horn" : "boom"); $("#rc").textContent = "Presses: " + rn; if (rn === 5) return bomb(); $("#rm").textContent = rn < 5 ? R1[rn - 1] : R2[Math.floor(Math.random() * R2.length)] };
+        // roast machine (roasts the name, never the person)
+        const RO = ["{n} sounds like a startup with 3 users. Two of them are you.", "I looked up {n}. Even my search engine yawned.", "{n} has the energy of a Monday email.", "The roadmap for {n} is a screenshot in a Notes app.", "{n} pivoted so many times it forgot where it started.", "If {n} were a snack, it’d be the last rice cake in the pack.", "{n} is why “coming soon” exists.", "Bold to call it {n}. Bolder to launch on a Friday.", "{n} is doing great. In the founder’s head.", "I’m unemployed and even I’d ask {n} for a business plan.", "{n} has a five-year plan. Year one is still loading.", "{n}: 12 features, 0 users, 100% confidence.", "People say {n} is ahead of its time. Time is not interested.", "{n} walked so that someone else could run it properly.", "{n} is the kind of name that sounds funded. It isn’t."];
+        let rl = -1; $("#rg").onclick = () => { const n = $("#ri").value.trim(); if (!n) return toast("Type a name or product first."); let k; do { k = Math.floor(Math.random() * RO.length) } while (k === rl); rl = k; snd("rim"); $("#ro").textContent = RO[k].replace(/\{n\}/g, n); $("#ra").style.display = "block"; $("#rf").textContent = CFG.btn + " a noodle to thank me" };
+        $("#rs").onclick = async () => { try { await navigator.clipboard.writeText($("#ro").textContent + " " + location.href); toast("Roast copied.") } catch (e) { toast("Couldn’t copy.") } }; $("#rf").onclick = () => openFund();
+        // excuses
+        const EX = ["I had a plan. The plan had a nap in it.", "The inbox and I are on a break.", "I was about to start, then lunch got in the way.", "There is one deadline. It’s next year.", "My to-do list is a work of fiction.", "Productivity is a lifestyle. I’m exploring other lifestyles.", "I’m waiting for the right moment. It’s been a while.", "I do my best work later. Much later.", "I could, but the couch has seniority.", "I’m saving my energy for something important. Not found yet.", "The wifi was too comfortable to leave.", "I’m not late. I’m early for tomorrow.", "I was going to start, but the noodles needed me.", "I can’t work on an empty stomach. Or a full one."];
+        let xi = -1; $("#exb").onclick = () => { snd("boing"); let n; do { n = Math.floor(Math.random() * EX.length) } while (n === xi); xi = n; $("#ex").textContent = EX[n] };
+        $("#exc").onclick = async () => { try { await navigator.clipboard.writeText($("#ex").textContent); toast("Copied. Use it wisely.") } catch (e) { toast("Couldn’t copy.") } };
+        // exit intent (once)
+        let ex1 = false; document.addEventListener("mouseout", e => { if (!e.relatedTarget && e.clientY <= 0 && !ex1 && !$("#md").classList.contains("on")) { ex1 = true; snd("dun"); $("#mb").innerHTML = `<h2>Wait, you’re leaving?</h2><p>I did nothing the entire time you were here. The least you could do is buy me a noodle.</p><p style="display:flex;gap:10px"><button class="btn" id="a1" style="flex:1;text-align:center">Fine, buy the noodle</button><button class="btn w" id="a2">I have no heart</button></p>`; $("#md").classList.add("on"); $("#a1").onclick = () => openFund(); $("#a2").onclick = () => { close_(); toast("Wow. Okay. Noted.") } } });
+        // ===== ADMIN (client-side only: it is NOT secure, and changes live in this browser) =====
+        let unlocked = false, atab = "entries", editing = null;
+        const dt = t => { const d = new Date(t - new Date().getTimezoneOffset() * 6e4); return d.toISOString().slice(0, 16) };
+        function renderAdmin() {
+            const A = $("#adm");
+            if (!unlocked) { A.innerHTML = `<div class="panel" style="max-width:420px"><label for="pw">Passcode</label><input id="pw" type="password"><p><button class="btn" id="pgo">Unlock</button></p><p class="hint">This passcode only hides the screen. It is visible in the page source, so it is not real security. A real admin needs a backend login.</p></div>`; $("#pgo").onclick = () => { if ($("#pw").value === CFG.pass) { unlocked = true; renderAdmin() } else toast("Wrong passcode.") }; return }
+            const tabs = [["entries", "Entries"], ["lines", "Lines"], ["settings", "Settings"], ["backup", "Backup"]];
+            let h = `<div class="note" style="margin:0 0 14px">Everything here is saved in <b>this browser only</b>. To apply changes for all visitors, use Backup > Export and paste the result into the file, or connect a backend.</div><div class="chips">${tabs.map(t => `<button class="chip ${atab === t[0] ? "on" : ""}" data-tab="${t[0]}">${t[1]}</button>`).join("")}</div>`;
+            if (atab === "entries") {
+                const e = editing || {}; h += `<div class="panel"><h3>${editing && editing.id ? "Edit entry" : "Record an entry"}</h3><p class="hint">Use this to record payments you actually received outside the site (UPI, PayPal, cash). These show to visitors with no tag, so only add real ones.</p>
+<label>Name or product</label><input id="e1" value="${esc(e.name || "")}"><label>Link</label><input id="e2" value="${esc(e.url || "")}"><label>Amount (USD)</label><input id="e3" type="number" min="0" step="0.01" value="${e.amt || ""}"><label>Description</label><textarea id="e4">${esc(e.desc || "")}</textarea><label>Date and time</label><input id="e5" type="datetime-local" value="${dt(e.t || Date.now())}"><label><input type="checkbox" id="e6" ${e.anon ? "checked" : ""}>Show as anonymous</label>
+<p><button class="btn sm" id="esv">${editing && editing.id ? "Save changes" : "Add entry"}</button> ${editing ? `<button class="btn sm w" id="ecn">Cancel</button>` : ""}</p></div>
+<div class="chips"><button class="chip" id="smp">Add 5 labelled samples (private preview)</button><button class="chip" id="rms">Remove samples</button><button class="chip" id="csv">Show CSV</button><button class="chip" id="cla">Delete all entries</button></div><p class="hint">Samples are always tagged “sample” and are hidden from visitors once a payment link is set.</p><div id="csvo"></div>
+<h3 style="margin-top:20px">${LOCAL.length} entries in this browser</h3>${[...LOCAL].sort((a, b) => b.t - a.t).map(x => `<div class="arow"><span><b>${esc(x.name)}</b> · ${money(x.amt)} · ${new Date(x.t).toLocaleString()} · ${esc(x.src)}</span><button class="chip" data-ed="${x.id}">Edit</button><button class="chip" data-dl="${x.id}">Delete</button></div>`).join("")}`
+            }
+            if (atab === "lines") { h += `<div class="panel"><label>Rotating hero lines (one per line)</label><textarea id="l1" style="min-height:240px">${esc(CFG.lines.join("\n"))}</textarea><label>“Go get a job” button texts (one per line; the first three play in order)</label><textarea id="l2" style="min-height:240px">${esc(CFG.dodge.join("\n"))}</textarea><p><button class="btn sm" id="lsv">Save lines</button> <button class="btn sm w" id="lrs">Reset to defaults</button></p></div>` }
+            if (atab === "settings") { h += `<div class="panel"><label>Payment link (empty = preview mode)</label><input id="s1" value="${esc(CFG.pay)}" placeholder="https://..."><label>Timezone for the daily reset</label><input id="s2" value="${esc(CFG.tz)}"><label>Hero tag</label><input id="s3" value="${esc(CFG.tag)}"><label>Main button text (the meal is added after it)</label><input id="s4" value="${esc(CFG.btn)}"><label>Small text under the main button</label><input id="s5" value="${esc(CFG.sub)}"><label>Admin passcode</label><input id="s6" value="${esc(CFG.pass)}"><p><button class="btn sm" id="ssv">Save settings</button></p></div>` }
+            if (atab === "backup") { h += `<div class="panel"><label>Export (copy this)</label><textarea id="b1" style="min-height:160px">${esc(JSON.stringify({ cfg: CFG, entries: LOCAL }))}</textarea><label>Import (paste an export here)</label><textarea id="b2"></textarea><p><button class="btn sm" id="bim">Import</button></p></div>` }
+            A.innerHTML = h;
+            $$("[data-tab]").forEach(b => b.onclick = () => { atab = b.dataset.tab; editing = null; renderAdmin() });
+            const on = (i, f) => { const el = $("#" + i); if (el) el.onclick = f };
+            on("esv", () => { const n = $("#e1").value.trim(), a = +$("#e3").value; if (!n || !(a > 0)) return toast("Name and a positive amount are required."); const o = { name: n, url: safeUrl($("#e2").value) || $("#e2").value.trim(), amt: a, desc: $("#e4").value.trim(), t: new Date($("#e5").value).getTime() || Date.now(), anon: $("#e6").checked, src: "manual" }; if (editing && editing.id) { Object.assign(LOCAL.find(x => x.id === editing.id), o) } else LOCAL.push({ id: "m" + Date.now(), img: "", ...o }); editing = null; saveLocal(); renderAdmin(); render(); toast("Saved.") });
+            on("ecn", () => { editing = null; renderAdmin() });
+            $$("[data-ed]").forEach(b => b.onclick = () => { editing = LOCAL.find(x => x.id === b.dataset.ed); renderAdmin(); scrollTo(0, 0) });
+            $$("[data-dl]").forEach(b => b.onclick = () => { LOCAL = LOCAL.filter(x => x.id !== b.dataset.dl); saveLocal(); renderAdmin(); render() });
+            on("smp", () => { [["Sample Studio", 120, "Sample entry to preview the board."], ["Sample SaaS", 60, "Another sample entry."], ["@samplehandle", 25, "Sample social profile."], ["Sample Game", 10, "Sample entry."], ["Sample Anonymous", 3, "Sample entry."]].forEach(([n, a, d], i) => LOCAL.push({ id: "s" + Date.now() + i, name: n, url: "", amt: a, desc: d, img: "", t: Date.now(), src: "sample" })); saveLocal(); renderAdmin(); render() });
+            on("rms", () => { LOCAL = LOCAL.filter(x => x.src !== "sample"); saveLocal(); renderAdmin(); render() });
+            on("cla", () => { if (confirm("Delete all entries in this browser?")) { LOCAL = []; saveLocal(); renderAdmin(); render() } });
+            on("csv", () => { $("#csvo").innerHTML = `<textarea style="min-height:140px">${esc("name,url,amount,date,source\n" + LOCAL.map(x => [x.name, x.url, x.amt, new Date(x.t).toISOString(), x.src].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(",")).join("\n"))}</textarea>` });
+            on("lsv", () => { CFG.lines = $("#l1").value.split("\n").map(s => s.trim()).filter(Boolean); CFG.dodge = $("#l2").value.split("\n").map(s => s.trim()).filter(Boolean); bag = []; mi = 0; saveCfg(); toast("Lines saved.") });
+            on("lrs", () => { CFG.lines = DEF.lines.slice(); CFG.dodge = DEF.dodge.slice(); saveCfg(); bag = []; mi = 0; renderAdmin() });
+            on("ssv", () => { CFG.pay = $("#s1").value.trim(); CFG.tz = $("#s2").value.trim() || "Asia/Kolkata"; CFG.tag = $("#s3").value; CFG.btn = $("#s4").value.trim() || "Buy me"; CFG.sub = $("#s5").value; CFG.pass = $("#s6").value || "admin123"; saveCfg(); render(); toast("Settings saved.") });
+            on("bim", () => { try { const j = JSON.parse($("#b2").value); if (j.cfg) Object.assign(CFG, j.cfg); if (Array.isArray(j.entries)) LOCAL = j.entries; saveCfg(); saveLocal(); renderAdmin(); render(); toast("Imported.") } catch (e) { toast("That isn’t valid JSON.") } })
+        }
+
+        // ===== CLICK EFFECTS: every click, even on empty space, bursts and shakes the 3D scene =====
+        let RM2 = false; try { RM2 = localStorage.getItem("idn_motion") === "off" } catch (e) { }
+        document.documentElement.classList.toggle("nomo", RM2);
+        const mb = document.getElementById("mot"); const mbl = () => mb.textContent = "Motion: " + (RM2 ? "off" : "on"); mbl(); mb.onclick = () => { RM2 = !RM2; try { localStorage.setItem("idn_motion", RM2 ? "off" : "on") } catch (e) { } document.documentElement.classList.toggle("nomo", RM2); mbl() };
+        (function () {
+            const CL = ["#2F4BFF", "#FFD23F", "#101010", "#E8412C", "#0E9F6E"], WD = ["zzz", "nothing.", "nap?", "meh", "+0", "bruh", "nope", "lol", "still here?", "no work"];
+            function burst(x, y) {
+                if (RM2 || document.querySelectorAll(".cb").length > 140) return;
+                const add = (el, kf, o) => { el.className += " cb"; el.style.left = x + "px"; el.style.top = y + "px"; document.body.appendChild(el); el.animate(kf, o).onfinish = () => el.remove() };
+                const glow = document.createElement("div"); glow.style.cssText = "width:40px;height:40px;border-radius:50%;background:" + CL[Math.floor(Math.random() * 2)] + "55"; add(glow, [{ transform: "translate(-50%,-50%) scale(.3)", opacity: 1 }, { transform: "translate(-50%,-50%) scale(6)", opacity: 0 }], { duration: 600, easing: "ease-out" });
+                for (let k = 0; k < 2; k++) { const r = document.createElement("div"); r.className = "cr"; add(r, [{ transform: "translate(-50%,-50%) scale(.4)", opacity: .9 }, { transform: "translate(-50%,-50%) scale(" + (9 + k * 5) + ")", opacity: 0 }], { duration: 600 + k * 250, delay: k * 90, easing: "ease-out", fill: "backwards" }) }
+                for (let i = 0; i < 22; i++) {
+                    const p = document.createElement("div"), a = Math.random() * 6.283, d = 60 + Math.random() * 130, z = 7 + Math.random() * 10; p.style.cssText = `width:${z}px;height:${z}px;background:${CL[i % 5]};border:2px solid #101010;border-radius:${i % 3 ? "50%" : "3px"}`;
+                    add(p, [{ transform: "translate(-50%,-50%) scale(1) rotate(0)", opacity: 1 }, { transform: `translate(calc(-50% + ${Math.cos(a) * d}px),calc(-50% + ${Math.sin(a) * d + 60}px)) scale(.3) rotate(${Math.random() * 540}deg)`, opacity: 0 }], { duration: 700 + Math.random() * 600, easing: "cubic-bezier(.15,.8,.25,1)" })
+                }
+                if (Math.random() < .6) { const w = document.createElement("div"); w.className = "cw"; w.textContent = WD[Math.floor(Math.random() * WD.length)]; add(w, [{ transform: "translate(-50%,-30%) scale(.5) rotate(-6deg)", opacity: 0 }, { transform: "translate(-50%,-110%) scale(1.1) rotate(3deg)", opacity: 1, offset: .25 }, { transform: "translate(-50%,-230%) scale(1) rotate(0)", opacity: 0 }], { duration: 1300, easing: "ease-out" }) }
+            }
+            window.burstAt = burst; addEventListener("pointerdown", e => { burst(e.clientX, e.clientY); if (window.shock) shock(e.clientX, e.clientY, 1); if (!e.target.closest("a,button,.row,.lr,.pc,.opt,.chip,.rbtn,input,textarea,select")) snd(CLK[Math.floor(Math.random() * CLK.length)], 30) }, { passive: true })
+        })();
+        // ===== 3D BACKGROUND (Three.js): floating shapes that drift with scroll, follow the mouse and get knocked around by clicks =====
+        (function () {
+            try {
+                const cv = document.getElementById("gl"), R = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true }); R.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+                const S = new THREE.Scene(), C = new THREE.PerspectiveCamera(45, 1, .1, 100); C.position.z = 14;
+                S.add(new THREE.AmbientLight(0xffffff, .85)); const dl = new THREE.DirectionalLight(0xffffff, .9); dl.position.set(4, 6, 8); S.add(dl);
+                const COLS = [0x2F4BFF, 0xFFD23F, 0x101010, 0xE8412C, 0x0E9F6E, 0xffffff];
+                const GEO = [() => new THREE.IcosahedronGeometry(1, 0), () => new THREE.OctahedronGeometry(1, 0), () => new THREE.BoxGeometry(1.4, 1.4, 1.4), () => new THREE.TorusGeometry(.9, .34, 12, 24), () => new THREE.ConeGeometry(.9, 1.6, 5), () => new THREE.SphereGeometry(1, 14, 10), () => new THREE.DodecahedronGeometry(1, 0), () => new THREE.TorusKnotGeometry(.7, .24, 64, 8)];
+                let HW = 8, HH = 5.8, P = 35; const sh = [], N = innerWidth < 700 ? 16 : 26, mob = () => innerWidth < 700;
+                function dims() { const w = innerWidth, h = innerHeight; R.setSize(w, h, false); C.aspect = w / h; C.updateProjectionMatrix(); HH = Math.tan(C.fov * Math.PI / 360) * C.position.z; HW = HH * C.aspect; P = 6 * HH } dims();
+                for (let i = 0; i < N; i++) {
+                    const m = new THREE.Mesh(GEO[i % GEO.length](), new THREE.MeshStandardMaterial({ color: COLS[i % COLS.length], flatShading: true, roughness: .55, metalness: .05 })); S.add(m);
+                    const side = Math.random() < .5 ? -1 : 1; sh.push({ m, x: side * (.45 + Math.random() * .55), f: i / N, z: -4 + Math.random() * 6, s: .9 + Math.random() * 1.2, rx: (Math.random() - .5) * 1.6, ry: (Math.random() - .5) * 2, o: [0, 0, 0], v: [0, 0, 0], pulse: 0, sp: 0 })
+                }
+                // one big hero shape, top right
+                sh[7].x = .55; sh[7].f = .99; sh[7].z = -1; sh[7].s = 2.8; sh[0].x = -.7;
+                let px = 0, py = 0, cy = 0, last = performance.now();
+                addEventListener("pointermove", e => { px = e.clientX / innerWidth * 2 - 1; py = -(e.clientY / innerHeight * 2 - 1) }, { passive: true });
+                addEventListener("resize", () => { dims(); frame(0, performance.now()) });
+                window.shock = (cx, cyp, k = 1) => { if (RM2) return; const wx = (cx / innerWidth * 2 - 1) * HW, wy = cy + (-(cyp / innerHeight * 2 - 1)) * HH; sh.forEach(s => { const p = s.m.position, dx = p.x - wx, dy = p.y - wy, d = Math.hypot(dx, dy) || .01, f = k * 9 / (1 + d * d * .07); s.v[0] += dx / d * f; s.v[1] += dy / d * f; s.v[2] += (Math.random() - .4) * f * .5; s.sp += (Math.random() - .5) * f * 1.2; s.pulse = Math.max(s.pulse, Math.min(1, f / 6)) }) };
+                function frame(dt, t) {
+                    cy = -scrollY / innerHeight * 2 * HH; C.position.set(px * .5, cy + py * .35, 14); C.lookAt(px * .2, cy, 0);
+                    sh.forEach(s => {
+                        const base = -s.f * P, off = (((base - cy) % P) + P) % P - P / 2;
+                        for (let a = 0; a < 3; a++) { s.v[a] += -3 * s.o[a] * dt; s.v[a] *= Math.pow(.04, dt); s.o[a] += s.v[a] * dt }
+                        s.sp *= Math.pow(.15, dt); s.pulse *= Math.pow(.02, dt);
+                        s.m.position.set(s.x * HW * (mob() ? .9 : 1) + Math.cos(t * .0008 + s.f * 13) * .6 + s.o[0], cy + off + Math.sin(t * .0012 + s.f * 20) * .8 + s.o[1], s.z + s.o[2]);
+                        s.m.rotation.x += (s.rx + s.sp) * dt; s.m.rotation.y += (s.ry + s.sp * .7) * dt;
+                        const k = (mob() ? .7 : 1) * s.s * (1 + s.pulse * .35); s.m.scale.setScalar(k)
+                    });
+                    R.render(S, C)
+                }
+                (function loop(now) { requestAnimationFrame(loop); if (document.hidden) { last = now; return } const dt = RM2 ? 0 : Math.min(.05, (now - last) / 1000); last = now; frame(dt, RM2 ? 0 : now) })(performance.now());
+            } catch (e) { const c = document.getElementById("gl"); if (c) c.style.display = "none" }
+        })();
+
+        // ===== SOUNDBOARD, cursor effects, tap tag, leaderboard polish, easter eggs =====
+        const ghostHTML = () => `<div class="pod gp">${[1, 0, 2].map(i => `<button class="pc gh p${i + 1}" data-fund style="animation-delay:${i * 120}ms"><span class="medal">${i + 1}</span>${i === 0 ? `<div class="crown">${CROWN}</div>` : ""}<div class="av gq">?</div><h3>Up for grabs</h3><div class="amt">$?</div><span class="go">Take it ›</span></button>`).join("")}</div><p class="hint" style="text-align:center;margin-bottom:6px">Nobody on the board yet. Tap a spot and claim it.</p>`;
+        document.addEventListener("click", e => { if (e.target.closest("[data-fund]")) openFund() });
+        $("#sbn").textContent = Object.keys(SND).length;
+        $("#sbg").innerHTML = Object.keys(SND).map(n => `<button class="chip" data-sn="${n}">${n}</button>`).join("");
+        $("#sbg").onclick = e => { const b = e.target.closest("[data-sn]"); if (!b) return; if (!SOUND) return toast("Sound is off. Turn it on in the header."); welcomed = true; try { SND[b.dataset.sn]() } catch (x) { } };
+        // typing + scrolling sounds
+        addEventListener("keydown", e => { if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || /^(Shift|Control|Alt|Meta|CapsLock)$/.test(e.key)) return; snd(e.key === " " ? "spaceclack" : e.key === "Enter" ? "enterclack" : "clack", 15) });
+        let sy0 = scrollY, sacc = 0; addEventListener("scroll", () => { sacc += Math.abs(scrollY - sy0); sy0 = scrollY; if (sacc > 70) { sacc = 0; snd("tk", 25) } }, { passive: true });
+        // leaderboard: 3D tilt on hover + amounts count up
+        const tilt = e => { const c = e.target.closest(".pc:not(.gh),.lr"); if (!c || RM2) return; const r = c.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5; c.style.transform = `perspective(700px) rotateX(${-y * 9}deg) rotateY(${x * 11}deg) translateY(-3px)` };
+        ["#board", "#hof"].forEach(q => { $(q).addEventListener("pointermove", tilt); $(q).addEventListener("pointerout", e => { const c = e.target.closest(".pc,.lr"); if (c) c.style.transform = "" }) });
+        let lastSig = ""; const countUp = () => { const els = $$(".nv"), sig = bmode + location.hash + els.length; if (sig === lastSig) return; lastSig = sig; if (RM2) return; els.forEach(el => { const v = +el.dataset.v, t0 = performance.now(); (function f(t) { const p = Math.min(1, (t - t0) / 800), q = 1 - Math.pow(1 - p, 3); el.textContent = money(v * q); if (p < 1) requestAnimationFrame(f) })(t0) }) };
+        ["#board", "#hof"].forEach(q => new MutationObserver(countUp).observe($(q), { childList: true }));
+        // cursor: star trail, swish sound and a spinning 3D cube that follows the pointer
+        (function () {
+            const cube = $("#cube"), fine = matchMedia("(pointer:fine)").matches, CL = ["#2F4BFF", "#FFD23F", "#E8412C", "#0E9F6E", "#101010"];
+            let lx = -1, ly = -1, tx = -100, ty = -100, cx = -100, cy = -100, vx = 0, vy = 0, ax = 20, ay = 30, a1 = 0, a2 = 0;
+            function spark(x, y) { if (document.querySelectorAll(".sk").length > 50) return; const p = document.createElement("div"), z = 8 + Math.random() * 9; p.className = "cb sk"; p.style.cssText = `left:${x}px;top:${y}px;width:${z}px;height:${z}px;background:${CL[Math.floor(Math.random() * 5)]}`; document.body.appendChild(p); p.animate([{ transform: "translate(-50%,-50%) scale(1) rotate(0)", opacity: 1 }, { transform: `translate(calc(-50% + ${(Math.random() - .5) * 50}px),calc(-50% + ${30 + Math.random() * 50}px)) scale(.1) rotate(${Math.random() * 360}deg)`, opacity: 0 }], { duration: 700 + Math.random() * 300, easing: "ease-out" }).onfinish = () => p.remove() }
+            addEventListener("pointermove", e => {
+                const x = e.clientX, y = e.clientY; if (lx < 0) { lx = x; ly = y } const dx = x - lx, dy = y - ly, d = Math.hypot(dx, dy); lx = x; ly = y; vx = dx; vy = dy; tx = x + 22; ty = y + 22;
+                if (e.pointerType === "mouse") { a1 += d; if (a1 > 24 && !RM2) { a1 = 0; spark(x, y) } a2 += d; if (a2 > 150) { a2 = 0; snd("swish", 60) } if (fine && !RM2) cube.style.display = "block" }
+            }, { passive: true });
+            (function loop() { requestAnimationFrame(loop); if (RM2) { cube.style.display = "none"; return } cx += (tx - cx) * .2; cy += (ty - cy) * .2; ax += vy * .5 + .9; ay += vx * .5 + 1.6; vx *= .88; vy *= .88; cube.style.transform = `translate3d(${cx}px,${cy}px,0) perspective(300px) rotateX(${ax}deg) rotateY(${ay}deg)` })()
+        })();
+        // tap tag + milestones
+        let taps = 0; const TM = { 10: "10 taps. Impressive dedication to nothing.", 25: "25 taps. You should be working.", 50: "50 taps. We’re basically friends.", 75: "75 taps. Your finger needs a nap.", 100: "100 taps. Please buy me a noodle." };
+        addEventListener("pointerdown", () => {
+            taps++; $("#tapT").textContent = taps === 1 ? "nice. keep tapping · 1" : "taps: " + taps; if (!RM2) $("#tapTag").animate([{ transform: "scale(1.3)" }, { transform: "scale(1)" }], { duration: 220 });
+            if (TM[taps]) { toast(TM[taps]); snd("fan"); if (!RM2) for (let i = 0; i < 6; i++)setTimeout(() => window.burstAt(Math.random() * innerWidth, Math.random() * innerHeight * .8), i * 140) }
+        }, { passive: true });
+        // easter eggs: konami code, and poking the sleeper
+        const KN = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"]; let ki = 0;
+        addEventListener("keydown", e => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; ki = k === KN[ki] ? ki + 1 : (k === KN[0] ? 1 : 0); if (ki === KN.length) { ki = 0; snd("fan"); toast("Party mode. Absolutely nothing was achieved."); if (!RM2) for (let i = 0; i < 10; i++)setTimeout(() => { const x = Math.random() * innerWidth, y = Math.random() * innerHeight; window.burstAt(x, y); if (window.shock) shock(x, y, 1.6) }, i * 160) } });
+        const slp = document.querySelector(".sleeper"); if (slp) slp.addEventListener("click", () => { toast("Huh? I wasn’t sleeping. I was resting my eyes."); snd("yawn") });
+        route(); showLine(); setInterval(showLine, 3800);
+    </script>
+</body>
+
+</html>
