@@ -1,63 +1,87 @@
-# ==========================================================================
+# ==============================================================================
 # doingnothing.lol - robots.txt
-# Technical SEO & Generative Engine Optimization (GEO)
-# ==========================================================================
+# Search Engine Optimization (SEO) & Generative Engine Optimization (GEO)
+# ==============================================================================
 
+# Default crawl permissions: full site access for all search engines
 User-agent: *
-Disallow: /dn-core-9842x-vault
-Disallow: /admin
-Disallow: /founder-gate
 Allow: /
 
-# Search Engine Crawlers
+# ------------------------------------------------------------------------------
+# Major Search Engine Crawlers
+# ------------------------------------------------------------------------------
 User-agent: Googlebot
-Disallow: /dn-core-9842x-vault
-Disallow: /admin
-Disallow: /founder-gate
+Allow: /
+
+User-agent: Googlebot-Image
 Allow: /
 
 User-agent: Bingbot
-Disallow: /dn-core-9842x-vault
-Disallow: /admin
-Disallow: /founder-gate
 Allow: /
 
-# AI Search & Retrieval Crawlers (Allowed for real-time citations & search)
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+# ------------------------------------------------------------------------------
+# AI & Generative Engine Optimization (GEO) Crawlers
+# Explicitly allowed for ChatGPT Search, Gemini, Claude, and Perplexity indexing
+# ------------------------------------------------------------------------------
+
+# OpenAI (ChatGPT Search & Retrieval)
+User-agent: GPTBot
+Allow: /
+
 User-agent: OAI-SearchBot
-Disallow: /dn-core-9842x-vault
-Disallow: /admin
-Disallow: /founder-gate
 Allow: /
 
 User-agent: ChatGPT-User
-Disallow: /dn-core-9842x-vault
-Disallow: /admin
-Disallow: /founder-gate
 Allow: /
 
-User-agent: Claude-SearchBot
-Disallow: /dn-core-9842x-vault
-Disallow: /admin
-Disallow: /founder-gate
+# Google Gemini & AI Overviews
+User-agent: Google-Extended
 Allow: /
 
-User-agent: Claude-User
-Disallow: /dn-core-9842x-vault
-Disallow: /admin
-Disallow: /founder-gate
+# Anthropic (Claude Search & Citations)
+User-agent: ClaudeBot
 Allow: /
 
+User-agent: Claude-Web
+Allow: /
+
+# Perplexity AI Search Engine
 User-agent: PerplexityBot
-Disallow: /dn-core-9842x-vault
-Disallow: /admin
-Disallow: /founder-gate
 Allow: /
 
 User-agent: Perplexity-User
-Disallow: /dn-core-9842x-vault
-Disallow: /admin
-Disallow: /founder-gate
 Allow: /
 
-# Sitemap
+# Apple Intelligence
+User-agent: Applebot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# Meta AI
+User-agent: meta-externalagent
+Allow: /
+
+# Cohere AI
+User-agent: Cohere-ai
+Allow: /
+
+# Diffbot AI Search
+User-agent: Diffbot
+Allow: /
+
+# ------------------------------------------------------------------------------
+# Sitemaps & Structured Knowledge Bases
+# ------------------------------------------------------------------------------
 Sitemap: https://doingnothing.lol/sitemap.xml
+# LLM Knowledge Document for AI models: https://doingnothing.lol/llms.txt
