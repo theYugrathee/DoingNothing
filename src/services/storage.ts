@@ -92,16 +92,29 @@ export class StorageService {
           r.name !== 'PixelPulse SaaS' &&
           r.name !== '@sarah_designs'
       );
+
+      // Strict deduplication map
+      const map = new Map<string, LeaderboardEntry>();
+      for (const r of cleanedRemote) {
+        const key = r.id || (r.name.trim().toLowerCase() + '_' + r.amt);
+        if (!map.has(key)) map.set(key, r);
+      }
+
+      // Merge only un-synced recent local entries
       const local = this.getEntries();
-      const combined = [...cleanedRemote];
       for (const loc of local) {
-        if (
-          Date.now() - loc.t < 7200000 &&
-          !combined.some((r) => r.id === loc.id || (r.name === loc.name && Math.abs(r.amt - loc.amt) < 0.01))
-        ) {
-          combined.unshift(loc);
+        const isDuplicate = Array.from(map.values()).some(
+          (m) =>
+            m.id === loc.id ||
+            (m.name.trim().toLowerCase() === loc.name.trim().toLowerCase() && Math.abs(m.amt - loc.amt) < 0.01)
+        );
+        if (!isDuplicate && Date.now() - loc.t < 7200000) {
+          const key = loc.id || (loc.name.trim().toLowerCase() + '_' + loc.amt);
+          map.set(key, loc);
         }
       }
+
+      const combined = Array.from(map.values());
       this.saveEntries(combined);
       return combined;
     }
