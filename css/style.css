@@ -308,7 +308,7 @@ nav.desktop-nav a.on {
 }
 
 h1.big {
-  font-size: clamp(42px, 7.5vw, 88px);
+  font-size: clamp(48px, 8.4vw, 98px);
   line-height: .92;
   font-weight: 800;
   margin: 10px 0 6px;
@@ -730,8 +730,36 @@ h1.big {
 }
 
 .lr.hot {
-  background: linear-gradient(90deg, #eaeeff, var(--card));
+  background: linear-gradient(90deg, #edf2ff, var(--card));
   border-color: var(--blue);
+}
+
+.lr.is-top-one {
+  background: linear-gradient(90deg, #fffdf0 0%, var(--card) 60%);
+  border-color: #f59e0b;
+}
+
+.lr-empty-desc {
+  font-style: italic;
+  color: #8a8880;
+  font-size: 13px;
+}
+
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #15803d;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  border-radius: 99px;
+  padding: 2px 7px;
+  vertical-align: middle;
 }
 
 .lr h3 {

@@ -576,8 +576,15 @@ function renderLeaderboard(): void {
     const host = AnalyticsService.getHost(item.url);
     const pct = Math.min(100, Math.max(3, (item.amt / maxAmount) * 100));
 
+    const isTopOne = currentBoardMode === 'top' && rank === 1;
+    const isRecentFirst = currentBoardMode === 'recent' && idx === 0;
+    const tierIcon = tier.name === 'Legend' ? '🔥 ' : tier.name === 'Big Spender' ? '⚡ ' : tier.name === 'Supporter' ? '🌱 ' : '🍜 ';
+    const descHtml = item.desc
+      ? `<p>${AnalyticsService.escapeHtml(item.desc)}</p>`
+      : `<p class="lr-empty-desc">“Silently funding the horizontal lifestyle.”</p>`;
+
     html += `
-      <button class="lr ${currentBoardMode === 'recent' && idx === 0 ? 'hot' : ''}" data-id="${item.id}">
+      <button class="lr ${isRecentFirst ? 'hot' : ''} ${isTopOne ? 'is-top-one' : ''}" data-id="${item.id}">
         <div class="lk">
           ${
             currentBoardMode === 'top'
@@ -589,10 +596,10 @@ function renderLeaderboard(): void {
         <div style="min-width:0">
           <h3>
             ${AnalyticsService.escapeHtml(item.name)}
-            <span class="tc" style="background:${tier.color}">${tier.name}</span>
+            <span class="tc" style="background:${tier.color}">${tierIcon}${tier.name}</span>
           </h3>
-          <p>${AnalyticsService.escapeHtml(item.desc || '')}</p>
-          <div class="d">${AnalyticsService.escapeHtml(host || item.url || '')}</div>
+          ${descHtml}
+          ${host ? `<div class="d"><span>↗</span> ${AnalyticsService.escapeHtml(host)}</div>` : ''}
         </div>
         <div class="lp">
           ${AnalyticsService.formatMoney(item.amt)}
