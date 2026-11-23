@@ -15,7 +15,7 @@ declare global {
 
         // ===== DEFAULTS (the Admin page can override these in this browser; use Backup > Export to bake them in for everyone) =====
         const DEF = {
-            pay: "", tz: "Asia/Kolkata", pass: "admin123", tag: "Unemployed since 2026. Proud of it.", btn: "Buy me", sub: "and get on today’s board",
+            pay: "", tz: "Asia/Kolkata", tag: "Unemployed since 2026. Proud of it.", btn: "Buy me", sub: "and get on today’s board",
             lines: ["Today I ate: nothing. Yesterday: instant noodles. Progress.", "Employee of the month at my own couch.", "Unemployed, undefeated, underfed.", "My diet is 80% noodles, 20% excuses.", "Current net worth: one cup of noodles.", "Last meal: spaghetti with ketchup. Michelin-adjacent.", "I’m not unemployed. I’m pre-productive.", "The cheapest meal in Europe? I’ve had it. Twice.", "My LinkedIn says open to nothing.", "I once tried to work. It was a weekend.", "Hustle culture called. I let it go to voicemail.", "I’m the reason the word “lazy” exists.", "Dinner tonight: cup noodles. Dessert: water.", "The worst employee you’ll never hire.", "Professional couch tester. Also unpaid.", "Hunger level: noodle emergency.", "My fridge light is the only thing working.", "I have a five-year plan. It’s mostly sleeping.", "I eat ramen like it’s a personality.", "Day 1 of my career. Day 1,000 of my nap.", "My bank account is a rumour.", "I’m self-employed. Salary: vibes.", "Lunch is a state of mind. Mine is empty.", "I’m between naps, jobs and meals.", "Cheapest food in America? I’m a regular.", "My cooking skills: boil, wait, regret.", "Plot twist: the noodles were breakfast.", "Not lazy. Just on energy-saving mode.", "I put “napping” under skills. Recruiters agree.", "Currently accepting applications for my next meal."],
             dodge: ["But no one hired me!", "Please don’t do that!", "I’m lazy.", "My last interview ended with a nap.", "HR still has my cover letter: “hi.”", "I have a degree in ceilings.", "Resume: one line. It says nap.", "My skills: horizontal.", "I’m overqualified for nothing.", "I put “Nap” under Experience.", "Even LinkedIn left me on read.", "I got ghosted by a chatbot.", "My LinkedIn says “Open to nap”.", "I’d work, but it’s Tuesday.", "Every day is a bad day to start.", "Employee of the month: nobody.", "Day 412 of unemployment. Thriving.", "Noodles don’t buy themselves.", "Dinner: noodles. Dessert: hope.", "Salary expectations: noodles.", "Today’s menu: spaghetti, again.", "I’m a $1 pasta connoisseur.", "Cup noodles are my personality.", "My fridge has an echo.", "Rent due. Motivation overdue.", "My bank account is a rumour.", "Career goals: a bigger couch.", "CEO of lying down.", "Founder of Doing Nothing Inc.", "Chief Napping Officer here.", "My KPI is staying horizontal.", "Synergy? I barely have energy.", "Let me circle back never.", "Can this be an email? No.", "Per my last nap...", "Quiet quitting before hiring.", "I’m disrupting employment.", "Even my cat got a promotion.", "My houseplant earns more.", "My goldfish has better prospects.", "I’m not broke. I’m minimalist.", "Stress is for the employed.", "Bills called. I didn’t answer.", "My calendar is empty by design.", "I mastered the art of waiting.", "Sorry, I’m buffering.", "Loading motivation... 3%.", "Low battery. Needs 14 hours.", "Out of office. Always.", "Auto-reply: still resting.", "Job? I thought you said jog.", "The word “job” gives me hives.", "I need a nap after that word.", "Triggered. Brb, napping.", "That’s offensive. Also true.", "Nope. Not in this timeline.", "Job offers go to my spam.", "Will work for noodles. Maybe.", "Will not work for noodles. Yet.", "Even my shadow is lazy.", "My alarm gave up on me.", "I peaked at naptime.", "This is my final form.", "Please pay me to stop.", "Don’t tell my mom you found me.", "Ask me after I wake up.", "Fine, but only horizontally.", "Free trial of me ends today.", "Sorry. Booked by my bed."]
         };
@@ -180,7 +180,7 @@ declare global {
         };
 
         // routing with clean URLs (no #)
-        const pages = ["home", "red", "roast", "challenge", "excuses", "soundboard", "about", "admin"];
+        const pages = ["home", "red", "roast", "challenge", "excuses", "soundboard", "about"];
         const PATH_MAP = {
             "/": "home",
             "/home": "home",
@@ -195,7 +195,7 @@ declare global {
             "/rules": "about",
             "/privacy": "about",
             "/terms": "about",
-            "/admin": "admin"
+            "/founder-gate": "founder-gate"
         };
         const PAGE_URLS = {
             home: "/",
@@ -212,6 +212,10 @@ declare global {
             const clean = (path || "/").replace(/\/$/, "") || "/";
             if (clean === "/hall-of-fame") {
                 bmode = "top";
+                return "home";
+            }
+            if (clean === "/founder-gate") {
+                setTimeout(openFounderConsole, 100);
                 return "home";
             }
             return PATH_MAP[clean] || PATH_MAP["/" + clean.split("/")[1]] || "home";
@@ -459,52 +463,183 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
         $("#exc").onclick = async () => { try { await navigator.clipboard.writeText($("#ex").textContent); toast("Copied. Use it wisely.") } catch (e) { toast("Couldn’t copy.") } };
         // exit intent (once)
         let ex1 = false; document.addEventListener("mouseout", e => { if (!e.relatedTarget && e.clientY <= 0 && !ex1 && !$("#md").classList.contains("on")) { ex1 = true; snd("dun"); $("#mb").innerHTML = `<h2>Wait, you’re leaving?</h2><p>I did nothing the entire time you were here. The least you could do is buy me a noodle.</p><p style="display:flex;gap:10px"><button class="btn" id="a1" style="flex:1;text-align:center">Fine, buy the noodle</button><button class="btn w" id="a2">I have no heart</button></p>`; $("#md").classList.add("on"); $("#a1").onclick = () => openFund(); $("#a2").onclick = () => { close_(); toast("Wow. Okay. Noted.") } } });
-        // ===== ADMIN (client-side only: it is NOT secure, and changes live in this browser) =====
+        // ===== FOUNDER CONSOLE (Authenticated securely against Supabase; hidden from normal users) =====
         let unlocked = false, atab = "entries", editing = null;
-        const dt = t => { const d = new Date(t - new Date().getTimezoneOffset() * 6e4); return d.toISOString().slice(0, 16) };
-        function renderAdmin() {
-            const A = $("#adm");
-            if (!unlocked) { A.innerHTML = `<div class="panel" style="max-width:420px"><label for="pw">Passcode</label><input id="pw" type="password"><p><button class="btn" id="pgo">Unlock</button></p><p class="hint">This passcode only hides the screen. It is visible in the page source, so it is not real security. A real admin needs a backend login.</p></div>`; $("#pgo").onclick = () => { if ($("#pw").value === CFG.pass) { unlocked = true; renderAdmin() } else toast("Wrong passcode.") }; return }
-            const tabs = [["entries", "Entries"], ["lines", "Lines"], ["settings", "Settings"], ["backup", "Backup"]];
-            let h = `<div class="note" style="margin:0 0 14px">Everything here is saved in <b>this browser only</b>. To apply changes for all visitors, use Backup > Export and paste the result into the file, or connect a backend.</div><div class="chips">${tabs.map(t => `<button class="chip ${atab === t[0] ? "on" : ""}" data-tab="${t[0]}">${t[1]}</button>`).join("")}</div>`;
-            if (atab === "entries") {
-                const e = editing || {}; h += `<div class="panel"><h3>${editing && editing.id ? "Edit entry" : "Record an entry"}</h3><p class="hint">Use this to record payments you actually received outside the site (UPI, PayPal, cash). These show to visitors with no tag, so only add real ones.</p>
-<label>Name or product</label><input id="e1" value="${esc(e.name || "")}"><label>Link</label><input id="e2" value="${esc(e.url || "")}"><label>Amount (USD)</label><input id="e3" type="number" min="0" step="0.01" value="${e.amt || ""}"><label>Description</label><textarea id="e4">${esc(e.desc || "")}</textarea><label>Date and time</label><input id="e5" type="datetime-local" value="${dt(e.t || Date.now())}"><label><input type="checkbox" id="e6" ${e.anon ? "checked" : ""}>Show as anonymous</label>
-<p><button class="btn sm" id="esv">${editing && editing.id ? "Save changes" : "Add entry"}</button> ${editing ? `<button class="btn sm w" id="ecn">Cancel</button>` : ""}</p></div>
-<div class="chips"><button class="chip" id="smp">Add 5 labelled samples (private preview)</button><button class="chip" id="rms">Remove samples</button><button class="chip" id="csv">Show CSV</button><button class="chip" id="cla">Delete all entries</button></div><p class="hint">Samples are always tagged “sample” and are hidden from visitors once a payment link is set.</p><div id="csvo"></div>
-<h3 style="margin-top:20px">${LOCAL.length} entries in this browser</h3>${[...LOCAL].sort((a, b) => b.t - a.t).map(x => `<div class="arow"><span><b>${esc(x.name)}</b> · ${money(x.amt)} · ${new Date(x.t).toLocaleString()} · ${esc(x.src)}</span><button class="chip" data-ed="${x.id}">Edit</button><button class="chip" data-dl="${x.id}">Delete</button></div>`).join("")}`
+        function openFounderConsole() {
+            if (!unlocked) {
+                $("#mb").innerHTML = `<h2>Founder Console</h2>
+                <p style="color:var(--mut);margin:0 0 16px;">Passcode is verified securely against Supabase. No password is ever stored in code or URLs.</p>
+                <label for="pw">Supabase Passcode</label>
+                <input type="password" id="pw" placeholder="Enter passcode" style="margin-bottom:14px">
+                <p style="display:flex;gap:10px;"><button class="btn sm" id="pwb" style="flex:1;">Unlock Console</button><button class="btn sm w" id="pwc">Cancel</button></p>`;
+                $("#md").classList.add("on");
+                $("#pwc").onclick = close_;
+                $("#pwb").onclick = async () => {
+                    const entered = $("#pw").value;
+                    const btn = $("#pwb");
+                    btn.textContent = "Verifying...";
+                    btn.disabled = true;
+                    const ok = await SupabaseService.verifyAdminPasscode(entered);
+                    btn.disabled = false;
+                    btn.textContent = "Unlock Console";
+                    if (ok) {
+                        unlocked = true;
+                        snd("fan");
+                        renderAdmin();
+                        toast("Welcome, Founder.");
+                    } else {
+                        snd("sad");
+                        toast("Incorrect passcode stored in Supabase.");
+                        $("#pw").value = "";
+                        $("#pw").focus();
+                    }
+                };
+                $("#pw").onkeydown = (e) => { if (e.key === "Enter") $("#pwb").click(); };
+                setTimeout(() => $("#pw")?.focus(), 120);
+                return;
             }
-            if (atab === "lines") { h += `<div class="panel"><label>Rotating hero lines (one per line)</label><textarea id="l1" style="min-height:240px">${esc(CFG.lines.join("\n"))}</textarea><label>“Go get a job” button texts (one per line; the first three play in order)</label><textarea id="l2" style="min-height:240px">${esc(CFG.dodge.join("\n"))}</textarea><p><button class="btn sm" id="lsv">Save lines</button> <button class="btn sm w" id="lrs">Reset to defaults</button></p></div>` }
-            if (atab === "settings") { h += `<div class="panel"><label>Payment link (empty = preview mode)</label><input id="s1" value="${esc(CFG.pay)}" placeholder="https://..."><label>Timezone for the daily reset</label><input id="s2" value="${esc(CFG.tz)}"><label>Hero tag</label><input id="s3" value="${esc(CFG.tag)}"><label>Main button text (the meal is added after it)</label><input id="s4" value="${esc(CFG.btn)}"><label>Small text under the main button</label><input id="s5" value="${esc(CFG.sub)}"><label>Admin passcode</label><input id="s6" value="${esc(CFG.pass)}"><p><button class="btn sm" id="ssv">Save settings</button></p></div>` }
-            if (atab === "backup") { h += `<div class="panel"><label>Export (copy this)</label><textarea id="b1" style="min-height:160px">${esc(JSON.stringify({ cfg: CFG, entries: LOCAL }))}</textarea><label>Import (paste an export here)</label><textarea id="b2"></textarea><p><button class="btn sm" id="bim">Import</button></p></div>` }
-            A.innerHTML = h;
-            $$("[data-tab]").forEach(b => b.onclick = () => { atab = b.dataset.tab; editing = null; renderAdmin() });
-            const on = (i, f) => { const el = $("#" + i); if (el) el.onclick = f };
-            on("esv", () => { const n = $("#e1").value.trim(), a = +$("#e3").value; if (!n || !(a > 0)) return toast("Name and a positive amount are required."); const o = { name: n, url: safeUrl($("#e2").value) || $("#e2").value.trim(), amt: a, desc: $("#e4").value.trim(), t: new Date($("#e5").value).getTime() || Date.now(), anon: $("#e6").checked, src: "manual" }; const newM: LeaderboardEntry = { id: (editing && editing.id) ? editing.id : "m" + Date.now(), img: "", anon: o.anon || false, ...o };
+            renderAdmin();
+        }
+
+        function renderAdmin() {
+            if (!unlocked) return openFounderConsole();
+            $("#md").classList.add("on");
+            let h = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h2 style="margin:0;">Founder Console</h2>
+                <button class="chip" id="adCl">Close</button>
+            </div>
+            <div class="tabs" style="margin-bottom:14px;">`;
+            [["entries", "Entries (" + LOCAL.length + ")"], ["settings", "Settings"], ["backup", "Backup"]].forEach(([k, l]) => {
+                h += `<button class="tab ${atab === k ? "on" : ""}" data-tab="${k}">${l}</button>`;
+            });
+            h += `</div>`;
+
+            if (atab === "entries") {
+                const E = editing || { name: "", url: "", amt: "", desc: "", t: Date.now(), anon: false };
+                h += `<div class="panel" style="margin-bottom:14px;">
+                    <h3>${editing ? "Edit entry" : "Add manual entry"}</h3>
+                    <label>Name</label><input id="e1" value="${esc(E.name)}">
+                    <label>URL (optional)</label><input id="e2" value="${esc(E.url)}">
+                    <label>Amount (USD)</label><input id="e3" type="number" step="1" value="${E.amt || ""}">
+                    <label>Message</label><textarea id="e4">${esc(E.desc || "")}</textarea>
+                    <label style="display:flex;align-items:center;margin:8px 0;"><input type="checkbox" id="e6" ${E.anon ? "checked" : ""}> Anonymous</label>
+                    <p style="display:flex;gap:8px;"><button class="btn sm" id="esv">Save entry</button>${editing ? `<button class="btn sm w" id="ecn">Cancel</button>` : ""}</p>
+                </div>
+                <div style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">` +
+                LOCAL.map(x => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border:1.5px solid var(--ink);border-radius:10px;background:#fff;">
+                    <div style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><b>${esc(x.name)}</b> - ${money(x.amt)} <small style="color:var(--mut);">(${new Date(x.t).toLocaleDateString()})</small></div>
+                    <div style="display:flex;gap:6px;"><button class="btn sm" style="padding:4px 8px;font-size:12px;" data-ed="${x.id}">Edit</button><button class="btn sm w" style="padding:4px 8px;font-size:12px;" data-dl="${x.id}">Delete</button></div>
+                </div>`).join("") + `</div>
+                <p style="margin-top:12px;display:flex;gap:8px;"><button class="chip" id="cla">Clear local entries</button><button class="chip" id="csv">Export CSV</button></p>
+                <div id="csvo"></div>`;
+            }
+
+            if (atab === "settings") {
+                h += `<div class="panel">
+                    <label>Payment URL (optional checkout / stripe)</label><input id="s1" value="${esc(CFG.pay)}" placeholder="https://...">
+                    <label>Timezone for daily reset</label><input id="s2" value="${esc(CFG.tz)}">
+                    <label>Hero tag</label><input id="s3" value="${esc(CFG.tag)}">
+                    <label>Main button label</label><input id="s4" value="${esc(CFG.btn)}">
+                    <label>Small text under button</label><input id="s5" value="${esc(CFG.sub)}">
+                    <p><button class="btn sm" id="ssv">Save Settings</button></p>
+                </div>`;
+            }
+
+            if (atab === "backup") {
+                h += `<div class="panel">
+                    <label>Export JSON</label><textarea id="b1" style="min-height:120px;">${esc(JSON.stringify({ cfg: CFG, entries: LOCAL }))}</textarea>
+                    <label>Import JSON</label><textarea id="b2" style="min-height:80px;"></textarea>
+                    <p><button class="btn sm" id="bim">Import JSON</button></p>
+                </div>`;
+            }
+
+            $("#mb").innerHTML = h;
+            $("#adCl").onclick = close_;
+            $$("[data-tab]").forEach(b => b.onclick = () => { atab = b.dataset.tab; editing = null; renderAdmin(); });
+            const on = (i, f) => { const el = $("#" + i); if (el) el.onclick = f; };
+
+            on("esv", async () => {
+                const n = $("#e1").value.trim(), a = +$("#e3").value;
+                if (!n || !(a > 0)) return toast("Name and positive amount are required.");
+                const o = { name: n, url: safeUrl($("#e2").value) || $("#e2").value.trim(), amt: a, desc: $("#e4").value.trim(), t: Date.now(), anon: $("#e6").checked, src: "manual" };
+                const newM = { id: (editing && editing.id) ? editing.id : "m" + Date.now(), img: "", ...o };
                 if (editing && editing.id) {
                     const idx = LOCAL.findIndex(x => x.id === editing.id);
                     if (idx !== -1) LOCAL[idx] = newM;
-                    StorageService.updateEntry(editing.id, newM);
+                    await StorageService.updateEntry(editing.id, newM);
                 } else {
                     LOCAL.unshift(newM);
-                    StorageService.addEntry(newM);
+                    await StorageService.addEntry(newM);
                 }
                 editing = null;
                 saveLocal();
                 renderAdmin();
                 render();
-                toast("Saved.") });
-            on("ecn", () => { editing = null; renderAdmin() });
-            $$("[data-ed]").forEach(b => b.onclick = () => { editing = LOCAL.find(x => x.id === b.dataset.ed); renderAdmin(); scrollTo(0, 0) });
-            $$("[data-dl]").forEach(b => b.onclick = () => { const delId = b.dataset.dl; LOCAL = LOCAL.filter(x => x.id !== delId); StorageService.deleteEntry(delId); saveLocal(); renderAdmin(); render() });
-            on("smp", () => { [["Sample Studio", 120, "Sample entry to preview the board."], ["Sample SaaS", 60, "Another sample entry."], ["@samplehandle", 25, "Sample social profile."], ["Sample Game", 10, "Sample entry."], ["Sample Anonymous", 3, "Sample entry."]].forEach(([n, a, d], i) => LOCAL.push({ id: "s" + Date.now() + i, name: n, url: "", amt: a, desc: d, img: "", t: Date.now(), src: "sample" })); saveLocal(); renderAdmin(); render() });
-            on("rms", () => { LOCAL = LOCAL.filter(x => x.src !== "sample"); saveLocal(); renderAdmin(); render() });
-            on("cla", () => { if (confirm("Delete all entries in this browser?")) { LOCAL = []; saveLocal(); renderAdmin(); render() } });
-            on("csv", () => { $("#csvo").innerHTML = `<textarea style="min-height:140px">${esc("name,url,amount,date,source\n" + LOCAL.map(x => [x.name, x.url, x.amt, new Date(x.t).toISOString(), x.src].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(",")).join("\n"))}</textarea>` });
-            on("lsv", () => { CFG.lines = $("#l1").value.split("\n").map(s => s.trim()).filter(Boolean); CFG.dodge = $("#l2").value.split("\n").map(s => s.trim()).filter(Boolean); bag = []; mi = 0; saveCfg(); toast("Lines saved.") });
-            on("lrs", () => { CFG.lines = DEF.lines.slice(); CFG.dodge = DEF.dodge.slice(); saveCfg(); bag = []; mi = 0; renderAdmin() });
-            on("ssv", () => { CFG.pay = $("#s1").value.trim(); CFG.tz = $("#s2").value.trim() || "Asia/Kolkata"; CFG.tag = $("#s3").value; CFG.btn = $("#s4").value.trim() || "Buy me"; CFG.sub = $("#s5").value; CFG.pass = $("#s6").value || "admin123"; saveCfg(); render(); toast("Settings saved.") });
-            on("bim", () => { try { const j = JSON.parse($("#b2").value); if (j.cfg) Object.assign(CFG, j.cfg); if (Array.isArray(j.entries)) LOCAL = j.entries; saveCfg(); saveLocal(); renderAdmin(); render(); toast("Imported.") } catch (e) { toast("That isn’t valid JSON.") } })
+                toast("Saved to Supabase.");
+            });
+
+            on("ecn", () => { editing = null; renderAdmin(); });
+            $$("[data-ed]").forEach(b => b.onclick = () => { editing = LOCAL.find(x => x.id === b.dataset.ed); renderAdmin(); });
+            $$("[data-dl]").forEach(b => b.onclick = async () => {
+                const delId = b.dataset.dl;
+                LOCAL = LOCAL.filter(x => x.id !== delId);
+                await StorageService.deleteEntry(delId);
+                saveLocal();
+                renderAdmin();
+                render();
+                toast("Deleted.");
+            });
+
+            on("cla", () => { if (confirm("Clear local entries?")) { LOCAL = []; saveLocal(); renderAdmin(); render(); } });
+            on("csv", () => { $("#csvo").innerHTML = `<textarea style="min-height:100px;margin-top:8px;">${esc("name,url,amount,date,source\n" + LOCAL.map(x => [x.name, x.url, x.amt, new Date(x.t).toISOString(), x.src].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(",")).join("\n"))}</textarea>`; });
+            on("ssv", () => {
+                CFG.pay = $("#s1").value.trim();
+                CFG.tz = $("#s2").value.trim() || "Asia/Kolkata";
+                CFG.tag = $("#s3").value;
+                CFG.btn = $("#s4").value.trim() || "Buy me";
+                CFG.sub = $("#s5").value;
+                saveCfg();
+                render();
+                toast("Settings saved.");
+            });
+            on("bim", () => {
+                try {
+                    const j = JSON.parse($("#b2").value);
+                    if (j.cfg) Object.assign(CFG, j.cfg);
+                    if (Array.isArray(j.entries)) LOCAL = j.entries;
+                    saveCfg();
+                    saveLocal();
+                    renderAdmin();
+                    render();
+                    toast("Imported.");
+                } catch (e) {
+                    toast("Invalid JSON format.");
+                }
+            });
+        }
+
+        // Secret keyboard shortcut (Ctrl + Shift + A) to open founder console
+        addEventListener("keydown", e => {
+            if (e.ctrlKey && e.shiftKey && (e.key === "A" || e.key === "a")) {
+                e.preventDefault();
+                openFounderConsole();
+            }
+        });
+
+        // Secret sleeper click counter (5 clicks opens founder console)
+        let sleeperClicks = 0, sleeperResetTimer = null;
+        const slpEl = document.querySelector(".sleeper");
+        if (slpEl) {
+            slpEl.addEventListener("click", () => {
+                sleeperClicks++;
+                clearTimeout(sleeperResetTimer);
+                sleeperResetTimer = setTimeout(() => { sleeperClicks = 0; }, 2000);
+                if (sleeperClicks >= 5) {
+                    sleeperClicks = 0;
+                    snd("fan");
+                    openFounderConsole();
+                }
+            });
         }
 
         // ===== CLICK EFFECTS: every click, even on empty space, bursts and shakes the 3D scene =====

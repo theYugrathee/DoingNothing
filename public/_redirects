@@ -1,2 +1,2 @@
-/admin /index.html 200
-
+# SPA rewrite for unguessable founder console
+/founder-gate /index.html 200

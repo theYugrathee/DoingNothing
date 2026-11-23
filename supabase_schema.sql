@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS public.patrons (
 CREATE INDEX IF NOT EXISTS idx_patrons_board 
 ON public.patrons (is_today, is_approved, amount DESC, created_at DESC);
 
--- 3. Grant table privileges to anon and authenticated roles (Resolves Error 42501)
+-- 3. Grant table privileges to anon and authenticated roles
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT ALL ON TABLE public.patrons TO anon, authenticated;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
@@ -69,4 +69,29 @@ BEGIN
 END;
 $$;
 
--- 7. No seed data — board starts empty and fills with real contributions only.
+-- 7. Admin Settings Table (Stores secret admin passcode in Supabase, NOT in code or URL)
+CREATE TABLE IF NOT EXISTS public.admin_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now())
+);
+
+GRANT ALL ON TABLE public.admin_settings TO anon, authenticated;
+ALTER TABLE public.admin_settings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow public read for admin_settings" ON public.admin_settings;
+CREATE POLICY "Allow public read for admin_settings"
+ON public.admin_settings FOR SELECT
+TO anon, authenticated
+USING (true);
+
+DROP POLICY IF EXISTS "Allow public write for admin_settings" ON public.admin_settings;
+CREATE POLICY "Allow public write for admin_settings"
+ON public.admin_settings FOR ALL
+TO anon, authenticated
+USING (true);
+
+-- Set your custom secret passcode in Supabase here:
+INSERT INTO public.admin_settings (key, value)
+VALUES ('admin_passcode', 'admin123')
+ON CONFLICT (key) DO NOTHING;

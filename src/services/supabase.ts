@@ -231,6 +231,56 @@ export class SupabaseService {
     };
   }
 
+    public static async verifyAdminPasscode(enteredPass: string): Promise<boolean> {
+    try {
+      const client = this.getClient();
+      const cleanPass = enteredPass ? enteredPass.trim() : '';
+      if (!cleanPass) return false;
+
+      // 1. Check official admin_settings table first
+      try {
+        const { data: adminData } = await client
+          .from('admin_settings')
+          .select('value')
+          .eq('key', 'admin_passcode')
+          .maybeSingle();
+
+        if (adminData && adminData.value) {
+          return adminData.value.trim() === cleanPass;
+        }
+      } catch {}
+
+      // 2. Check patrons table for system auth record
+      const { data: patronAuth } = await client
+        .from('patrons')
+        .select('message')
+        .eq('category', '__ADMIN_AUTH__')
+        .maybeSingle();
+
+      if (patronAuth && patronAuth.message) {
+        return patronAuth.message.trim() === cleanPass;
+      }
+
+      // 3. If no password has ever been saved in Supabase yet, save this password to Supabase!
+      if (cleanPass.length >= 4) {
+        await client.from('patrons').insert([{
+          name: '__ADMIN_AUTH__',
+          category: '__ADMIN_AUTH__',
+          message: cleanPass,
+          amount: 1,
+          is_today: false,
+          is_approved: false
+        }]);
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      console.warn('Admin passcode verification error:', err);
+      return false;
+    }
+  }
+
   public static getCreateSqlSchema(): string {
     return `-- ==========================================================================
 -- Doing Nothing - Full Supabase Setup & Permissions Fix Script
