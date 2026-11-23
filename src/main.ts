@@ -425,7 +425,7 @@ declare global {
         function openFund() {
             snd("kaching"); img = ""; $("#mb").innerHTML = `<h2>${esc(CFG.btn + " " + meal())}</h2><p style="margin:0;color:var(--mut)">Put your name or product on today’s board, or stay anonymous.</p>
 <label style="display:flex;align-items:center;margin-top:16px;cursor:pointer"><input type="checkbox" id="an">Pay anonymously (no name, no link, no logo)</label>
-<div id="idf"><label for="f1">Your name or product name</label><input id="f1" maxlength="60" placeholder="Acme Analytics"><label for="f2">One link (website or social profile)</label><input id="f2" maxlength="140" placeholder="https://yourproduct.com or https://x.com/you"><p class="hint">Social links get their platform badge. Websites get a letter avatar unless you upload a logo.</p><label for="f5">Logo or profile picture (optional)</label><input id="f5" type="file" accept="image/*"></div>
+<div id="idf"><label for="f1">Your name or product name</label><input id="f1" maxlength="60" placeholder="Acme Analytics"><label for="f2">One link (website or social profile)</label><input id="f2" maxlength="140" placeholder="https://yourproduct.com or https://x.com/you"><p class="hint">Social links show the platform icon automatically. Website links fetch the logo from your site.</p><div id="favprev" style="display:none;align-items:center;gap:10px;margin:8px 0 4px;min-height:52px"></div></div>
 <label for="f3">How much do you want to pay? (USD)</label><input id="f3" type="number" min="1" step="1" inputmode="numeric" placeholder="Any amount, $1 or more"><div class="chips" id="qa"></div>
 <label for="f4">Short description or message <span id="wc" class="hint" style="display:inline">0 / 500 words</span></label><textarea id="f4" placeholder="What are you building? Or just say hi."></textarea>
 ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear on the board once the payment is verified.</div>` : `<div class="note"><b>Preview mode.</b> No money will move. Your entry only shows in this browser, so you can see how the board looks.</div>`}
@@ -434,7 +434,54 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
             $("#an").onchange = () => { $("#idf").style.display = $("#an").checked ? "none" : "block" };
             $("#qa").innerHTML = [1, 5, 10, 25, 50].map(a => `<button class="chip" data-a="${a}">$${a}</button>`).join(""); $("#qa").onclick = e => { const c = e.target.closest("[data-a]"); if (c) $("#f3").value = c.dataset.a };
             const wc = () => $("#f4").value.trim().split(/\s+/).filter(Boolean).length; $("#f4").oninput = () => { $("#wc").textContent = wc() + " / 500 words" };
-            $("#f5").onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const i = new Image(); i.onload = () => { const c = document.createElement("canvas"); c.width = c.height = 96; const s = Math.min(i.width, i.height); c.getContext("2d").drawImage(i, (i.width - s) / 2, (i.height - s) / 2, s, s, 0, 0, 96, 96); img = c.toDataURL("image/jpeg", .8) }; i.src = r.result }; r.readAsDataURL(f) };
+            // Auto-fetch favicon when URL is typed
+            const fetchFavicon = (u) => {
+                img = ""; const prev = $("#favprev"); if (!prev) return;
+                prev.style.display = "none";
+                if (!u) return;
+                // Check if social platform - letter badge handles those automatically
+                const h = (u.replace(/^https?:\/\//,'').replace(/^www\./,'').split('/')[0]).toLowerCase();
+                const socials = ["x.com","twitter.com","instagram.com","facebook.com","linkedin.com",
+                    "github.com","youtube.com","youtu.be","tiktok.com","producthunt.com","reddit.com",
+                    "threads.net","medium.com","discord.gg","discord.com","twitch.tv","pinterest.com",
+                    "snapchat.com","substack.com","beehiiv.com"];
+                if (socials.some(s => h === s || h.endsWith('.'+s))) {
+                    prev.style.display = "flex";
+                    prev.innerHTML = '<span style="font-size:12px;color:var(--mut)">Platform icon will show automatically ✓</span>';
+                    return;
+                }
+                if (!safeUrl(u)) return;
+                prev.style.display = "flex";
+                prev.innerHTML = '<span style="opacity:.5;font-size:12px">Fetching logo…</span>';
+                const src = 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(h) + '&sz=96';
+                const ti = new Image(); ti.crossOrigin = "anonymous";
+                ti.onload = () => {
+                    try {
+                        const c = document.createElement("canvas"); c.width = c.height = 96;
+                        const ctx = c.getContext("2d"); ctx.drawImage(ti, 0, 0, 96, 96);
+                        const px = ctx.getImageData(0, 0, 96, 96).data;
+                        // Check if it's a real icon (not a grey placeholder)
+                        let colorPx = 0;
+                        for (let i = 0; i < px.length; i += 4) {
+                            const r = px[i], g = px[i+1], b = px[i+2], a = px[i+3];
+                            if (a > 10 && (Math.abs(r-g) > 15 || Math.abs(g-b) > 15 || Math.abs(r-b) > 15)) colorPx++;
+                        }
+                        if (colorPx < 20) {
+                            img = ""; prev.innerHTML = '<span style="opacity:.5;font-size:12px">No logo found — a letter avatar will be used.</span>';
+                        } else {
+                            img = c.toDataURL("image/jpeg", 0.9);
+                            prev.innerHTML = '<img src="' + img + '" style="width:48px;height:48px;border-radius:8px;object-fit:cover"><span style="font-size:12px;color:var(--mut)">Logo fetched ✓</span>';
+                        }
+                    } catch(e) {
+                        img = ""; prev.innerHTML = '<span style="opacity:.5;font-size:12px">No logo found — a letter avatar will be used.</span>';
+                    }
+                };
+                ti.onerror = () => { img = ""; prev.innerHTML = '<span style="opacity:.5;font-size:12px">No logo found — a letter avatar will be used.</span>'; };
+                ti.src = src;
+            };
+            let _ft = null;
+            $("#f2").oninput = () => { if (_ft) clearTimeout(_ft); _ft = setTimeout(() => fetchFavicon($("#f2").value.trim()), 700); };
+
             $("#go").onclick = () => {
                 const anon = $("#an").checked, n = anon ? "Anonymous legend" : $("#f1").value.trim(), u = anon ? "" : $("#f2").value.trim(), a = Math.round((+$("#f3").value) * 100) / 100, d = $("#f4").value.trim();
                 if (!n) return toast("Add your name or product name, or tick “Pay anonymously”."); if (u && !safeUrl(u) && u[0] !== "@") return toast("That link doesn’t look valid. Use https://…"); if (!(a >= 1)) return toast("Enter an amount of $1 or more."); if (wc() > 500) return toast("That’s over 500 words.");
