@@ -36,7 +36,7 @@ declare global {
         function noise(d, v = .3, f = 1500, at = 0) { const c = ctx(); if (!c) return; const t = c.currentTime + at, n = Math.floor(c.sampleRate * d), b = c.createBuffer(1, n, c.sampleRate), a = b.getChannelData(0); for (let i = 0; i < n; i++)a[i] = Math.random() * 2 - 1; const s = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain(); s.buffer = b; fl.type = "bandpass"; fl.frequency.value = f; g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d); s.connect(fl); fl.connect(g); g.connect(MG); s.start(t) }
         const SND = { pop: () => tone(700, .07, "sine", .4, 300), bonk: () => tone(260, .13, "triangle", .6, 80), squeak: () => tone(1300, .09, "square", .12, 2000), boing: () => { tone(200, .22, "sine", .5, 700); tone(700, .3, "sine", .4, 240, .2) }, blorp: () => tone(150, .22, "sawtooth", .2, 55), honk: () => { tone(233, .3, "sawtooth", .18); tone(247, .3, "sawtooth", .18) }, up: () => tone(300, .25, "sine", .35, 1500), tick: () => tone(1500, .02, "square", .07), kaching: () => { tone(1568, .12, "sine", .4); tone(2093, .35, "sine", .4, null, .1); noise(.08, .15, 6000) }, sad: () => [[293, .3, 0], [277, .3, .32], [261, .3, .64], [233, .9, .96]].forEach(([f, d, a]) => tone(f, d, "sawtooth", .18, f * .92, a)), rim: () => { tone(130, .12, "triangle", .7, 70); tone(110, .12, "triangle", .7, 60, .18); noise(.5, .35, 5000, .4) }, horn: () => { [440, 554, 659].forEach(f => tone(f, .6, "sawtooth", .14, f * .9)); noise(.15, .1, 3000) }, boom: () => { tone(80, .7, "sine", .9, 30); noise(.25, .35, 200) }, alarm: () => { for (let i = 0; i < 4; i++)tone(i % 2 ? 660 : 880, .12, "square", .12, null, i * .14) }, scratch: () => noise(.35, .4, 2500), fan: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, .18, "triangle", .4, null, i * .09)), dun: () => [[196, 0], [196, .28], [165, .6]].forEach(([f, a]) => tone(f, .4, "sawtooth", .2, f * .97, a)), yay: () => { tone(400, .15, "sine", .4, 900); tone(900, .2, "sine", .4, 1300, .14) } };
         const arp = (n, st, ty = "sine", v = .35, d = .16) => n.forEach((f, i) => tone(f, d, ty, v, null, i * st));
-        const clack = (f = 1) => { noise(.035, .3 * f, 3200 + Math.random() * 1200); tone(120 + Math.random() * 60, .05, "square", .12 * f, 70); tone(2800 + Math.random() * 600, .015, "square", .05, null, .012) };
+        const clack = (f = 1) => { tone(260 + Math.random() * 50, .038, "triangle", .065 * f, 140); tone(460 + Math.random() * 60, .02, "sine", .03 * f, 220); };
         Object.assign(SND, {
             coin: () => { tone(988, .08, "square", .18); tone(1319, .3, "square", .18, null, .08) }, jump: () => tone(300, .14, "square", .2, 800), laser: () => tone(1800, .22, "sawtooth", .18, 200), zap: () => { noise(.12, .3, 3000); tone(700, .18, "sawtooth", .16, 90) }, whoosh: () => noise(.35, .35, 900),
             bubble: () => { tone(400, .09, "sine", .4, 900); tone(500, .09, "sine", .35, 1100, .1) }, drip: () => tone(1300, .1, "sine", .4, 500), ding: () => tone(1760, .6, "sine", .35), bell: () => [880, 1320, 1760].forEach((f, i) => tone(f, .9 - i * .15, "sine", .22)), chime: () => arp([784, 988, 1175], .1, "triangle", .3, .5),
@@ -54,7 +54,33 @@ declare global {
         function snd(n, gap = 60) { if (!SOUND || !welcomed) return; const t = performance.now(); if (lastS[n] && t - lastS[n] < gap) return; lastS[n] = t; try { SND[n]() } catch (e) { } }
         const CLK = ["pop", "bonk", "squeak", "boing", "blorp", "yay", "coin", "bubble", "blip", "drip", "xylo", "glock", "jump", "spring", "squeeze", "pew", "quack", "meow", "kazoo", "clap", "dingding", "gulp", "whistle", "woo", "bubblepop", "cowbell"];
         const welcome = () => { if (welcomed) return; welcomed = true; snd("fan") };["pointerdown", "keydown", "touchstart"].forEach(v => addEventListener(v, welcome, { passive: true }));
-        document.addEventListener("click", e => { if (e.target.closest("#snd,#mot,#sbg")) return; if (e.target.closest("a,button,.row,.opt,.chip,.rbtn")) snd(CLK[Math.floor(Math.random() * CLK.length)], 30) }, true);
+        document.addEventListener("click", e => {
+            const btn = e.target.closest("button, .btn, .chip, .rbtn, .pc, .lr, a, .opt");
+            if (btn) {
+                // Default button tapping scale pop animation
+                if (!RM2) {
+                    btn.animate([
+                        { transform: "scale(0.92)" },
+                        { transform: "scale(1.18)" },
+                        { transform: "scale(0.98)" },
+                        { transform: "scale(1)" }
+                    ], { duration: 250, easing: "cubic-bezier(0.175, 0.885, 0.32, 1.275)" });
+
+                    // Celebratory milestone-style burst effect right at the button
+                    const r = btn.getBoundingClientRect();
+                    const bx = e.clientX || (r.left + r.width / 2);
+                    const by = e.clientY || (r.top + r.height / 2);
+                    if (window.burstAt) {
+                        window.burstAt(bx, by);
+                        if (window.shock) shock(bx, by, 1.25);
+                        setTimeout(() => window.burstAt(bx + (Math.random() - 0.5) * 50, by + (Math.random() - 0.5) * 35), 75);
+                        setTimeout(() => window.burstAt(bx + (Math.random() - 0.5) * 70, by + (Math.random() - 0.5) * 45), 150);
+                    }
+                }
+            }
+            if (e.target.closest("#snd,#mot,#sbg")) return;
+            if (btn) snd(CLK[Math.floor(Math.random() * CLK.length)], 30);
+        }, true);
         let hv = null; document.addEventListener("pointerover", e => { const r = e.target.closest(".row"); if (r && r !== hv) { hv = r; snd("tick", 90) } else if (!r) hv = null });
         const sb = document.getElementById("snd"); const sbl = () => sb.textContent = "Sound: " + (SOUND ? "on" : "off"); sbl(); sb.onclick = () => { SOUND = !SOUND; try { localStorage.setItem("idn_snd", SOUND ? "on" : "off") } catch (e) { } sbl(); welcomed = true; snd("pop") };
         const money = n => "$" + (Math.round(n * 100) / 100).toLocaleString();
@@ -286,8 +312,8 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
         $("#sbg").innerHTML = Object.keys(SND).map(n => `<button class="chip" data-sn="${n}">${n}</button>`).join("");
         $("#sbg").onclick = e => { const b = e.target.closest("[data-sn]"); if (!b) return; if (!SOUND) return toast("Sound is off. Turn it on in the header."); welcomed = true; try { SND[b.dataset.sn]() } catch (x) { } };
         // typing + scrolling sounds
-        addEventListener("keydown", e => { if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || /^(Shift|Control|Alt|Meta|CapsLock)$/.test(e.key)) return; snd(e.key === " " ? "spaceclack" : e.key === "Enter" ? "enterclack" : "clack", 15) });
-        let sy0 = scrollY, sacc = 0; addEventListener("scroll", () => { sacc += Math.abs(scrollY - sy0); sy0 = scrollY; if (sacc > 70) { sacc = 0; snd("tk", 25) } }, { passive: true });
+        addEventListener("keydown", e => { if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || /^(Shift|Control|Alt|Meta|CapsLock|Tab|Escape)$/.test(e.key)) return; snd(e.key === " " ? "spaceclack" : e.key === "Enter" ? "enterclack" : "clack", 30) });
+        let sy0 = scrollY, sacc = 0; addEventListener("scroll", () => { sacc += Math.abs(scrollY - sy0); sy0 = scrollY; if (sacc > 110) { sacc = 0; snd("tk", 70) } }, { passive: true });
         // leaderboard: 3D tilt on hover + amounts count up
         const tilt = e => { const c = e.target.closest(".pc:not(.gh),.lr"); if (!c || RM2) return; const r = c.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5; c.style.transform = `perspective(700px) rotateX(${-y * 9}deg) rotateY(${x * 11}deg) translateY(-3px)` };
         ["#board", "#hof"].forEach(q => { $(q).addEventListener("pointermove", tilt); $(q).addEventListener("pointerout", e => { const c = e.target.closest(".pc,.lr"); if (c) c.style.transform = "" }) });
@@ -300,7 +326,7 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
             function spark(x, y) { if (document.querySelectorAll(".sk").length > 50) return; const p = document.createElement("div"), z = 8 + Math.random() * 9; p.className = "cb sk"; p.style.cssText = `left:${x}px;top:${y}px;width:${z}px;height:${z}px;background:${CL[Math.floor(Math.random() * 5)]}`; document.body.appendChild(p); p.animate([{ transform: "translate(-50%,-50%) scale(1) rotate(0)", opacity: 1 }, { transform: `translate(calc(-50% + ${(Math.random() - .5) * 50}px),calc(-50% + ${30 + Math.random() * 50}px)) scale(.1) rotate(${Math.random() * 360}deg)`, opacity: 0 }], { duration: 700 + Math.random() * 300, easing: "ease-out" }).onfinish = () => p.remove() }
             addEventListener("pointermove", e => {
                 const x = e.clientX, y = e.clientY; if (lx < 0) { lx = x; ly = y } const dx = x - lx, dy = y - ly, d = Math.hypot(dx, dy); lx = x; ly = y; vx = dx; vy = dy; tx = x + 22; ty = y + 22;
-                if (e.pointerType === "mouse") { a1 += d; if (a1 > 24 && !RM2) { a1 = 0; spark(x, y) } a2 += d; if (a2 > 150) { a2 = 0; snd("swish", 60) } if (fine && !RM2) cube.style.display = "block" }
+                if (e.pointerType === "mouse") { a1 += d; if (a1 > 24 && !RM2) { a1 = 0; spark(x, y) } a2 += d; if (a2 > 320) { a2 = 0; snd("swish", 200) } if (fine && !RM2) cube.style.display = "block" }
             }, { passive: true });
             (function loop() { requestAnimationFrame(loop); if (RM2) { cube.style.display = "none"; return } cx += (tx - cx) * .2; cy += (ty - cy) * .2; ax += vy * .5 + .9; ay += vx * .5 + 1.6; vx *= .88; vy *= .88; cube.style.transform = `translate3d(${cx}px,${cy}px,0) perspective(300px) rotateX(${ax}deg) rotateY(${ay}deg)` })()
         })();
