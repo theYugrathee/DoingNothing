@@ -526,6 +526,21 @@ function renderAvatar(item: LeaderboardEntry): string {
   return `<div class="av" style="background:${bg}">${AnalyticsService.escapeHtml(initial)}</div>`;
 }
 
+function formatAgoHtml(t: number): string {
+  const diffMins = Math.floor((Date.now() - t) / 60000);
+  if (diffMins < 1) {
+    return `<div class="ago-box"><span class="ago-num">Just</span><span class="ago-unit">now</span></div>`;
+  }
+  if (diffMins < 60) {
+    return `<div class="ago-box"><span class="ago-num">${diffMins}m</span><span class="ago-unit">ago</span></div>`;
+  }
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) {
+    return `<div class="ago-box"><span class="ago-num">${diffHours}h</span><span class="ago-unit">ago</span></div>`;
+  }
+  return `<div class="ago-box"><span class="ago-num">${Math.floor(diffHours / 24)}d</span><span class="ago-unit">ago</span></div>`;
+}
+
 function renderLeaderboard(): void {
   const boardEl = $('#boardContainer');
   const countEl = $('#countToday');
@@ -537,13 +552,7 @@ function renderLeaderboard(): void {
   const stats = AnalyticsService.calculateDailyStats(entries, config.targetGoal);
   if (totalEl) totalEl.textContent = AnalyticsService.formatMoney(stats.collectedToday);
   if (countEl) countEl.textContent = stats.feedersToday.toString();
-  if (topNameEl) {
-    if (stats.topSupporter && stats.topSupporter !== 'Nobody yet' && stats.topSupporter !== 'Nobody') {
-      topNameEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px"><span style="font-size:16px;line-height:1">👑</span><span>${AnalyticsService.escapeHtml(stats.topSupporter)}</span></span>`;
-    } else {
-      topNameEl.textContent = 'Nobody yet';
-    }
-  }
+  if (topNameEl) topNameEl.textContent = stats.topSupporter || 'Nobody yet';
 
   const displayList = AnalyticsService.getSortedBoard(entries, currentBoardMode);
 
@@ -566,15 +575,14 @@ function renderLeaderboard(): void {
     const tier = AnalyticsService.getTier(item.amt);
     const host = AnalyticsService.getHost(item.url);
     const pct = Math.min(100, Math.max(3, (item.amt / maxAmount) * 100));
-    const isFresh = Date.now() - item.t < 120000;
 
-        html += `
+    html += `
       <button class="lr ${currentBoardMode === 'recent' && idx === 0 ? 'hot' : ''}" data-id="${item.id}">
         <div class="lk">
           ${
             currentBoardMode === 'top'
-              ? `<b>${rank}</b>`
-              : `<span class="tp ${isFresh ? 'nw' : ''}">${AnalyticsService.getTimeAgo(item.t)}</span>`
+              ? `<b>#${rank}</b>`
+              : formatAgoHtml(item.t)
           }
         </div>
         ${renderAvatar(item)}
