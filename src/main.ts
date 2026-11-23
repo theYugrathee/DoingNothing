@@ -581,7 +581,7 @@ function renderLeaderboard(): void {
         <div class="lk">
           ${
             currentBoardMode === 'top'
-              ? `<b>#${rank}</b>`
+              ? `<b class="rank-badge ${rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-other'}">#${rank}</b>`
               : formatAgoHtml(item.t)
           }
         </div>
