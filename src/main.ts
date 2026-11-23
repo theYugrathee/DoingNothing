@@ -87,8 +87,35 @@ declare global {
         const dayKey = t => new Date(t).toLocaleDateString("en-CA", { timeZone: tz() });
         const left = () => { const p = new Intl.DateTimeFormat("en-GB", { timeZone: tz(), hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" }).formatToParts(new Date()), g = t => +p.find(x => x.type === t).value; return 86400 - ((g("hour") % 24) * 3600 + g("minute") * 60 + g("second")) };
         const COL = ["#2F4BFF", "#E8412C", "#0E9F6E", "#8B3DFF", "#F08A00", "#101010", "#D6246E"]; const hue = s => COL[[...s].reduce((a, c) => a + c.charCodeAt(0), 0) % COL.length];
-        const SOC = { "x.com": ["X", "#101010"], "twitter.com": ["X", "#101010"], "instagram.com": ["IG", "#D6246E"], "linkedin.com": ["in", "#0A66C2"], "github.com": ["GH", "#101010"], "youtube.com": ["YT", "#E00"], "youtu.be": ["YT", "#E00"], "tiktok.com": ["TT", "#101010"], "facebook.com": ["f", "#1877F2"], "producthunt.com": ["P", "#DA552F"], "reddit.com": ["R", "#FF4500"], "threads.net": ["@", "#101010"], "medium.com": ["M", "#101010"] };
-        const soc = u => { const h = host(u), k = Object.keys(SOC).find(k => h === k || h.endsWith("." + k)); return k ? SOC[k] : null };
+        interface SocialDef { name: string; bg: string; svg: string; }
+        const SOCIAL_MAP: Record<string, SocialDef> = {
+            "x.com": { name: "X", bg: "#000000", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>' },
+            "twitter.com": { name: "Twitter", bg: "#1DA1F2", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.52 8.52 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/></svg>' },
+            "instagram.com": { name: "Instagram", bg: "linear-gradient(135deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>' },
+            "facebook.com": { name: "Facebook", bg: "#1877F2", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>' },
+            "fb.com": { name: "Facebook", bg: "#1877F2", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>' },
+            "linkedin.com": { name: "LinkedIn", bg: "#0A66C2", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>' },
+            "github.com": { name: "GitHub", bg: "#161b22", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>' },
+            "youtube.com": { name: "YouTube", bg: "#FF0000", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>' },
+            "youtu.be": { name: "YouTube", bg: "#FF0000", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>' },
+            "tiktok.com": { name: "TikTok", bg: "#010101", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>' },
+            "reddit.com": { name: "Reddit", bg: "#FF4500", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>' },
+            "medium.com": { name: "Medium", bg: "#000000", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M13.54 12a6.8 6.8 0 0 1-6.77 6.82A6.8 6.8 0 0 1 0 12a6.8 6.8 0 0 1 6.77-6.82A6.8 6.8 0 0 1 13.54 12zm7.42 0c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z"/></svg>' },
+            "threads.net": { name: "Threads", bg: "#000000", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.472 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.589 12c.027 3.086.718 5.496 2.057 7.164 1.43 1.783 3.631 2.698 6.54 2.717 2.623-.02 4.358-.631 5.8-2.045 1.647-1.613 1.618-3.593 1.09-4.798-.31-.71-.873-1.3-1.634-1.75-.192 1.352-.622 2.446-1.284 3.272-.886 1.102-2.14 1.704-3.73 1.79-1.202.065-2.361-.218-3.259-.801-1.063-.689-1.685-1.74-1.752-2.964-.065-1.19.408-2.285 1.33-3.082.88-.76 2.119-1.207 3.583-1.291a13.853 13.853 0 0 1 3.02.142c-.126-.742-.375-1.332-.75-1.757-.513-.586-1.308-.883-2.359-.89h-.029c-.844 0-1.992.232-2.721 1.32L7.734 7.847c.98-1.454 2.568-2.256 4.478-2.256h.044c3.194.02 5.097 1.975 5.287 5.388.108.046.216.094.321.142 1.49.7 2.58 1.761 3.154 3.07.797 1.829.433 4.146-1.278 5.907C17.908 23.054 15.302 24 12.186 24zm-.145-10.86c-.899.05-1.6.299-2.085.733-.47.42-.698.98-.665 1.58.062 1.147 1.182 1.812 2.738 1.724 1.147-.063 2.011-.45 2.57-1.152.419-.523.651-1.264.69-2.212a11.413 11.413 0 0 0-3.248-.673z"/></svg>' },
+            "discord.com": { name: "Discord", bg: "#5865F2", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057.1 18.082.11 18.1.128 18.11a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>' },
+            "discord.gg": { name: "Discord", bg: "#5865F2", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057.1 18.082.11 18.1.128 18.11a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>' },
+            "producthunt.com": { name: "Product Hunt", bg: "#DA552F", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M13.604 8.4h-3.405V12h3.405c.993 0 1.8-.807 1.8-1.8 0-.993-.807-1.8-1.8-1.8zM12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zm1.604 14.4h-3.405V18H7.8V6h5.804c2.319 0 4.2 1.881 4.2 4.2 0 2.319-1.881 4.2-4.2 4.2z"/></svg>' },
+            "twitch.tv": { name: "Twitch", bg: "#9146FF", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>' },
+            "substack.com": { name: "Substack", bg: "#FF6719", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z"/></svg>' }
+        };
+        const getSocialInfo = (u: string): SocialDef | null => {
+            if (!u) return null;
+            const clean = u.replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+            const h = clean.split('/')[0].toLowerCase();
+            const k = Object.keys(SOCIAL_MAP).find(key => h === key || h.endsWith('.' + key));
+            return k ? SOCIAL_MAP[k] : null;
+        };
+        const soc = (u: string) => { const s = getSocialInfo(u); return s ? [s.name, s.bg] : null; };
         // entries (src: preview | sample | manual). Visitors see preview/sample only in preview mode; manual entries (real payments you recorded) always show.
         let LOCAL: LeaderboardEntry[] = StorageService.getEntries();
         const saveLocal = () => { StorageService.saveEntries(LOCAL); };
@@ -294,7 +321,19 @@ declare global {
         addEventListener("resize", home); document.fonts && document.fonts.ready.then(home);
         // counter
         let shown = 0; function setTotal(to) { const f = shown, s = performance.now(); shown = to; (function a(t) { const p = Math.min(1, (t - s) / 800); $("#tot").textContent = money(f + (to - f) * p); if (p < 1) requestAnimationFrame(a) })(s) }
-        function avatar(x) { const s = soc(x.url); if (x.img) return `<div class="av"><img src="${esc(x.img)}" alt=""></div>`; if (x.anon) return `<div class="av" style="background:#8a877d">?</div>`; if (s) return `<div class="av" style="background:${s[1]}">${esc(s[0])}</div>`; return `<div class="av" style="background:${hue(x.name)}">${esc((x.name[0] || "?").toUpperCase())}</div>` }
+        function avatar(x) {
+            if (x.anon) return `<div class="av" style="background:#8a877d">?</div>`;
+            const s = getSocialInfo(x.url);
+            if (s) {
+                return `<div class="av" style="background:${s.bg};display:grid;place-items:center">${s.svg}</div>`;
+            }
+            const h = host(x.url);
+            const logoSrc = x.img || (h && h.includes('.') ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(h)}&sz=128` : '');
+            if (logoSrc) {
+                return `<div class="av" style="background:#fff;display:grid;place-items:center"><img src="${esc(logoSrc)}" style="width:100%;height:100%;object-fit:contain;padding:4px" onerror="this.onerror=null;this.parentElement.style.background='${hue(x.name)}';this.parentElement.innerHTML='${esc((x.name[0]||'?').toUpperCase())}'" alt=""></div>`;
+            }
+            return `<div class="av" style="background:${hue(x.name)}">${esc((x.name[0] || "?").toUpperCase())}</div>`;
+        }
         const tierOf = a => a >= 100 ? ["Legend", "#E8412C"] : a >= 25 ? ["Big spender", "#8B3DFF"] : a >= 5 ? ["Supporter", "#0E9F6E"] : ["Noodle", "#6c6a64"];
         const chipT = x => { const t = tierOf(x.amt); return `<span class="tc" style="background:${t[1]}">${t[0]}</span>` };
         const CROWN = '<svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true"><path d="M3 18h18l1-10-5 4-5-8-5 8-5-4z" fill="#FFD23F" stroke="#101010" stroke-width="1.6" stroke-linejoin="round"/></svg>';
@@ -425,7 +464,7 @@ declare global {
         function openFund() {
             snd("kaching"); img = ""; $("#mb").innerHTML = `<h2>${esc(CFG.btn + " " + meal())}</h2><p style="margin:0;color:var(--mut)">Put your name or product on today’s board, or stay anonymous.</p>
 <label style="display:flex;align-items:center;margin-top:16px;cursor:pointer"><input type="checkbox" id="an">Pay anonymously (no name, no link, no logo)</label>
-<div id="idf"><label for="f1">Your name or product name</label><input id="f1" maxlength="60" placeholder="Acme Analytics"><label for="f2">One link (website or social profile)</label><input id="f2" maxlength="140" placeholder="https://yourproduct.com or https://x.com/you"><p class="hint">Social links show the platform icon automatically. Website links fetch the logo from your site.</p><div id="favprev" style="display:none;align-items:center;gap:10px;margin:8px 0 4px;min-height:52px"></div></div>
+<div id="idf"><label for="f1">Your name or product name</label><input id="f1" maxlength="60" placeholder="Acme Analytics"><label for="f2">One link (website or social profile)</label><input id="f2" maxlength="140" placeholder="https://yourproduct.com or https://x.com/you"><p class="hint">Social profiles show their brand icon. Websites show their logo automatically.</p><div id="logobox" style="display:none;margin:8px 0 12px;padding:8px 12px;background:#f7f5f0;border:1.5px solid #e2ded5;border-radius:12px;align-items:center;gap:12px"></div></div>
 <label for="f3">How much do you want to pay? (USD)</label><input id="f3" type="number" min="1" step="1" inputmode="numeric" placeholder="Any amount, $1 or more"><div class="chips" id="qa"></div>
 <label for="f4">Short description or message <span id="wc" class="hint" style="display:inline">0 / 500 words</span></label><textarea id="f4" placeholder="What are you building? Or just say hi."></textarea>
 ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear on the board once the payment is verified.</div>` : `<div class="note"><b>Preview mode.</b> No money will move. Your entry only shows in this browser, so you can see how the board looks.</div>`}
@@ -434,53 +473,32 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
             $("#an").onchange = () => { $("#idf").style.display = $("#an").checked ? "none" : "block" };
             $("#qa").innerHTML = [1, 5, 10, 25, 50].map(a => `<button class="chip" data-a="${a}">$${a}</button>`).join(""); $("#qa").onclick = e => { const c = e.target.closest("[data-a]"); if (c) $("#f3").value = c.dataset.a };
             const wc = () => $("#f4").value.trim().split(/\s+/).filter(Boolean).length; $("#f4").oninput = () => { $("#wc").textContent = wc() + " / 500 words" };
-            // Auto-fetch favicon when URL is typed
-            const fetchFavicon = (u) => {
-                img = ""; const prev = $("#favprev"); if (!prev) return;
-                prev.style.display = "none";
-                if (!u) return;
-                // Check if social platform - letter badge handles those automatically
-                const h = (u.replace(/^https?:\/\//,'').replace(/^www\./,'').split('/')[0]).toLowerCase();
-                const socials = ["x.com","twitter.com","instagram.com","facebook.com","linkedin.com",
-                    "github.com","youtube.com","youtu.be","tiktok.com","producthunt.com","reddit.com",
-                    "threads.net","medium.com","discord.gg","discord.com","twitch.tv","pinterest.com",
-                    "snapchat.com","substack.com","beehiiv.com"];
-                if (socials.some(s => h === s || h.endsWith('.'+s))) {
-                    prev.style.display = "flex";
-                    prev.innerHTML = '<span style="font-size:12px;color:var(--mut)">Platform icon will show automatically ✓</span>';
+
+            // Instant logo detection within ms for social profiles or normal websites
+            const updateLogoBox = () => {
+                const u = ($("#f2").value || "").trim();
+                const box = $("#logobox");
+                if (!box) return;
+                if (!u) { box.style.display = "none"; img = ""; return; }
+                const s = getSocialInfo(u);
+                if (s) {
+                    img = "";
+                    box.style.display = "flex";
+                    box.innerHTML = `<div style="width:38px;height:38px;border-radius:10px;background:${s.bg};display:grid;place-items:center;flex-shrink:0">${s.svg}</div><div style="min-width:0;flex:1"><div style="font-size:13px;font-weight:700;color:var(--ink)">${esc(s.name)} profile</div><div style="font-size:11.5px;color:#0E9F6E;font-weight:600">Brand icon ✓</div></div>`;
                     return;
                 }
-                if (!safeUrl(u)) return;
-                prev.style.display = "flex";
-                prev.innerHTML = '<span style="opacity:.5;font-size:12px">Fetching logo…</span>';
-                const src = 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(h) + '&sz=96';
-                const ti = new Image(); ti.crossOrigin = "anonymous";
-                ti.onload = () => {
-                    try {
-                        const c = document.createElement("canvas"); c.width = c.height = 96;
-                        const ctx = c.getContext("2d"); ctx.drawImage(ti, 0, 0, 96, 96);
-                        const px = ctx.getImageData(0, 0, 96, 96).data;
-                        // Check if it's a real icon (not a grey placeholder)
-                        let colorPx = 0;
-                        for (let i = 0; i < px.length; i += 4) {
-                            const r = px[i], g = px[i+1], b = px[i+2], a = px[i+3];
-                            if (a > 10 && (Math.abs(r-g) > 15 || Math.abs(g-b) > 15 || Math.abs(r-b) > 15)) colorPx++;
-                        }
-                        if (colorPx < 20) {
-                            img = ""; prev.innerHTML = '<span style="opacity:.5;font-size:12px">No logo found — a letter avatar will be used.</span>';
-                        } else {
-                            img = c.toDataURL("image/jpeg", 0.9);
-                            prev.innerHTML = '<img src="' + img + '" style="width:48px;height:48px;border-radius:8px;object-fit:cover"><span style="font-size:12px;color:var(--mut)">Logo fetched ✓</span>';
-                        }
-                    } catch(e) {
-                        img = ""; prev.innerHTML = '<span style="opacity:.5;font-size:12px">No logo found — a letter avatar will be used.</span>';
-                    }
-                };
-                ti.onerror = () => { img = ""; prev.innerHTML = '<span style="opacity:.5;font-size:12px">No logo found — a letter avatar will be used.</span>'; };
-                ti.src = src;
+                const clean = u.replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+                const h = clean.split('/')[0].toLowerCase();
+                if (h && h.includes('.')) {
+                    const logoUrl = 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(h) + '&sz=128';
+                    img = logoUrl;
+                    box.style.display = "flex";
+                    box.innerHTML = `<div style="width:38px;height:38px;border-radius:10px;background:#fff;border:1px solid #e5e3dc;display:grid;place-items:center;overflow:hidden;flex-shrink:0"><img src="${logoUrl}" style="width:26px;height:26px;object-fit:contain" onerror="this.src='https://icons.duckduckgo.com/ip3/${encodeURIComponent(h)}.ico'"></div><div style="min-width:0;flex:1"><div style="font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(h)}</div><div style="font-size:11.5px;color:#0E9F6E;font-weight:600">Website logo ✓</div></div>`;
+                    return;
+                }
+                box.style.display = "none"; img = "";
             };
-            let _ft = null;
-            $("#f2").oninput = () => { if (_ft) clearTimeout(_ft); _ft = setTimeout(() => fetchFavicon($("#f2").value.trim()), 700); };
+            $("#f2").oninput = updateLogoBox;
 
             $("#go").onclick = () => {
                 const anon = $("#an").checked, n = anon ? "Anonymous legend" : $("#f1").value.trim(), u = anon ? "" : $("#f2").value.trim(), a = Math.round((+$("#f3").value) * 100) / 100, d = $("#f4").value.trim();
