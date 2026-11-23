@@ -509,18 +509,21 @@ function setupDodgingButton(): void {
 
 function renderAvatar(item: LeaderboardEntry): string {
   if (item.anon) {
-    return `<div class="av anon-av">?</div>`;
+    return `<div class="av" style="background:#8a877d">?</div>`;
   }
 
-  // Automatically fetch logo / favicon / profile picture if image or url exists
   const avatarUrl = resolveAvatarUrl(item.url, item.img);
+  const colors = ['#2F4BFF', '#E8412C', '#0E9F6E', '#8B3DFF', '#F08A00', '#101010', '#D6246E'];
+  let hash = 0;
+  for (let i = 0; i < item.name.length; i++) hash += item.name.charCodeAt(i);
+  const bg = colors[hash % colors.length];
   const initial = (item.name[0] || '?').toUpperCase();
 
   if (avatarUrl) {
-    return `<div class="av logo-av"><img src="${AnalyticsService.escapeHtml(avatarUrl)}" alt="${AnalyticsService.escapeHtml(item.name)}" loading="lazy" onerror="this.style.display='none';this.parentElement.innerHTML='<span class=\\'fallback-letter\\'>${AnalyticsService.escapeHtml(initial)}</span>';"></div>`;
+    return `<div class="av" style="background:#ffffff;border:1.5px solid var(--line)"><img src="${AnalyticsService.escapeHtml(avatarUrl)}" alt="" onerror="this.style.display='none';this.parentElement.style.background='${bg}';this.parentElement.textContent='${AnalyticsService.escapeHtml(initial)}'"></div>`;
   }
 
-  return `<div class="av letter-av"><span class="fallback-letter">${AnalyticsService.escapeHtml(initial)}</span></div>`;
+  return `<div class="av" style="background:${bg}">${AnalyticsService.escapeHtml(initial)}</div>`;
 }
 
 function renderLeaderboard(): void {
@@ -565,26 +568,26 @@ function renderLeaderboard(): void {
     const pct = Math.min(100, Math.max(3, (item.amt / maxAmount) * 100));
     const isFresh = Date.now() - item.t < 120000;
 
-    html += `
+        html += `
       <button class="lr ${currentBoardMode === 'recent' && idx === 0 ? 'hot' : ''}" data-id="${item.id}">
         <div class="lk">
           ${
             currentBoardMode === 'top'
-              ? `<b class="rank-badge ${rank <= 3 ? 'rank-' + rank : ''}">#${rank}</b>`
-              : `<span class="tp ${isFresh ? 'nw' : ''}">⏱️ ${AnalyticsService.getTimeAgo(item.t)}</span>`
+              ? `<b>${rank}</b>`
+              : `<span class="tp ${isFresh ? 'nw' : ''}">${AnalyticsService.getTimeAgo(item.t)}</span>`
           }
         </div>
         ${renderAvatar(item)}
-        <div style="min-width:0;flex:1">
-          <div class="lr-title-row">
-            <h3 class="lr-name">${AnalyticsService.escapeHtml(item.name)}</h3>
+        <div style="min-width:0">
+          <h3>
+            ${AnalyticsService.escapeHtml(item.name)}
             <span class="tc" style="background:${tier.color}">${tier.name}</span>
-          </div>
-          <p class="lr-desc">${AnalyticsService.escapeHtml(item.desc || '')}</p>
-          ${host ? `<div class="lr-link"><span>↗</span> ${AnalyticsService.escapeHtml(host)}</div>` : ''}
+          </h3>
+          <p>${AnalyticsService.escapeHtml(item.desc || '')}</p>
+          <div class="d">${AnalyticsService.escapeHtml(host || item.url || '')}</div>
         </div>
         <div class="lp">
-          <div class="lp-amt">${AnalyticsService.formatMoney(item.amt)}</div>
+          ${AnalyticsService.formatMoney(item.amt)}
           <span class="go">Details ›</span>
         </div>
         <i class="lbar" style="width:${pct}%"></i>

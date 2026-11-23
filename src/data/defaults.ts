@@ -97,8 +97,8 @@ export const DEFAULT_CONFIG: AppConfig = {
   roastTemplates: [...ROAST_TEMPLATES],
   excusesList: [...EXCUSES_LIST],
   socials: {
-    twitter: 'https://x.com',
-    github: 'https://github.com/theYugrathee/DoingNothing'
+    twitter: 'https://x.com/YugRathee',
+    github: ''
   }
 };
 
