@@ -506,7 +506,6 @@ function setupDodgingButton(): void {
 // ==========================================================================
 // Leaderboard & Today's Board Rendering (with Auto-Fetched Logos/Avatars)
 // ==========================================================================
-const CROWN_SVG = '<svg class="crown" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M3 18h18l1-10-5 4-5-8-5 8-5-4z" fill="#FFD23F" stroke="#101010" stroke-width="1.6" stroke-linejoin="round"/></svg>';
 
 function renderAvatar(item: LeaderboardEntry): string {
   if (item.anon) {
@@ -557,37 +556,10 @@ function renderLeaderboard(): void {
 
   let html = '';
 
-  // Render top 3 podium in Top mode
-  if (currentBoardMode === 'top' && displayList.length >= 2) {
-    const podiums = [
-      { item: displayList[1], rank: 2, cls: 'p2' },
-      { item: displayList[0], rank: 1, cls: 'p1' },
-      { item: displayList[2], rank: 3, cls: 'p3' }
-    ].filter((p) => p.item);
-
-    html += `<div class="pod" style="grid-template-columns: repeat(${podiums.length}, minmax(0, 1fr))">`;
-    podiums.forEach((p) => {
-      const tier = AnalyticsService.getTier(p.item.amt);
-      html += `
-        <button class="pc ${p.cls}" data-id="${p.item.id}">
-          <span class="medal">${p.rank}</span>
-          ${p.rank === 1 ? CROWN_SVG : ''}
-          ${renderAvatar(p.item)}
-          <h3>${AnalyticsService.escapeHtml(p.item.name)}</h3>
-          <span class="tc" style="background:${tier.color}">${tier.name}</span>
-          <div class="amt">${AnalyticsService.formatMoney(p.item.amt)}</div>
-          <span class="go">Details ›</span>
-        </button>
-      `;
-    });
-    html += `</div>`;
-  }
-
+  // Always use plain row list — no podium/card view
   const maxAmount = Math.max(1, ...displayList.map((i) => i.amt));
-  const startIndex = currentBoardMode === 'top' && displayList.length >= 2 ? 3 : 0;
-
-  displayList.slice(startIndex).forEach((item, idx) => {
-    const rank = startIndex + idx + 1;
+  displayList.forEach((item, idx) => {
+    const rank = idx + 1;
     const tier = AnalyticsService.getTier(item.amt);
     const host = AnalyticsService.getHost(item.url);
     const pct = Math.min(100, Math.max(3, (item.amt / maxAmount) * 100));
