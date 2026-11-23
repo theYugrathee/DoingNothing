@@ -91,7 +91,7 @@ ON public.admin_settings FOR ALL
 TO anon, authenticated
 USING (true);
 
--- Set your custom secret passcode in Supabase here:
-INSERT INTO public.admin_settings (key, value)
-VALUES ('admin_passcode', 'admin123')
-ON CONFLICT (key) DO NOTHING;
+-- ??  DO NOT set your passcode here — run this directly in Supabase SQL Editor with your own secret:
+-- INSERT INTO public.admin_settings (key, value)
+-- VALUES ('admin_passcode', 'YOUR_STRONG_SECRET_HERE')
+-- ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;

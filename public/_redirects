@@ -1,2 +1,5 @@
-# SPA rewrite for unguessable founder console
-/founder-gate /index.html 200
+# Founder console — hidden URL rewrite (not served at /admin publicly)
+/founder-gate /admin/index.html 200
+
+# SPA fallback for clean URLs
+/* /index.html 200

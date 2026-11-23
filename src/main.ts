@@ -151,16 +151,28 @@ declare global {
         const PAGE_SIZE = 100;
 
         const recentList = () => {
+            // Sort all entries newest-first, then deduplicate by donor key:
+            // ONE card per unique URL/donor — always the LATEST donation.
+            // latestAmt = what they just donated; totalAmt = lifetime sum.
             const list = all().slice().sort((a, b) => b.t - a.t);
             const donorMap = getDonorMap(list);
-            return list.map(item => {
-                const d = donorMap.get(getDonorKey(item));
-                return {
+            const seen = new Set<string>();
+            const deduped: Array<LeaderboardEntry & { totalAmt: number; donorCount: number; latestAmt: number }> = [];
+            for (const item of list) {
+                const dk = getDonorKey(item);
+                if (seen.has(dk)) continue; // already captured the latest card for this donor
+                seen.add(dk);
+                const d = donorMap.get(dk);
+                deduped.push({
                     ...item,
+                    // Show the latest donation amount as the main $-figure on the card
+                    amt: d ? d.latestAmt : item.amt,
+                    latestAmt: d ? d.latestAmt : item.amt,
                     totalAmt: d ? d.totalAmt : item.amt,
                     donorCount: d ? d.count : 1
-                };
-            });
+                });
+            }
+            return deduped;
         };
 
         const topPlayersList = () => {
@@ -215,7 +227,7 @@ declare global {
                 return "home";
             }
             if (clean === "/founder-gate") {
-                setTimeout(openFounderConsole, 100);
+                window.location.replace("/admin/index.html");
                 return "home";
             }
             return PATH_MAP[clean] || PATH_MAP["/" + clean.split("/")[1]] || "home";
@@ -622,7 +634,7 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
         addEventListener("keydown", e => {
             if (e.ctrlKey && e.shiftKey && (e.key === "A" || e.key === "a")) {
                 e.preventDefault();
-                openFounderConsole();
+                window.location.href = "/founder-gate";
             }
         });
 
@@ -637,7 +649,7 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
                 if (sleeperClicks >= 5) {
                     sleeperClicks = 0;
                     snd("fan");
-                    openFounderConsole();
+                    window.location.href = "/founder-gate";
                 }
             });
         }

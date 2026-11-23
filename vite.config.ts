@@ -23,7 +23,8 @@ export default defineConfig({
         soundboard: resolve(__dirname, 'soundboard/index.html'),
         privacy: resolve(__dirname, 'privacy/index.html'),
         terms: resolve(__dirname, 'terms/index.html'),
-        notFound: resolve(__dirname, '404.html')
+        notFound: resolve(__dirname, '404.html'),
+        admin: resolve(__dirname, 'admin/index.html')
       }
     }
   },

@@ -1,0 +1,1788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
+  <meta name="googlebot" content="noindex, nofollow" />
+  <title>Founder Console — Doing Nothing</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <style>
+    :root {
+      --bg: #0d0d0d;
+      --bg2: #161616;
+      --bg3: #1f1f1f;
+      --border: #2a2a2a;
+      --border2: #3a3a3a;
+      --ink: #f0f0f0;
+      --ink2: #a0a0a0;
+      --accent: #2F4BFF;
+      --accent2: #4a62ff;
+      --danger: #E8412C;
+      --success: #0E9F6E;
+      --warn: #FFD23F;
+      --card: #1a1a1a;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* ========== LOCK SCREEN ========== */
+    #lockScreen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at center, #1a1a2e 0%, #0d0d0d 70%);
+    }
+    .lock-box {
+      background: var(--bg2);
+      border: 1.5px solid var(--border2);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .lock-icon {
+      font-size: 48px;
+      margin-bottom: 20px;
+      display: block;
+      filter: drop-shadow(0 4px 12px rgba(47,75,255,0.4));
+    }
+    .lock-box h1 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+    .lock-box p {
+      color: var(--ink2);
+      font-size: 13px;
+      margin-bottom: 28px;
+    }
+    .lock-input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1.5px solid var(--border2);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: 15px;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 14px;
+      letter-spacing: 2px;
+    }
+    .lock-input:focus { border-color: var(--accent); }
+    .lock-btn {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 13px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .lock-btn:hover { background: var(--accent2); }
+    .lock-btn:active { transform: scale(0.98); }
+    .lock-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .lock-error {
+      color: var(--danger);
+      font-size: 13px;
+      margin-top: 10px;
+      min-height: 20px;
+    }
+
+    /* ========== ADMIN SHELL ========== */
+    #adminShell { display: none; }
+    #adminShell.visible { display: flex; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      min-height: 100vh;
+      background: var(--bg2);
+      border-right: 1.5px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 50;
+    }
+    .sidebar-logo {
+      padding: 20px 20px 16px;
+      border-bottom: 1.5px solid var(--border);
+    }
+    .sidebar-logo h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .sidebar-logo span {
+      font-size: 11px;
+      color: var(--ink2);
+      display: block;
+      margin-top: 2px;
+    }
+    .nav-items {
+      flex: 1;
+      padding: 12px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow-y: auto;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 13.5px;
+      color: var(--ink2);
+      transition: background 0.15s, color 0.15s;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
+    }
+    .nav-item:hover { background: var(--bg3); color: var(--ink); }
+    .nav-item.active { background: rgba(47,75,255,0.15); color: var(--accent); font-weight: 600; }
+    .nav-item .icon { font-size: 16px; min-width: 20px; text-align: center; }
+    .sidebar-footer {
+      padding: 12px 10px;
+      border-top: 1.5px solid var(--border);
+    }
+    .sidebar-footer button {
+      width: 100%;
+      background: none;
+      border: 1.5px solid var(--border2);
+      color: var(--ink2);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .sidebar-footer button:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* Main content */
+    .main-content {
+      margin-left: 220px;
+      flex: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar {
+      background: var(--bg2);
+      border-bottom: 1.5px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+    .topbar-title { font-size: 16px; font-weight: 700; color: var(--ink); }
+    .topbar-meta { font-size: 12px; color: var(--ink2); }
+    .page-content { padding: 24px; flex: 1; }
+
+    /* ========== CARDS / PANELS ========== */
+    .card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      margin-bottom: 18px;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--bg2);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      transition: border-color 0.2s;
+    }
+    .stat-card:hover { border-color: var(--border2); }
+    .stat-label { font-size: 12px; color: var(--ink2); margin-bottom: 6px; }
+    .stat-value { font-size: 26px; font-weight: 800; color: var(--ink); }
+    .stat-sub { font-size: 11px; color: var(--ink2); margin-top: 4px; }
+    .stat-card.accent .stat-value { color: var(--accent); }
+    .stat-card.success .stat-value { color: var(--success); }
+    .stat-card.warn .stat-value { color: var(--warn); }
+    .stat-card.danger .stat-value { color: var(--danger); }
+
+    /* ========== BUTTONS ========== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent2); }
+    .btn-danger { background: rgba(232,65,44,0.15); color: var(--danger); border: 1px solid rgba(232,65,44,0.3); }
+    .btn-danger:hover { background: rgba(232,65,44,0.25); }
+    .btn-secondary { background: var(--bg3); color: var(--ink); border: 1px solid var(--border2); }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-success { background: rgba(14,159,110,0.15); color: var(--success); border: 1px solid rgba(14,159,110,0.3); }
+    .btn-success:hover { background: rgba(14,159,110,0.25); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    /* ========== FORM ========== */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-grid.single { grid-template-columns: 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group.full { grid-column: 1 / -1; }
+    label { font-size: 12px; color: var(--ink2); font-weight: 600; }
+    input[type="text"], input[type="number"], input[type="url"], input[type="password"],
+    textarea, select {
+      background: var(--bg3);
+      border: 1.5px solid var(--border2);
+      border-radius: var(--radius-sm);
+      padding: 9px 12px;
+      font-size: 13px;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+      width: 100%;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 70px; }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+    }
+    input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+
+    /* ========== TABLE ========== */
+    .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1.5px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      background: var(--bg3);
+      color: var(--ink2);
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1.5px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.03); }
+    tbody td { padding: 10px 14px; vertical-align: middle; color: var(--ink); }
+    .td-name { font-weight: 600; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .td-url { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink2); font-size: 12px; }
+    .td-url a { color: var(--accent); text-decoration: none; }
+    .td-url a:hover { text-decoration: underline; }
+    .td-actions { display: flex; gap: 6px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-live { background: rgba(14,159,110,0.15); color: var(--success); }
+    .badge-manual { background: rgba(255,210,63,0.15); color: var(--warn); }
+    .badge-sample { background: rgba(160,160,160,0.15); color: var(--ink2); }
+    .badge-anon { background: rgba(47,75,255,0.1); color: var(--accent); }
+
+    /* ========== SEARCH BAR ========== */
+    .search-bar-wrap { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+    .search-input-wrap { position: relative; flex: 1; min-width: 200px; }
+    .search-input-wrap input {
+      padding-left: 36px;
+      background: var(--bg3);
+      border-radius: var(--radius-sm);
+    }
+    .search-icon {
+      position: absolute;
+      left: 11px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 15px;
+      color: var(--ink2);
+      pointer-events: none;
+    }
+    .filter-select { max-width: 140px; }
+
+    /* ========== PAGINATION ========== */
+    .pg { display: flex; gap: 8px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+    .pg span { font-size: 13px; color: var(--ink2); }
+
+    /* ========== TOAST ========== */
+    #toast {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      background: var(--bg2);
+      border: 1.5px solid var(--border2);
+      color: var(--ink);
+      padding: 12px 20px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      z-index: 9999;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+      max-width: 300px;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.success { border-color: var(--success); color: var(--success); }
+    #toast.error { border-color: var(--danger); color: var(--danger); }
+
+    /* ========== MODAL ========== */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: var(--bg2);
+      border: 1.5px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 28px;
+      width: 90%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+    /* ========== CONFIRM DIALOG ========== */
+    #confirmDialog .confirm-msg { color: var(--ink2); font-size: 14px; margin-bottom: 16px; }
+    #confirmDialog .confirm-name { color: var(--ink); font-weight: 700; }
+
+    /* ========== AUDIT LOG ========== */
+    .log-item {
+      padding: 10px 14px;
+      border-left: 2px solid var(--border2);
+      margin-bottom: 10px;
+      font-size: 13px;
+    }
+    .log-item.add { border-color: var(--success); }
+    .log-item.edit { border-color: var(--accent); }
+    .log-item.delete { border-color: var(--danger); }
+    .log-time { font-size: 11px; color: var(--ink2); margin-top: 3px; }
+
+    /* ========== PROGRESS BAR ========== */
+    .progress-bar {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.3s;
+    }
+
+    /* ========== BLOCKLIST ========== */
+    .blocked-entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: rgba(232,65,44,0.05);
+      border: 1px solid rgba(232,65,44,0.2);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    /* ========== TOP PLAYERS ========== */
+    .top-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--bg3);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+    }
+    .top-rank { font-size: 18px; font-weight: 900; color: var(--ink2); min-width: 30px; }
+    .top-rank.g1 { color: #FFD700; }
+    .top-rank.g2 { color: #C0C0C0; }
+    .top-rank.g3 { color: #CD7F32; }
+    .top-name { font-weight: 700; flex: 1; color: var(--ink); }
+    .top-url { font-size: 12px; color: var(--ink2); }
+    .top-amt { font-weight: 800; font-size: 16px; color: var(--success); }
+    .top-count { font-size: 11px; color: var(--ink2); background: var(--border2); padding: 2px 8px; border-radius: 20px; }
+
+    /* ========== IMPORT/EXPORT ========== */
+    .import-drop {
+      border: 2px dashed var(--border2);
+      border-radius: var(--radius);
+      padding: 32px;
+      text-align: center;
+      color: var(--ink2);
+      font-size: 14px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      margin-bottom: 14px;
+    }
+    .import-drop:hover, .import-drop.dragover { border-color: var(--accent); background: rgba(47,75,255,0.05); color: var(--accent); }
+
+    /* ========== SETTINGS ========== */
+    .settings-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--ink2);
+      margin: 20px 0 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .settings-section-title:first-child { margin-top: 0; }
+
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 768px) {
+      .sidebar { width: 60px; }
+      .sidebar .nav-item span, .sidebar-logo span, .sidebar-logo h2 span { display: none; }
+      .sidebar-logo h2 { font-size: 11px; }
+      .main-content { margin-left: 60px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ========== SECTION HIDE ========== */
+    .admin-section { display: none; }
+    .admin-section.active { display: block; }
+
+    /* ========== LOADING SPINNER ========== */
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ========== AVATAR ========== */
+    .avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--bg3);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: var(--ink2);
+      border: 1.5px solid var(--border);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--ink2);
+      font-size: 14px;
+    }
+    .empty-state .empty-icon { font-size: 36px; margin-bottom: 10px; display: block; }
+  </style>
+</head>
+<body>
+
+<!-- LOCK SCREEN -->
+<div id="lockScreen">
+  <div class="lock-box">
+    <span class="lock-icon">🛡️</span>
+    <h1>Founder Console</h1>
+    <p>Your passcode is verified against Supabase.<br>Nothing is stored in code or URLs.</p>
+    <input class="lock-input" type="password" id="lockPass" placeholder="Enter your passcode" autocomplete="off" />
+    <button class="lock-btn" id="lockBtn">Unlock Dashboard</button>
+    <div class="lock-error" id="lockErr"></div>
+  </div>
+</div>
+
+<!-- ADMIN SHELL -->
+<div id="adminShell">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h2>🧑‍💻 <span>Console</span></h2>
+      <span>doingnothing.lol</span>
+    </div>
+    <nav class="nav-items">
+      <button class="nav-item active" data-section="dashboard">
+        <span class="icon">📊</span><span>Dashboard</span>
+      </button>
+      <button class="nav-item" data-section="entries">
+        <span class="icon">📋</span><span>All Entries</span>
+      </button>
+      <button class="nav-item" data-section="add-entry">
+        <span class="icon">➕</span><span>Add Entry</span>
+      </button>
+      <button class="nav-item" data-section="top-players">
+        <span class="icon">🏆</span><span>Top Players</span>
+      </button>
+      <button class="nav-item" data-section="bulk">
+        <span class="icon">⚡</span><span>Bulk Actions</span>
+      </button>
+      <button class="nav-item" data-section="blocklist">
+        <span class="icon">🚫</span><span>Blocklist</span>
+      </button>
+      <button class="nav-item" data-section="settings">
+        <span class="icon">⚙️</span><span>Site Settings</span>
+      </button>
+      <button class="nav-item" data-section="export">
+        <span class="icon">💾</span><span>Export / Import</span>
+      </button>
+      <button class="nav-item" data-section="sync">
+        <span class="icon">🔄</span><span>Force Sync</span>
+      </button>
+      <button class="nav-item" data-section="audit">
+        <span class="icon">📝</span><span>Audit Log</span>
+      </button>
+      <button class="nav-item" data-section="passcode">
+        <span class="icon">🔑</span><span>Change Passcode</span>
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <button id="lockOutBtn">🔒 Lock &amp; Exit</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbarTitle">Dashboard</div>
+        <div class="topbar-meta" id="topbarMeta">Loading…</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span id="syncStatus" style="font-size:12px;color:var(--ink2);">⬤ Connecting…</span>
+        <a href="/" class="btn btn-secondary btn-sm" style="text-decoration:none;" target="_blank">↗ View Site</a>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- ===== DASHBOARD ===== -->
+      <div id="sec-dashboard" class="admin-section active">
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card success">
+            <div class="stat-label">Total Collected</div>
+            <div class="stat-value" id="st-total">$0</div>
+            <div class="stat-sub">all time</div>
+          </div>
+          <div class="stat-card accent">
+            <div class="stat-label">Total Entries</div>
+            <div class="stat-value" id="st-count">0</div>
+            <div class="stat-sub">unique donations</div>
+          </div>
+          <div class="stat-card warn">
+            <div class="stat-label">Today's Donations</div>
+            <div class="stat-value" id="st-today">0</div>
+            <div class="stat-sub">entries today</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Unique Donors</div>
+            <div class="stat-value" id="st-donors">0</div>
+            <div class="stat-sub">by URL</div>
+          </div>
+          <div class="stat-card danger">
+            <div class="stat-label">Blocked Entries</div>
+            <div class="stat-value" id="st-blocked">0</div>
+            <div class="stat-sub">on blocklist</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Avg. Donation</div>
+            <div class="stat-value" id="st-avg">$0</div>
+            <div class="stat-sub">per entry</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🏅 Top 5 Donors (by total)</div>
+          <div id="dashTop5"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🕒 Recent 10 Entries</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th><th>Amount</th><th>Date</th><th>Source</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="dashRecent"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== ALL ENTRIES ===== -->
+      <div id="sec-entries" class="admin-section">
+        <div class="card">
+          <div class="search-bar-wrap">
+            <div class="search-input-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="searchQ" placeholder="Search by name, URL, or message…" />
+            </div>
+            <select class="filter-select" id="filterSrc">
+              <option value="">All sources</option>
+              <option value="live">Live</option>
+              <option value="manual">Manual</option>
+              <option value="sample">Sample</option>
+            </select>
+            <select class="filter-select" id="filterSort">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="highest">Highest amount</option>
+              <option value="lowest">Lowest amount</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" id="searchClearBtn">✕ Clear</button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:30px"><input type="checkbox" id="selectAll" title="Select all" /></th>
+                  <th>Donor</th>
+                  <th>URL / Link</th>
+                  <th>Amount</th>
+                  <th>Message</th>
+                  <th>Source</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="entriesTable"></tbody>
+            </table>
+          </div>
+
+          <div class="pg">
+            <button class="btn btn-secondary btn-sm" id="pgPrev">← Prev</button>
+            <span id="pgInfo">Page 1</span>
+            <button class="btn btn-secondary btn-sm" id="pgNext">Next →</button>
+            <span style="margin-left:auto;" id="pgCount"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== ADD ENTRY ===== -->
+      <div id="sec-add-entry" class="admin-section">
+        <div class="card" style="max-width:640px;">
+          <div class="card-title" id="addFormTitle">➕ Add New Entry</div>
+          <input type="hidden" id="editId" />
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Display Name *</label>
+              <input type="text" id="f-name" placeholder="e.g. Yug Rathee" />
+            </div>
+            <div class="form-group">
+              <label>Amount (USD) *</label>
+              <input type="number" id="f-amt" placeholder="e.g. 50" min="0.01" step="0.01" />
+            </div>
+            <div class="form-group full">
+              <label>URL / Link (optional)</label>
+              <input type="url" id="f-url" placeholder="https://yourproduct.com" />
+            </div>
+            <div class="form-group">
+              <label>Logo / Avatar URL</label>
+              <input type="url" id="f-img" placeholder="https://…/avatar.png" />
+            </div>
+            <div class="form-group">
+              <label>Source</label>
+              <select id="f-src">
+                <option value="manual">Manual</option>
+                <option value="live">Live</option>
+                <option value="sample">Sample</option>
+              </select>
+            </div>
+            <div class="form-group full">
+              <label>Message / Note (optional)</label>
+              <textarea id="f-desc" placeholder="Optional message shown on the leaderboard…"></textarea>
+            </div>
+            <div class="form-group full">
+              <div class="checkbox-row">
+                <input type="checkbox" id="f-anon" />
+                <label for="f-anon">Anonymous donor (hide name on public board)</label>
+              </div>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:16px;">
+            <button class="btn btn-primary" id="saveEntryBtn">💾 Save Entry</button>
+            <button class="btn btn-secondary" id="cancelEditBtn" style="display:none;">Cancel Edit</button>
+          </div>
+          <div id="addEntryMsg" style="margin-top:12px;font-size:13px;"></div>
+        </div>
+      </div>
+
+      <!-- ===== TOP PLAYERS ===== -->
+      <div id="sec-top-players" class="admin-section">
+        <div class="card">
+          <div class="card-title">🏆 Top Players — All-Time Totals by URL</div>
+          <div id="topPlayersList"></div>
+        </div>
+      </div>
+
+      <!-- ===== BULK ACTIONS ===== -->
+      <div id="sec-bulk" class="admin-section">
+        <div class="card">
+          <div class="card-title">⚡ Bulk Actions</div>
+          <p style="font-size:13px;color:var(--ink2);margin-bottom:16px;">Select entries in the <strong>All Entries</strong> tab, then come here to perform bulk operations.</p>
+          <div id="bulkSelCount" style="font-size:14px;font-weight:700;margin-bottom:16px;">0 entries selected</div>
+          <div class="btn-row">
+            <button class="btn btn-danger" id="bulkDeleteBtn">🗑️ Delete Selected</button>
+            <button class="btn btn-secondary" id="bulkBlockBtn">🚫 Block Selected</button>
+            <button class="btn btn-secondary" id="bulkSelectAllBtn">☑ Select All</button>
+            <button class="btn btn-secondary" id="bulkClearSelBtn">✕ Clear Selection</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🛠️ Bulk Utilities</div>
+          <div class="btn-row">
+            <button class="btn btn-secondary" id="bulkExportSel">💾 Export Selected as JSON</button>
+            <button class="btn btn-secondary" id="bulkApproveAllBtn">✅ Mark All as Approved</button>
+            <button class="btn btn-danger" id="bulkClearAllBtn">🧹 Clear ALL Entries (Danger!)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== BLOCKLIST ===== -->
+      <div id="sec-blocklist" class="admin-section">
+        <div class="card">
+          <div class="card-title">🚫 Blocked Entries</div>
+          <p style="font-size:13px;color:var(--ink2);margin-bottom:14px;">Blocked entries are hidden from the public leaderboard.</p>
+          <div id="blocklistItems"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">➕ Block a URL or Name</div>
+          <div class="form-grid" style="max-width:480px;">
+            <div class="form-group full">
+              <label>URL or Name to block</label>
+              <input type="text" id="blockInput" placeholder="e.g. spam.com or SpammerName" />
+            </div>
+          </div>
+          <button class="btn btn-danger" id="addBlockBtn" style="margin-top:12px;">Block It</button>
+        </div>
+      </div>
+
+      <!-- ===== SETTINGS ===== -->
+      <div id="sec-settings" class="admin-section">
+        <div class="card" style="max-width:640px;">
+          <div class="card-title">⚙️ Site Settings</div>
+
+          <div class="settings-section-title">Branding & Payments</div>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>Payment URL (Stripe, BuyMeACoffee, UPI, etc.)</label>
+              <input type="url" id="cfg-pay" placeholder="https://buymeacoffee.com/…" />
+            </div>
+            <div class="form-group">
+              <label>Hero Tag / Tagline</label>
+              <input type="text" id="cfg-tag" placeholder="I do nothing all day." />
+            </div>
+            <div class="form-group">
+              <label>Main Button Label</label>
+              <input type="text" id="cfg-btn" placeholder="Buy me a noodle" />
+            </div>
+            <div class="form-group full">
+              <label>Sub Text Under Button</label>
+              <input type="text" id="cfg-sub" placeholder="For just $1. Because I did nothing." />
+            </div>
+          </div>
+
+          <div class="settings-section-title">Locale & Time</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Timezone (for daily reset)</label>
+              <input type="text" id="cfg-tz" placeholder="Asia/Kolkata" />
+            </div>
+            <div class="form-group">
+              <label>Currency Symbol</label>
+              <input type="text" id="cfg-cur" placeholder="$" style="max-width:80px;" />
+            </div>
+          </div>
+
+          <div class="settings-section-title">Feature Flags</div>
+          <div class="form-group">
+            <div class="checkbox-row">
+              <input type="checkbox" id="cfg-anon-toggle" />
+              <label for="cfg-anon-toggle">Allow anonymous donations (hide name)</label>
+            </div>
+            <div class="checkbox-row">
+              <input type="checkbox" id="cfg-roast-toggle" />
+              <label for="cfg-roast-toggle">Enable Roast Me section</label>
+            </div>
+            <div class="checkbox-row">
+              <input type="checkbox" id="cfg-sounds-toggle" />
+              <label for="cfg-sounds-toggle">Enable sound effects (default on)</label>
+            </div>
+          </div>
+
+          <div class="btn-row" style="margin-top:20px;">
+            <button class="btn btn-primary" id="saveSettingsBtn">💾 Save Settings</button>
+            <button class="btn btn-secondary" id="resetSettingsBtn">↩ Reset to Defaults</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== EXPORT / IMPORT ===== -->
+      <div id="sec-export" class="admin-section">
+        <div class="card">
+          <div class="card-title">💾 Export Data</div>
+          <div class="btn-row" style="margin-bottom:16px;">
+            <button class="btn btn-primary" id="exportJsonBtn">📦 Export JSON</button>
+            <button class="btn btn-secondary" id="exportCsvBtn">📊 Export CSV</button>
+          </div>
+          <div id="exportOutput"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📥 Import Data</div>
+          <div class="import-drop" id="importDrop">
+            <div style="font-size:28px;margin-bottom:8px;">📂</div>
+            Drag & drop a JSON backup here, or click to browse
+            <input type="file" id="importFile" accept=".json" style="display:none;" />
+          </div>
+          <textarea id="importText" placeholder="Or paste JSON here…" style="min-height:100px;margin-bottom:12px;"></textarea>
+          <button class="btn btn-primary" id="importBtn">📥 Import JSON</button>
+          <div id="importMsg" style="margin-top:10px;font-size:13px;"></div>
+        </div>
+      </div>
+
+      <!-- ===== FORCE SYNC ===== -->
+      <div id="sec-sync" class="admin-section">
+        <div class="card" style="max-width:520px;">
+          <div class="card-title">🔄 Supabase Sync</div>
+          <p style="font-size:13px;color:var(--ink2);margin-bottom:20px;">
+            Manually trigger a full re-sync between Supabase and this admin console. Useful after direct DB edits or if data looks stale.
+          </p>
+          <div id="syncLog" style="font-size:13px;color:var(--ink2);min-height:60px;background:var(--bg3);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;font-family:monospace;"></div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="forceSyncBtn">🔄 Force Sync Now</button>
+            <button class="btn btn-secondary" id="testConnBtn">🔌 Test Connection</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== AUDIT LOG ===== -->
+      <div id="sec-audit" class="admin-section">
+        <div class="card">
+          <div class="card-title">📝 Audit Log <small style="font-weight:400;font-size:12px;color:var(--ink2);">(session only)</small></div>
+          <div id="auditList"><div class="empty-state"><span class="empty-icon">🗒️</span>No actions yet this session.</div></div>
+          <button class="btn btn-secondary btn-sm" id="clearAuditBtn" style="margin-top:12px;">Clear Log</button>
+        </div>
+      </div>
+
+      <!-- ===== CHANGE PASSCODE ===== -->
+      <div id="sec-passcode" class="admin-section">
+        <div class="card" style="max-width:420px;">
+          <div class="card-title">🔑 Change Admin Passcode</div>
+          <p style="font-size:13px;color:var(--ink2);margin-bottom:18px;">
+            Your new passcode is saved directly in Supabase <code>admin_settings</code> table. It is never stored in code, URLs, or the browser.
+          </p>
+          <div class="form-grid single">
+            <div class="form-group">
+              <label>Current Passcode</label>
+              <input type="password" id="pc-current" placeholder="Current passcode" />
+            </div>
+            <div class="form-group">
+              <label>New Passcode (min 6 chars)</label>
+              <input type="password" id="pc-new" placeholder="New strong passcode" />
+            </div>
+            <div class="form-group">
+              <label>Confirm New Passcode</label>
+              <input type="password" id="pc-confirm" placeholder="Confirm new passcode" />
+            </div>
+          </div>
+          <button class="btn btn-primary" id="changePassBtn" style="margin-top:16px;">🔐 Update Passcode</button>
+          <div id="pcMsg" style="margin-top:12px;font-size:13px;"></div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main-content -->
+</div><!-- /adminShell -->
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-title">✏️ Edit Entry</div>
+    <input type="hidden" id="mod-id" />
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Name</label><input type="text" id="mod-name" />
+      </div>
+      <div class="form-group">
+        <label>Amount (USD)</label><input type="number" id="mod-amt" step="0.01" />
+      </div>
+      <div class="form-group full">
+        <label>URL</label><input type="url" id="mod-url" />
+      </div>
+      <div class="form-group full">
+        <label>Logo URL</label><input type="url" id="mod-img" />
+      </div>
+      <div class="form-group full">
+        <label>Message</label><textarea id="mod-desc"></textarea>
+      </div>
+      <div class="form-group full">
+        <div class="checkbox-row">
+          <input type="checkbox" id="mod-anon" />
+          <label for="mod-anon">Anonymous</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="modCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="modSaveBtn">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirmDialog">
+  <div class="modal-box" style="max-width:380px;">
+    <div class="modal-title">⚠️ Confirm Delete</div>
+    <div class="confirm-msg">Are you sure you want to delete <span class="confirm-name" id="confirmName"></span>? This cannot be undone.</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="confirmCancelBtn">Cancel</button>
+      <button class="btn btn-danger" id="confirmOkBtn">🗑️ Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- Load Supabase + Admin Logic -->
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+// ==================== CONFIG ====================
+const SUPABASE_URL = 'https://upnbvommgourlstrilsa.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_zdRs9UjpAC1oVUQvzSGiXA_kVScRgOp';
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ==================== STATE ====================
+let ALL_ENTRIES = [];
+let BLOCKLIST = [];
+let AUDIT_LOG = [];
+let selectedIds = new Set();
+let currentPage = 1;
+const PAGE_SIZE = 50;
+let searchQ = '', filterSrc = '', filterSort = 'newest';
+let CFG = loadCfg();
+
+// ==================== UTILS ====================
+const $ = id => document.getElementById(id);
+const $q = s => document.querySelector(s);
+const esc = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const money = v => '$' + Number(v || 0).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 2});
+const date = t => new Date(t).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+
+let toastTimer;
+function toast(msg, type = '') {
+  const el = $('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 3000);
+}
+
+function loadCfg() {
+  try {
+    const saved = localStorage.getItem('idn_cfg');
+    return saved ? JSON.parse(saved) : {};
+  } catch { return {}; }
+}
+function saveCfg(c) {
+  CFG = { ...CFG, ...c };
+  try { localStorage.setItem('idn_cfg', JSON.stringify(CFG)); } catch {}
+}
+function loadBlocklist() {
+  try { return JSON.parse(localStorage.getItem('idn_blocklist') || '[]'); } catch { return []; }
+}
+function saveBlocklist() {
+  try { localStorage.setItem('idn_blocklist', JSON.stringify(BLOCKLIST)); } catch {}
+}
+
+function addAudit(action, label) {
+  AUDIT_LOG.unshift({ action, label, t: Date.now() });
+  if (AUDIT_LOG.length > 200) AUDIT_LOG.pop();
+}
+
+// ==================== LOCK / UNLOCK ====================
+$('lockBtn').onclick = async () => {
+  const pass = $('lockPass').value.trim();
+  if (!pass) { $('lockErr').textContent = 'Please enter a passcode.'; return; }
+  $('lockBtn').disabled = true;
+  $('lockBtn').textContent = 'Verifying…';
+  $('lockErr').textContent = '';
+  const ok = await verifyPasscode(pass);
+  $('lockBtn').disabled = false;
+  $('lockBtn').textContent = 'Unlock Dashboard';
+  if (ok) {
+    $('lockScreen').style.display = 'none';
+    $('adminShell').classList.add('visible');
+    init();
+  } else {
+    $('lockErr').textContent = '❌ Incorrect passcode. Try again.';
+    $('lockPass').value = '';
+    $('lockPass').focus();
+  }
+};
+$('lockPass').onkeydown = e => { if (e.key === 'Enter') $('lockBtn').click(); };
+$('lockOutBtn').onclick = () => { location.reload(); };
+
+async function verifyPasscode(entered) {
+  try {
+    const { data } = await sb.from('admin_settings').select('value').eq('key','admin_passcode').maybeSingle();
+    if (data && data.value) return data.value.trim() === entered.trim();
+    // fallback
+    const { data: d2 } = await sb.from('patrons').select('message').eq('category','__ADMIN_AUTH__').maybeSingle();
+    if (d2 && d2.message) return d2.message.trim() === entered.trim();
+    // first time setup
+    if (entered.length >= 4) {
+      await sb.from('admin_settings').upsert([{key:'admin_passcode',value:entered}]);
+      return true;
+    }
+    return false;
+  } catch { return false; }
+}
+
+// ==================== NAVIGATION ====================
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const sec = btn.dataset.section;
+    document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+    $('sec-' + sec).classList.add('active');
+    const titles = {
+      dashboard: 'Dashboard',
+      entries: 'All Entries',
+      'add-entry': 'Add Entry',
+      'top-players': 'Top Players',
+      bulk: 'Bulk Actions',
+      blocklist: 'Blocklist',
+      settings: 'Site Settings',
+      export: 'Export / Import',
+      sync: 'Force Sync',
+      audit: 'Audit Log',
+      passcode: 'Change Passcode'
+    };
+    $('topbarTitle').textContent = titles[sec] || sec;
+    if (sec === 'dashboard') renderDashboard();
+    if (sec === 'entries') renderTable();
+    if (sec === 'top-players') renderTopPlayers();
+    if (sec === 'blocklist') renderBlocklist();
+    if (sec === 'settings') loadSettingsForm();
+    if (sec === 'audit') renderAudit();
+    if (sec === 'bulk') renderBulkInfo();
+    if (sec === 'add-entry') resetAddForm();
+  };
+});
+
+// ==================== INIT ====================
+async function init() {
+  BLOCKLIST = loadBlocklist();
+  updateSyncStatus('Syncing…', '#FFD23F');
+  await fetchAll();
+  updateSyncStatus('Live ✓', '#0E9F6E');
+  $('topbarMeta').textContent = `${ALL_ENTRIES.length} entries loaded · ${new Date().toLocaleTimeString()}`;
+  renderDashboard();
+
+  // realtime
+  sb.channel('admin_realtime')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'patrons' }, async () => {
+      await fetchAll();
+      renderCurrentSection();
+      $('topbarMeta').textContent = `${ALL_ENTRIES.length} entries · updated ${new Date().toLocaleTimeString()}`;
+    }).subscribe();
+}
+
+function updateSyncStatus(msg, color) {
+  const el = $('syncStatus');
+  el.textContent = '⬤ ' + msg;
+  el.style.color = color || 'var(--ink2)';
+}
+
+async function fetchAll() {
+  try {
+    const { data, error } = await sb.from('patrons').select('*').order('created_at', { ascending: false });
+    if (!error && data) {
+      ALL_ENTRIES = data
+        .filter(r => r.category !== '__ADMIN_AUTH__')
+        .map(r => ({
+          id: String(r.id),
+          name: r.name || 'Anonymous',
+          url: r.url || '',
+          amt: Number(r.amount ?? r.amt ?? 0),
+          desc: r.message ?? r.desc ?? '',
+          img: r.logo_url ?? r.img ?? '',
+          anon: Boolean(!r.name || r.anon),
+          t: r.created_at ? new Date(r.created_at).getTime() : Date.now(),
+          src: r.category === 'sample' ? 'sample' : (r.category === 'manual' ? 'manual' : 'live'),
+          raw: r
+        }));
+    }
+  } catch (e) {
+    console.warn('fetch error', e);
+  }
+}
+
+function renderCurrentSection() {
+  const active = document.querySelector('.nav-item.active');
+  if (!active) return;
+  const sec = active.dataset.section;
+  if (sec === 'dashboard') renderDashboard();
+  if (sec === 'entries') renderTable();
+  if (sec === 'top-players') renderTopPlayers();
+}
+
+// ==================== DASHBOARD ====================
+function renderDashboard() {
+  const real = ALL_ENTRIES.filter(e => !BLOCKLIST.includes(e.id) && !BLOCKLIST.includes(e.url));
+  const total = real.reduce((s, e) => s + e.amt, 0);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayCount = real.filter(e => new Date(e.t) >= today).length;
+  const donors = new Set(real.map(e => e.url || e.name)).size;
+  const avg = real.length ? total / real.length : 0;
+
+  $('st-total').textContent = money(total);
+  $('st-count').textContent = real.length;
+  $('st-today').textContent = todayCount;
+  $('st-donors').textContent = donors;
+  $('st-blocked').textContent = BLOCKLIST.length;
+  $('st-avg').textContent = money(avg);
+
+  // Top 5
+  const byUrl = {};
+  real.forEach(e => {
+    const k = e.url || e.name;
+    if (!byUrl[k]) byUrl[k] = { name: e.name, url: e.url, total: 0, count: 0 };
+    byUrl[k].total += e.amt;
+    byUrl[k].count++;
+  });
+  const top5 = Object.values(byUrl).sort((a,b) => b.total - a.total).slice(0,5);
+  const maxT = top5[0]?.total || 1;
+  $('dashTop5').innerHTML = top5.length ? top5.map((p,i) => `
+    <div style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+        <span style="font-weight:700;">#${i+1} ${esc(p.name)}</span>
+        <span style="color:var(--success);font-weight:800;">${money(p.total)} <small style="color:var(--ink2);font-weight:400;">${p.count} donations</small></span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(p.total/maxT*100)}%"></div></div>
+    </div>`).join('') : '<div class="empty-state"><span class="empty-icon">📭</span>No entries yet.</div>';
+
+  // Recent 10
+  const recent = real.slice(0, 10);
+  $('dashRecent').innerHTML = recent.length ? recent.map(e => `
+    <tr>
+      <td class="td-name">${e.anon ? '🕵️ Anonymous' : esc(e.name)}</td>
+      <td style="font-weight:700;color:var(--success);">${money(e.amt)}</td>
+      <td style="color:var(--ink2);font-size:12px;">${date(e.t)}</td>
+      <td><span class="badge badge-${e.src}">${e.src}</span></td>
+      <td><div class="td-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openEdit('${e.id}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmDelete('${e.id}','${esc(e.name)}')">🗑️</button>
+      </div></td>
+    </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--ink2);padding:24px;">No entries yet.</td></tr>';
+}
+
+// ==================== ENTRIES TABLE ====================
+$('searchQ').oninput = debounce(() => { searchQ = $('searchQ').value; currentPage = 1; renderTable(); }, 300);
+$('filterSrc').onchange = () => { filterSrc = $('filterSrc').value; currentPage = 1; renderTable(); };
+$('filterSort').onchange = () => { filterSort = $('filterSort').value; currentPage = 1; renderTable(); };
+$('searchClearBtn').onclick = () => { $('searchQ').value = ''; searchQ = ''; filterSrc = ''; filterSort = 'newest'; $('filterSrc').value = ''; $('filterSort').value = 'newest'; renderTable(); };
+$('pgPrev').onclick = () => { if (currentPage > 1) { currentPage--; renderTable(); } };
+$('pgNext').onclick = () => { const pages = Math.ceil(filteredEntries().length / PAGE_SIZE); if (currentPage < pages) { currentPage++; renderTable(); } };
+$('selectAll').onchange = e => {
+  const show = filteredEntries().slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+  if (e.target.checked) show.forEach(x => selectedIds.add(x.id));
+  else show.forEach(x => selectedIds.delete(x.id));
+  renderTable();
+};
+
+function filteredEntries() {
+  let arr = [...ALL_ENTRIES];
+  if (filterSrc) arr = arr.filter(e => e.src === filterSrc);
+  if (searchQ) {
+    const q = searchQ.toLowerCase();
+    arr = arr.filter(e => e.name.toLowerCase().includes(q) || e.url.toLowerCase().includes(q) || e.desc.toLowerCase().includes(q));
+  }
+  if (filterSort === 'newest') arr.sort((a,b) => b.t - a.t);
+  else if (filterSort === 'oldest') arr.sort((a,b) => a.t - b.t);
+  else if (filterSort === 'highest') arr.sort((a,b) => b.amt - a.amt);
+  else if (filterSort === 'lowest') arr.sort((a,b) => a.amt - b.amt);
+  return arr;
+}
+
+function renderTable() {
+  const all = filteredEntries();
+  const pages = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
+  if (currentPage > pages) currentPage = pages;
+  const slice = all.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+
+  $('pgInfo').textContent = `Page ${currentPage} of ${pages}`;
+  $('pgCount').textContent = `${all.length} entries total`;
+  $('pgPrev').disabled = currentPage <= 1;
+  $('pgNext').disabled = currentPage >= pages;
+
+  $('entriesTable').innerHTML = slice.length ? slice.map(e => {
+    const blocked = BLOCKLIST.includes(e.id) || BLOCKLIST.includes(e.url);
+    return `<tr style="${blocked ? 'opacity:0.4;' : ''}">
+      <td><input type="checkbox" class="row-cb" data-id="${e.id}" ${selectedIds.has(e.id) ? 'checked' : ''}></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="avatar">${e.img ? `<img src="${esc(e.img)}" onerror="this.parentElement.textContent='👤'" />` : '👤'}</div>
+          <div>
+            <div class="td-name">${e.anon ? '🕵️ Anon' : esc(e.name)}</div>
+            ${e.anon ? `<small style="color:var(--ink2);">(${esc(e.name)})</small>` : ''}
+          </div>
+        </div>
+      </td>
+      <td class="td-url">${e.url ? `<a href="${esc(e.url)}" target="_blank">${esc(e.url.replace(/^https?:\/\//,'').substring(0,30))}${e.url.length>30?'…':''}</a>` : '<span style="color:var(--ink2);">—</span>'}</td>
+      <td style="font-weight:700;color:var(--success);">${money(e.amt)}</td>
+      <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink2);font-size:12px;">${esc(e.desc) || '—'}</td>
+      <td><span class="badge badge-${e.src}">${e.src}</span></td>
+      <td style="font-size:12px;color:var(--ink2);white-space:nowrap;">${date(e.t)}</td>
+      <td><div class="td-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openEdit('${e.id}')">✏️</button>
+        <button class="btn btn-${blocked ? 'success' : 'secondary'} btn-sm" onclick="toggleBlock('${e.id}','${esc(e.url || e.name)}')" title="${blocked ? 'Unblock' : 'Block'}">${blocked ? '✅' : '🚫'}</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmDelete('${e.id}','${esc(e.name)}')">🗑️</button>
+      </div></td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="8" style="text-align:center;color:var(--ink2);padding:32px;">No entries match your filters.</td></tr>`;
+
+  // checkbox listeners
+  document.querySelectorAll('.row-cb').forEach(cb => {
+    cb.onchange = e => {
+      const id = e.target.dataset.id;
+      if (e.target.checked) selectedIds.add(id);
+      else selectedIds.delete(id);
+      $('selectAll').checked = filteredEntries().slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE).every(x=>selectedIds.has(x.id));
+    };
+  });
+}
+
+// ==================== TOP PLAYERS ====================
+function renderTopPlayers() {
+  const byUrl = {};
+  ALL_ENTRIES.filter(e => !BLOCKLIST.includes(e.id)).forEach(e => {
+    const k = e.url || ('__name__' + e.name);
+    if (!byUrl[k]) byUrl[k] = { name: e.name, url: e.url, total: 0, count: 0, latest: e.t };
+    byUrl[k].total += e.amt;
+    byUrl[k].count++;
+    if (e.t > byUrl[k].latest) byUrl[k].latest = e.t;
+  });
+  const sorted = Object.values(byUrl).sort((a,b) => b.total - a.total);
+  $('topPlayersList').innerHTML = sorted.length ? sorted.slice(0,100).map((p,i) => {
+    const rank = i === 0 ? 'g1' : i === 1 ? 'g2' : i === 2 ? 'g3' : '';
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+    return `<div class="top-row">
+      <div class="top-rank ${rank}">${medal || '#'+(i+1)}</div>
+      <div>
+        <div class="top-name">${esc(p.name)}</div>
+        <div class="top-url">${p.url ? `<a href="${esc(p.url)}" target="_blank" style="color:var(--accent);">${esc(p.url.replace(/^https?:\/\//,'').substring(0,40))}</a>` : '—'}</div>
+      </div>
+      <span class="top-count">${p.count} donations</span>
+      <div class="top-amt">${money(p.total)}</div>
+    </div>`;
+  }).join('') : '<div class="empty-state"><span class="empty-icon">🏆</span>No data yet.</div>';
+}
+
+// ==================== ADD / EDIT ENTRY ====================
+function resetAddForm() {
+  $('editId').value = '';
+  $('addFormTitle').textContent = '➕ Add New Entry';
+  $('f-name').value = '';
+  $('f-amt').value = '';
+  $('f-url').value = '';
+  $('f-img').value = '';
+  $('f-desc').value = '';
+  $('f-anon').checked = false;
+  $('f-src').value = 'manual';
+  $('cancelEditBtn').style.display = 'none';
+  $('addEntryMsg').textContent = '';
+}
+
+$('saveEntryBtn').onclick = async () => {
+  const name = $('f-name').value.trim();
+  const amt = parseFloat($('f-amt').value);
+  if (!name) { $('addEntryMsg').textContent = '❌ Name is required.'; return; }
+  if (!amt || amt <= 0) { $('addEntryMsg').textContent = '❌ Amount must be positive.'; return; }
+
+  $('saveEntryBtn').disabled = true;
+  $('saveEntryBtn').innerHTML = '<span class="spinner"></span> Saving…';
+  $('addEntryMsg').textContent = '';
+
+  const payload = {
+    name, amount: amt,
+    url: $('f-url').value.trim(),
+    logo_url: $('f-img').value.trim(),
+    message: $('f-desc').value.trim(),
+    category: $('f-src').value,
+    is_today: true,
+    is_approved: true
+  };
+
+  const editId = $('editId').value;
+  let ok = false;
+  if (editId) {
+    const { error } = await sb.from('patrons').update(payload).eq('id', editId);
+    ok = !error;
+    if (ok) addAudit('edit', `Edited: ${name}`);
+  } else {
+    const { error } = await sb.from('patrons').insert([payload]);
+    ok = !error;
+    if (ok) addAudit('add', `Added: ${name} (${money(amt)})`);
+  }
+
+  $('saveEntryBtn').disabled = false;
+  $('saveEntryBtn').innerHTML = '💾 Save Entry';
+
+  if (ok) {
+    toast(editId ? 'Entry updated!' : 'Entry added!', 'success');
+    $('addEntryMsg').style.color = 'var(--success)';
+    $('addEntryMsg').textContent = '✅ Saved to Supabase.';
+    await fetchAll();
+    if (!editId) resetAddForm();
+  } else {
+    $('addEntryMsg').style.color = 'var(--danger)';
+    $('addEntryMsg').textContent = '❌ Save failed. Check Supabase permissions.';
+    toast('Save failed!', 'error');
+  }
+};
+
+$('cancelEditBtn').onclick = resetAddForm;
+
+// ==================== EDIT MODAL ====================
+window.openEdit = function(id) {
+  const e = ALL_ENTRIES.find(x => x.id === id);
+  if (!e) return;
+  $('mod-id').value = e.id;
+  $('mod-name').value = e.name;
+  $('mod-amt').value = e.amt;
+  $('mod-url').value = e.url;
+  $('mod-img').value = e.img;
+  $('mod-desc').value = e.desc;
+  $('mod-anon').checked = e.anon;
+  $('editModal').classList.add('show');
+};
+
+$('modCancelBtn').onclick = () => $('editModal').classList.remove('show');
+$('editModal').onclick = e => { if (e.target === $('editModal')) $('editModal').classList.remove('show'); };
+
+$('modSaveBtn').onclick = async () => {
+  const id = $('mod-id').value;
+  const payload = {
+    name: $('mod-name').value.trim(),
+    amount: parseFloat($('mod-amt').value),
+    url: $('mod-url').value.trim(),
+    logo_url: $('mod-img').value.trim(),
+    message: $('mod-desc').value.trim()
+  };
+  if (!payload.name || !payload.amount) { toast('Name and amount required', 'error'); return; }
+  $('modSaveBtn').disabled = true;
+  const { error } = await sb.from('patrons').update(payload).eq('id', id);
+  $('modSaveBtn').disabled = false;
+  if (!error) {
+    addAudit('edit', `Edited: ${payload.name}`);
+    toast('Updated!', 'success');
+    $('editModal').classList.remove('show');
+    await fetchAll();
+    renderCurrentSection();
+  } else {
+    toast('Update failed: ' + error.message, 'error');
+  }
+};
+
+// ==================== DELETE ====================
+let pendingDeleteId = null;
+window.confirmDelete = function(id, name) {
+  pendingDeleteId = id;
+  $('confirmName').textContent = name;
+  $('confirmDialog').classList.add('show');
+};
+$('confirmCancelBtn').onclick = () => { $('confirmDialog').classList.remove('show'); pendingDeleteId = null; };
+$('confirmOkBtn').onclick = async () => {
+  if (!pendingDeleteId) return;
+  const entry = ALL_ENTRIES.find(e => e.id === pendingDeleteId);
+  $('confirmOkBtn').disabled = true;
+  const { error } = await sb.from('patrons').delete().eq('id', pendingDeleteId);
+  $('confirmOkBtn').disabled = false;
+  if (!error) {
+    addAudit('delete', `Deleted: ${entry?.name || pendingDeleteId}`);
+    toast('Deleted!', 'success');
+    $('confirmDialog').classList.remove('show');
+    pendingDeleteId = null;
+    await fetchAll();
+    renderCurrentSection();
+  } else {
+    toast('Delete failed: ' + error.message, 'error');
+  }
+};
+
+// ==================== BLOCKLIST ====================
+window.toggleBlock = function(id, urlOrName) {
+  const key = urlOrName || id;
+  if (BLOCKLIST.includes(id) || BLOCKLIST.includes(key)) {
+    BLOCKLIST = BLOCKLIST.filter(x => x !== id && x !== key);
+    toast('Unblocked.');
+  } else {
+    BLOCKLIST.push(id);
+    toast('Blocked (hidden from public board).');
+  }
+  saveBlocklist();
+  renderTable();
+  renderBlocklist();
+};
+
+function renderBlocklist() {
+  $('blocklistItems').innerHTML = BLOCKLIST.length
+    ? BLOCKLIST.map(b => `
+        <div class="blocked-entry">
+          <span>${esc(b)}</span>
+          <button class="btn btn-secondary btn-sm" onclick="unblock('${esc(b)}')">✅ Unblock</button>
+        </div>`).join('')
+    : '<div class="empty-state"><span class="empty-icon">✅</span>No blocked entries.</div>';
+}
+
+window.unblock = function(key) {
+  BLOCKLIST = BLOCKLIST.filter(x => x !== key);
+  saveBlocklist();
+  renderBlocklist();
+  toast('Unblocked.');
+};
+
+$('addBlockBtn').onclick = () => {
+  const v = $('blockInput').value.trim();
+  if (!v) return;
+  if (!BLOCKLIST.includes(v)) BLOCKLIST.push(v);
+  saveBlocklist();
+  $('blockInput').value = '';
+  renderBlocklist();
+  toast('Added to blocklist.');
+};
+
+// ==================== BULK ACTIONS ====================
+function renderBulkInfo() {
+  $('bulkSelCount').textContent = `${selectedIds.size} entries selected`;
+}
+
+$('bulkDeleteBtn').onclick = async () => {
+  if (!selectedIds.size) { toast('Nothing selected.'); return; }
+  if (!confirm(`Delete ${selectedIds.size} entries? This cannot be undone.`)) return;
+  let deleted = 0;
+  for (const id of selectedIds) {
+    const { error } = await sb.from('patrons').delete().eq('id', id);
+    if (!error) deleted++;
+  }
+  addAudit('delete', `Bulk deleted ${deleted} entries`);
+  toast(`Deleted ${deleted} entries.`, 'success');
+  selectedIds.clear();
+  await fetchAll();
+  renderBulkInfo();
+};
+
+$('bulkBlockBtn').onclick = () => {
+  if (!selectedIds.size) { toast('Nothing selected.'); return; }
+  selectedIds.forEach(id => { if (!BLOCKLIST.includes(id)) BLOCKLIST.push(id); });
+  saveBlocklist();
+  toast(`Blocked ${selectedIds.size} entries.`);
+  selectedIds.clear();
+  renderBulkInfo();
+};
+
+$('bulkSelectAllBtn').onclick = () => { ALL_ENTRIES.forEach(e => selectedIds.add(e.id)); renderBulkInfo(); toast('All selected.'); };
+$('bulkClearSelBtn').onclick = () => { selectedIds.clear(); renderBulkInfo(); toast('Selection cleared.'); };
+
+$('bulkExportSel').onclick = () => {
+  const sel = ALL_ENTRIES.filter(e => selectedIds.has(e.id));
+  if (!sel.length) { toast('Nothing selected.'); return; }
+  download('selected_entries.json', JSON.stringify(sel, null, 2));
+  toast(`Exported ${sel.length} entries.`, 'success');
+};
+
+$('bulkApproveAllBtn').onclick = async () => {
+  if (!confirm('Mark ALL entries as approved in Supabase?')) return;
+  const { error } = await sb.from('patrons').update({ is_approved: true }).neq('id', '00000000-0000-0000-0000-000000000000');
+  if (!error) { toast('All approved!', 'success'); await fetchAll(); }
+  else toast('Failed: ' + error.message, 'error');
+};
+
+$('bulkClearAllBtn').onclick = async () => {
+  if (!confirm('⚠️ DELETE ALL entries from Supabase? This is permanent!')) return;
+  if (!confirm('Are you absolutely sure? All leaderboard data will be gone.')) return;
+  const { error } = await sb.from('patrons').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  if (!error) {
+    addAudit('delete', 'Cleared ALL entries');
+    toast('All entries cleared!', 'success');
+    ALL_ENTRIES = [];
+    selectedIds.clear();
+    renderDashboard();
+  } else toast('Failed: ' + error.message, 'error');
+};
+
+// ==================== SETTINGS ====================
+function loadSettingsForm() {
+  $('cfg-pay').value = CFG.pay || '';
+  $('cfg-tag').value = CFG.tag || '';
+  $('cfg-btn').value = CFG.btn || '';
+  $('cfg-sub').value = CFG.sub || '';
+  $('cfg-tz').value = CFG.tz || 'Asia/Kolkata';
+  $('cfg-cur').value = CFG.cur || '$';
+  $('cfg-anon-toggle').checked = CFG.anonAllowed !== false;
+  $('cfg-roast-toggle').checked = CFG.roastEnabled !== false;
+  $('cfg-sounds-toggle').checked = CFG.soundsEnabled !== false;
+}
+
+$('saveSettingsBtn').onclick = () => {
+  saveCfg({
+    pay: $('cfg-pay').value.trim(),
+    tag: $('cfg-tag').value,
+    btn: $('cfg-btn').value.trim(),
+    sub: $('cfg-sub').value,
+    tz: $('cfg-tz').value.trim() || 'Asia/Kolkata',
+    cur: $('cfg-cur').value.trim() || '$',
+    anonAllowed: $('cfg-anon-toggle').checked,
+    roastEnabled: $('cfg-roast-toggle').checked,
+    soundsEnabled: $('cfg-sounds-toggle').checked,
+  });
+  addAudit('edit', 'Settings updated');
+  toast('Settings saved!', 'success');
+};
+
+$('resetSettingsBtn').onclick = () => {
+  if (!confirm('Reset all settings to defaults?')) return;
+  localStorage.removeItem('idn_cfg');
+  CFG = {};
+  loadSettingsForm();
+  toast('Settings reset.');
+};
+
+// ==================== EXPORT / IMPORT ====================
+$('exportJsonBtn').onclick = () => {
+  const data = { exported_at: new Date().toISOString(), entries: ALL_ENTRIES, cfg: CFG };
+  download('doingnothing_backup.json', JSON.stringify(data, null, 2));
+  toast('Exported JSON!', 'success');
+};
+
+$('exportCsvBtn').onclick = () => {
+  const rows = ['id,name,url,amount,message,source,date', ...ALL_ENTRIES.map(e =>
+    [e.id, e.name, e.url, e.amt, e.desc, e.src, new Date(e.t).toISOString()].map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')
+  )];
+  download('doingnothing_entries.csv', rows.join('\n'), 'text/csv');
+  toast('Exported CSV!', 'success');
+};
+
+$('importDrop').onclick = () => $('importFile').click();
+$('importFile').onchange = e => { const f = e.target.files[0]; if (f) readImportFile(f); };
+$('importDrop').ondragover = e => { e.preventDefault(); $('importDrop').classList.add('dragover'); };
+$('importDrop').ondragleave = () => $('importDrop').classList.remove('dragover');
+$('importDrop').ondrop = e => { e.preventDefault(); $('importDrop').classList.remove('dragover'); const f = e.dataTransfer.files[0]; if (f) readImportFile(f); };
+
+function readImportFile(f) {
+  const r = new FileReader();
+  r.onload = e => { $('importText').value = e.target.result; };
+  r.readAsText(f);
+}
+
+$('importBtn').onclick = async () => {
+  try {
+    const j = JSON.parse($('importText').value);
+    const entries = j.entries || (Array.isArray(j) ? j : []);
+    if (!entries.length) { $('importMsg').textContent = '❌ No entries found in JSON.'; return; }
+    if (!confirm(`Import ${entries.length} entries? Duplicates will be skipped.`)) return;
+    $('importBtn').disabled = true;
+    $('importMsg').textContent = 'Importing…';
+    let inserted = 0;
+    for (const e of entries) {
+      const { error } = await sb.from('patrons').insert([{
+        name: e.name, url: e.url || '', logo_url: e.img || '',
+        amount: e.amt || e.amount || 0, message: e.desc || e.message || '',
+        category: e.src || 'manual', is_today: false, is_approved: true
+      }]);
+      if (!error) inserted++;
+    }
+    addAudit('add', `Imported ${inserted} entries`);
+    $('importMsg').style.color = 'var(--success)';
+    $('importMsg').textContent = `✅ Imported ${inserted} of ${entries.length} entries.`;
+    if (j.cfg) saveCfg(j.cfg);
+    toast(`Imported ${inserted} entries!`, 'success');
+    await fetchAll();
+  } catch (e) {
+    $('importMsg').style.color = 'var(--danger)';
+    $('importMsg').textContent = '❌ Invalid JSON: ' + e.message;
+  }
+  $('importBtn').disabled = false;
+};
+
+// ==================== FORCE SYNC ====================
+$('forceSyncBtn').onclick = async () => {
+  const log = $('syncLog');
+  log.textContent = '🔄 Syncing from Supabase…\n';
+  $('forceSyncBtn').disabled = true;
+  updateSyncStatus('Syncing…', '#FFD23F');
+  try {
+    await fetchAll();
+    log.textContent += `✅ Done. ${ALL_ENTRIES.length} entries loaded at ${new Date().toLocaleTimeString()}\n`;
+    updateSyncStatus('Live ✓', '#0E9F6E');
+    $('topbarMeta').textContent = `${ALL_ENTRIES.length} entries · synced ${new Date().toLocaleTimeString()}`;
+    toast('Sync complete!', 'success');
+  } catch (e) {
+    log.textContent += '❌ Error: ' + e.message;
+    updateSyncStatus('Error', '#E8412C');
+    toast('Sync failed!', 'error');
+  }
+  $('forceSyncBtn').disabled = false;
+};
+
+$('testConnBtn').onclick = async () => {
+  const log = $('syncLog');
+  log.textContent = '🔌 Testing connection…\n';
+  try {
+    const { data, error } = await sb.from('patrons').select('id').limit(1);
+    if (!error) {
+      log.textContent += `✅ Connected! Supabase is healthy.\n`;
+      toast('Connection OK!', 'success');
+    } else {
+      log.textContent += `❌ Error: ${error.message}\n`;
+      toast('Connection error!', 'error');
+    }
+  } catch (e) {
+    log.textContent += '❌ Exception: ' + e.message;
+  }
+};
+
+// ==================== AUDIT ====================
+function renderAudit() {
+  $('auditList').innerHTML = AUDIT_LOG.length
+    ? AUDIT_LOG.map(l => `
+        <div class="log-item ${l.action}">
+          <div>${esc(l.label)}</div>
+          <div class="log-time">${new Date(l.t).toLocaleString()}</div>
+        </div>`).join('')
+    : '<div class="empty-state"><span class="empty-icon">🗒️</span>No actions yet this session.</div>';
+}
+$('clearAuditBtn').onclick = () => { AUDIT_LOG = []; renderAudit(); toast('Log cleared.'); };
+
+// ==================== CHANGE PASSCODE ====================
+$('changePassBtn').onclick = async () => {
+  const cur = $('pc-current').value.trim();
+  const nw = $('pc-new').value.trim();
+  const conf = $('pc-confirm').value.trim();
+  const msg = $('pcMsg');
+  msg.textContent = '';
+
+  if (!cur) { msg.style.color='var(--danger)'; msg.textContent='❌ Enter your current passcode.'; return; }
+  if (nw.length < 6) { msg.style.color='var(--danger)'; msg.textContent='❌ New passcode must be at least 6 characters.'; return; }
+  if (nw !== conf) { msg.style.color='var(--danger)'; msg.textContent='❌ Passcodes do not match.'; return; }
+
+  $('changePassBtn').disabled = true;
+  $('changePassBtn').innerHTML = '<span class="spinner"></span> Verifying…';
+
+  const curOk = await verifyPasscode(cur);
+  if (!curOk) {
+    msg.style.color='var(--danger)'; msg.textContent='❌ Current passcode is incorrect.';
+    $('changePassBtn').disabled = false; $('changePassBtn').textContent='🔐 Update Passcode'; return;
+  }
+
+  const { error } = await sb.from('admin_settings').upsert([{ key:'admin_passcode', value:nw }]);
+  $('changePassBtn').disabled = false;
+  $('changePassBtn').textContent='🔐 Update Passcode';
+  if (!error) {
+    msg.style.color='var(--success)'; msg.textContent='✅ Passcode updated in Supabase!';
+    addAudit('edit', 'Passcode changed');
+    $('pc-current').value=''; $('pc-new').value=''; $('pc-confirm').value='';
+    toast('Passcode updated!', 'success');
+  } else {
+    msg.style.color='var(--danger)'; msg.textContent='❌ Failed: ' + error.message;
+  }
+};
+
+// ==================== HELPERS ====================
+function download(filename, content, mime='application/json') {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = filename;
+  a.click();
+}
+
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+// Make edit/delete/block globally accessible
+window.openEdit = window.openEdit;
+window.confirmDelete = window.confirmDelete;
+window.toggleBlock = window.toggleBlock;
+window.unblock = window.unblock;
+</script>
+</body>
+</html>
