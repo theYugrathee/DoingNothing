@@ -4,32 +4,59 @@
 # ==========================================================================
 
 User-agent: *
+Disallow: /dn-core-9842x-vault
+Disallow: /admin
+Disallow: /founder-gate
 Allow: /
 
 # Search Engine Crawlers
 User-agent: Googlebot
+Disallow: /dn-core-9842x-vault
+Disallow: /admin
+Disallow: /founder-gate
 Allow: /
 
 User-agent: Bingbot
+Disallow: /dn-core-9842x-vault
+Disallow: /admin
+Disallow: /founder-gate
 Allow: /
 
 # AI Search & Retrieval Crawlers (Allowed for real-time citations & search)
 User-agent: OAI-SearchBot
+Disallow: /dn-core-9842x-vault
+Disallow: /admin
+Disallow: /founder-gate
 Allow: /
 
 User-agent: ChatGPT-User
+Disallow: /dn-core-9842x-vault
+Disallow: /admin
+Disallow: /founder-gate
 Allow: /
 
 User-agent: Claude-SearchBot
+Disallow: /dn-core-9842x-vault
+Disallow: /admin
+Disallow: /founder-gate
 Allow: /
 
 User-agent: Claude-User
+Disallow: /dn-core-9842x-vault
+Disallow: /admin
+Disallow: /founder-gate
 Allow: /
 
 User-agent: PerplexityBot
+Disallow: /dn-core-9842x-vault
+Disallow: /admin
+Disallow: /founder-gate
 Allow: /
 
 User-agent: Perplexity-User
+Disallow: /dn-core-9842x-vault
+Disallow: /admin
+Disallow: /founder-gate
 Allow: /
 
 # Sitemap

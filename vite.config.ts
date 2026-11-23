@@ -24,7 +24,7 @@ export default defineConfig({
         privacy: resolve(__dirname, 'privacy/index.html'),
         terms: resolve(__dirname, 'terms/index.html'),
         notFound: resolve(__dirname, '404.html'),
-        admin: resolve(__dirname, 'admin/index.html')
+        vault: resolve(__dirname, 'dn-core-9842x-vault/index.html')
       }
     }
   },

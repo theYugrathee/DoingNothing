@@ -1,2 +1,4 @@
-# Founder console — hidden URL rewrite (not served at /admin publicly)
-/founder-gate /admin/index.html 200
+# Block /admin explicitly to return 404
+/admin /404 404
+/admin/* /404 404
+/founder-gate /404 404

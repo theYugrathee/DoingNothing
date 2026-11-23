@@ -233,8 +233,7 @@ declare global {
             "/about": "about",
             "/rules": "about",
             "/privacy": "about",
-            "/terms": "about",
-            "/founder-gate": "founder-gate"
+            "/terms": "about"
         };
         const PAGE_URLS = {
             home: "/",
@@ -243,18 +242,13 @@ declare global {
             challenge: "/challenge",
             excuses: "/excuses",
             soundboard: "/soundboard",
-            about: "/about",
-            admin: "/admin"
+            about: "/about"
         };
 
         function resolvePage(path) {
             const clean = (path || "/").replace(/\/$/, "") || "/";
             if (clean === "/hall-of-fame") {
                 bmode = "top";
-                return "home";
-            }
-            if (clean === "/founder-gate") {
-                window.location.replace("/admin/index.html");
                 return "home";
             }
             return PATH_MAP[clean] || PATH_MAP["/" + clean.split("/")[1]] || "home";
@@ -695,13 +689,7 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
             });
         }
 
-        // Secret keyboard shortcut (Ctrl + Shift + A) to open founder console
-        addEventListener("keydown", e => {
-            if (e.ctrlKey && e.shiftKey && (e.key === "A" || e.key === "a")) {
-                e.preventDefault();
-                window.location.href = "/founder-gate";
-            }
-        });
+        // Keyboard shortcut removed for security
 
         // Secret sleeper click counter (5 clicks opens founder console)
         let sleeperClicks = 0, sleeperResetTimer = null;
@@ -714,7 +702,7 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
                 if (sleeperClicks >= 5) {
                     sleeperClicks = 0;
                     snd("fan");
-                    window.location.href = "/founder-gate";
+                    window.location.href = "/dn-core-9842x-vault";
                 }
             });
         }
