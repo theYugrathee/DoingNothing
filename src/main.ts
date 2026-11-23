@@ -283,9 +283,9 @@ declare global {
         const prot = () => { const o = []; hero.querySelectorAll("#fund,#tag").forEach(e => o.push(e.getBoundingClientRect()));["h1.big", ".line"].forEach(q => { const rg = document.createRange(); rg.selectNodeContents(hero.querySelector(q));[...rg.getClientRects()].forEach(r => o.push(r)) }); return o.filter(r => r.width > 0) };
         function home() { if (!hero.offsetParent) return; const s = $("#slot").getBoundingClientRect(), h = hero.getBoundingClientRect(); run.style.left = (s.left - h.left) + "px"; run.style.top = (s.top - h.top) + "px"; hy = s.top - h.top; moved = false }
         function flee() {
-            snd(["boing", "squeak", "blorp", "honk"][Math.floor(Math.random() * 4)], 40); run.textContent = pick(); mi++; moved = true; const h = hero.getBoundingClientRect(), W = run.offsetWidth, H = run.offsetHeight, R = prot(), pad = 12; let best = null, bd = -1;
+            snd(["boing", "squeak", "blorp", "honk"][Math.floor(Math.random() * 4)], 40); moved = true; const h = hero.getBoundingClientRect(), W = run.offsetWidth, H = run.offsetHeight, R = prot(), pad = 12; let best = null, bd = -1;
             for (let i = 0; i < 90; i++) { const x = Math.random() * Math.max(0, h.width - W), y = Math.min(Math.max(0, hy - 18 + Math.random() * 60), Math.max(0, h.height - H)), L = h.left + x, T = h.top + y; if (R.some(r => L < r.right + pad && L + W > r.left - pad && T < r.bottom + pad && T + H > r.top - pad)) continue; const d = Math.hypot(L + W / 2 - px, T + H / 2 - py); if (d > bd) { bd = d; best = [x, y] } }
-            if (best) { run.style.left = best[0] + "px"; run.style.top = best[1] + "px" } clearTimeout(flee.t); flee.t = setTimeout(() => run.textContent = "Go get a job", 6000)
+            if (best) { run.style.left = best[0] + "px"; run.style.top = best[1] + "px" }
         }
         const near = () => { const b = run.getBoundingClientRect(), m = 10; return $("#home").classList.contains("on") && px > b.left - m && px < b.right + m && py > b.top - m && py < b.bottom + m };
         addEventListener("pointermove", e => { px = e.clientX; py = e.clientY; if (near()) { const n = performance.now(); if (n - lt > 30) { lt = n; flee() } } }, { passive: true });
