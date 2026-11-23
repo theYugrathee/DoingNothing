@@ -57,24 +57,21 @@ declare global {
         document.addEventListener("click", e => {
             const btn = e.target.closest("button, .btn, .chip, .rbtn, .pc, .lr, a, .opt");
             if (btn) {
-                // Default button tapping scale pop animation
                 if (!RM2) {
+                    // Crisp spring scale bounce
                     btn.animate([
-                        { transform: "scale(0.92)" },
-                        { transform: "scale(1.18)" },
-                        { transform: "scale(0.98)" },
+                        { transform: "scale(0.94)" },
+                        { transform: "scale(1.12)" },
                         { transform: "scale(1)" }
-                    ], { duration: 250, easing: "cubic-bezier(0.175, 0.885, 0.32, 1.275)" });
+                    ], { duration: 200, easing: "cubic-bezier(0.175, 0.885, 0.32, 1.275)" });
 
-                    // Celebratory milestone-style burst effect right at the button
+                    // Single clean celebratory burst (not messy or clustered)
                     const r = btn.getBoundingClientRect();
                     const bx = e.clientX || (r.left + r.width / 2);
                     const by = e.clientY || (r.top + r.height / 2);
                     if (window.burstAt) {
                         window.burstAt(bx, by);
-                        if (window.shock) shock(bx, by, 1.25);
-                        setTimeout(() => window.burstAt(bx + (Math.random() - 0.5) * 50, by + (Math.random() - 0.5) * 35), 75);
-                        setTimeout(() => window.burstAt(bx + (Math.random() - 0.5) * 70, by + (Math.random() - 0.5) * 45), 150);
+                        if (window.shock) shock(bx, by, 1.15);
                     }
                 }
             }
@@ -110,17 +107,161 @@ declare global {
             }
             return list;
         };
-        const todays = () => all().filter(x => dayKey(x.t) === dayKey(Date.now())).sort((a, b) => b.amt - a.amt || a.t - b.t);
         const tagOf = x => x.src === "sample" ? "sample" : x.src === "preview" ? "preview" : "";
-        // routing
-        const pages = ["home", "red", "roast", "hall-of-fame", "challenge", "excuses", "soundboard", "about", "admin"];
-        function route() { snd("up", 150); if (window.shock) shock(innerWidth / 2, innerHeight / 2, .6); let h = location.hash.slice(1); if (!pages.includes(h)) h = "home"; pages.forEach(p => $("#" + p).classList.toggle("on", p === h)); $$("#nav a").forEach(a => a.classList.toggle("on", a.hash === "#" + h)); if (h !== "challenge") stopCh(); scrollTo(0, 0); render(); if (h === "admin") renderAdmin(); setTimeout(home, 60) }
-        addEventListener("hashchange", route);
+
+        function normalizeLink(u) {
+            if (!u) return "";
+            try {
+                const raw = String(u).trim().toLowerCase();
+                const parsed = new URL(/^https?:/i.test(raw) ? raw : "https://" + raw);
+                return (parsed.hostname.replace(/^www\./, "") + parsed.pathname.replace(/\/$/, "")).toLowerCase();
+            } catch (e) {
+                return String(u).trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "");
+            }
+        }
+
+        function getDonorKey(x) {
+            const link = normalizeLink(x.url);
+            if (link) return "link:" + link;
+            if (x.anon) return "anon:" + (x.id || Math.random());
+            return "name:" + (x.name || "anon").trim().toLowerCase();
+        }
+
+        function getDonorMap(entries) {
+            const map = new Map();
+            for (const x of entries) {
+                const k = getDonorKey(x);
+                if (!map.has(k)) {
+                    map.set(k, { totalAmt: 0, count: 0, latestT: 0, latestAmt: 0, latestEntry: x });
+                }
+                const d = map.get(k);
+                d.totalAmt = Math.round((d.totalAmt + Number(x.amt || 0)) * 100) / 100;
+                d.count += 1;
+                if (x.t >= d.latestT) {
+                    d.latestT = x.t;
+                    d.latestAmt = x.amt;
+                    d.latestEntry = x;
+                }
+            }
+            return map;
+        }
+
+        let bmode = "recent";
+        let currentPage = 1;
+        const PAGE_SIZE = 100;
+
+        const recentList = () => {
+            const list = all().slice().sort((a, b) => b.t - a.t);
+            const donorMap = getDonorMap(list);
+            return list.map(item => {
+                const d = donorMap.get(getDonorKey(item));
+                return {
+                    ...item,
+                    totalAmt: d ? d.totalAmt : item.amt,
+                    donorCount: d ? d.count : 1
+                };
+            });
+        };
+
+        const topPlayersList = () => {
+            const pool = all();
+            const donorMap = getDonorMap(pool);
+            const result = [];
+            for (const d of donorMap.values()) {
+                result.push({
+                    ...d.latestEntry,
+                    amt: d.totalAmt, // Total accumulated amount for top players ranking
+                    totalAmt: d.totalAmt,
+                    latestAmt: d.latestAmt,
+                    donorCount: d.count
+                });
+            }
+            return result.sort((a, b) => b.amt - a.amt || a.t - b.t).slice(0, 100);
+        };
+
+        // routing with clean URLs (no #)
+        const pages = ["home", "red", "roast", "challenge", "excuses", "soundboard", "about", "admin"];
+        const PATH_MAP = {
+            "/": "home",
+            "/home": "home",
+            "/dont-press": "red",
+            "/red": "red",
+            "/get-roasted": "roast",
+            "/roast": "roast",
+            "/challenge": "challenge",
+            "/excuses": "excuses",
+            "/soundboard": "soundboard",
+            "/about": "about",
+            "/rules": "about",
+            "/privacy": "about",
+            "/terms": "about",
+            "/admin": "admin"
+        };
+        const PAGE_URLS = {
+            home: "/",
+            red: "/dont-press",
+            roast: "/get-roasted",
+            challenge: "/challenge",
+            excuses: "/excuses",
+            soundboard: "/soundboard",
+            about: "/about",
+            admin: "/admin"
+        };
+
+        function resolvePage(path) {
+            const clean = (path || "/").replace(/\/$/, "") || "/";
+            if (clean === "/hall-of-fame") {
+                bmode = "top";
+                return "home";
+            }
+            return PATH_MAP[clean] || PATH_MAP["/" + clean.split("/")[1]] || "home";
+        }
+
+        function routeTo(pageId, updateUrl = true) {
+            if (!pages.includes(pageId)) pageId = "home";
+            if (updateUrl) {
+                const dest = PAGE_URLS[pageId] || "/";
+                if (location.pathname !== dest) {
+                    history.pushState(null, "", dest);
+                }
+            }
+            pages.forEach(p => { const el = $("#" + p); if (el) el.classList.toggle("on", p === pageId); });
+            $$("#nav a").forEach(a => {
+                const r = a.getAttribute("data-route") || a.getAttribute("href");
+                const isMatch = r === pageId || (pageId === "home" && (r === "/" || r === "home"));
+                a.classList.toggle("on", isMatch);
+            });
+            if (pageId !== "challenge") stopCh();
+            scrollTo(0, 0);
+            render();
+            if (pageId === "admin") renderAdmin();
+            setTimeout(home, 60);
+        }
+
+        // Intercept internal link clicks for clean URL routing
+        document.addEventListener("click", e => {
+            const a = e.target.closest("a");
+            if (!a) return;
+            const href = a.getAttribute("href");
+            if (href && (href.startsWith("/") || href.startsWith("#")) && !href.startsWith("//") && !a.target && !a.download) {
+                e.preventDefault();
+                snd("up", 150);
+                if (window.shock) shock(innerWidth / 2, innerHeight / 2, .6);
+                const targetPath = href.startsWith("#") ? "/" + href.slice(1) : href;
+                const page = resolvePage(targetPath);
+                routeTo(page, true);
+            }
+        });
+
+        window.addEventListener("popstate", () => {
+            routeTo(resolvePage(location.pathname), false);
+        });
+
         // hero
         function meal() { const h = new Date().getHours(); return h >= 5 && h < 11 ? "breakfast" : h >= 11 && h < 16 ? "lunch" : h >= 16 && h < 22 ? "dinner" : "a midnight snack" }
         function setMeal() { $("#fund").innerHTML = esc(CFG.btn + " " + meal()) + `<small>${esc(CFG.sub)}</small>`; $("#tag").textContent = CFG.tag }
         let li = 0; const showLine = () => { const e = $("#line"), L = CFG.lines.length ? CFG.lines : DEF.lines; e.style.opacity = 0; setTimeout(() => { e.textContent = L[li++ % L.length]; e.style.opacity = 1 }, 300) };
-        // the "Go get a job" button: sits next to the main button, dodges the moment the pointer touches it, stays in a band around its row
+        // the "Go get a job" button
         const run = $("#run"), hero = $(".hero"); let mi = 0, bag = [], px = -999, py = -999, lt = 0, moved = false, hy = 0;
         const pick = () => { const D = CFG.dodge.length ? CFG.dodge : DEF.dodge; if (mi < 3 && D[mi]) return D[mi]; if (!bag.length) bag = D.slice(3).sort(() => Math.random() - .5); return bag.pop() || D[0] };
         const prot = () => { const o = []; hero.querySelectorAll("#fund,#tag").forEach(e => o.push(e.getBoundingClientRect()));["h1.big", ".line"].forEach(q => { const rg = document.createRange(); rg.selectNodeContents(hero.querySelector(q));[...rg.getClientRects()].forEach(r => o.push(r)) }); return o.filter(r => r.width > 0) };
@@ -141,26 +282,128 @@ declare global {
         const tierOf = a => a >= 100 ? ["Legend", "#E8412C"] : a >= 25 ? ["Big spender", "#8B3DFF"] : a >= 5 ? ["Supporter", "#0E9F6E"] : ["Noodle", "#6c6a64"];
         const chipT = x => { const t = tierOf(x.amt); return `<span class="tc" style="background:${t[1]}">${t[0]}</span>` };
         const CROWN = '<svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true"><path d="M3 18h18l1-10-5 4-5-8-5 8-5-4z" fill="#FFD23F" stroke="#101010" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+        
         function lbHTML(L, mode, at) {
             const mx = Math.max(1, ...L.map(x => x.amt)); let h = "", st = 0;
-            if (mode === "top") { const P = [1, 0, 2].filter(i => L[i]); h += `<div class="pod" style="grid-template-columns:repeat(${P.length},minmax(0,1fr))">` + P.map(i => { const x = L[i]; return `<button class="pc p${i + 1}" ${at}="${i}" style="animation-delay:${i * 90}ms"><span class="medal">${i + 1}</span>${i === 0 ? `<div class="crown">${CROWN}</div><i class="sp s1"></i><i class="sp s2"></i><i class="sp s3"></i>` : ""}${avatar(x)}<h3>${esc(x.name)}</h3>${chipT(x)}<div class="amt"><b class="nv" data-v="${x.amt}">${money(x.amt)}</b></div><span class="go">Details ›</span></button>` }).join("") + `</div>`; st = 3 }
-            return h + L.slice(st).map((x, k) => { const i = k + st, fresh = mode === "recent" && Date.now() - x.t < 12e4; return `<button class="lr ${mode === "recent" && i === 0 ? "hot" : ""}" ${at}="${i}" style="animation-delay:${Math.min(k, 12) * 35}ms"><div class="lk">${mode === "top" ? `<b>${i + 1}</b>` : `<span class="tp ${fresh ? "nw" : ""}">${ago(x.t)}</span>`}</div>${avatar(x)}<div style="min-width:0"><h3>${esc(x.name)} ${chipT(x)}${tagOf(x) ? `<span class="pv">${tagOf(x)}</span>` : ""}</h3><p>${esc(x.desc || "")}</p><div class="d">${esc(host(x.url) || x.url || "")}</div></div><div class="lp"><b class="nv" data-v="${x.amt}">${money(x.amt)}</b><span class="go">Details ›</span></div><i class="lbar" style="width:${Math.max(3, x.amt / mx * 100)}%"></i></button>` }).join("")
+            if (mode === "top") {
+                const P = [1, 0, 2].filter(i => L[i]);
+                h += `<div class="pod" style="grid-template-columns:repeat(${P.length},minmax(0,1fr))">` + P.map(i => {
+                    const x = L[i];
+                    return `<button class="pc p${i + 1}" ${at}="${i}" style="animation-delay:${i * 90}ms"><span class="medal">${i + 1}</span>${i === 0 ? `<div class="crown">${CROWN}</div><i class="sp s1"></i><i class="sp s2"></i><i class="sp s3"></i>` : ""}${avatar(x)}<h3>${esc(x.name)}</h3>${chipT(x)}<div class="amt"><b class="nv" data-v="${x.amt}">${money(x.amt)}</b>${x.donorCount > 1 ? `<div style="font-size:11.5px;font-weight:700;color:var(--mut);margin-top:2px;">${x.donorCount} donations</div>` : ""}</div><span class="go">Details ›</span></button>`;
+                }).join("") + `</div>`;
+                st = 3;
+            }
+            return h + L.slice(st).map((x, k) => {
+                const i = k + st, fresh = mode === "recent" && Date.now() - x.t < 12e4;
+                const hasRepeat = x.totalAmt && x.totalAmt > x.amt;
+                return `<button class="lr ${mode === "recent" && i === 0 ? "hot" : ""}" ${at}="${i}" style="animation-delay:${Math.min(k, 12) * 35}ms"><div class="lk">${mode === "top" ? `<b>${i + 1}</b>` : `<span class="tp ${fresh ? "nw" : ""}">${ago(x.t)}</span>`}</div>${avatar(x)}<div style="min-width:0"><h3>${esc(x.name)} ${chipT(x)}${tagOf(x) ? `<span class="pv">${tagOf(x)}</span>` : ""}</h3><p>${esc(x.desc || "")}</p><div class="d">${esc(host(x.url) || x.url || "")}</div></div><div class="lp"><b class="nv" data-v="${x.amt}">${money(x.amt)}</b>${mode === "recent" && hasRepeat ? `<span class="tot-badge">Total ${money(x.totalAmt)}</span>` : ""}${mode === "top" && x.donorCount > 1 ? `<span class="tot-badge">${x.donorCount} donations</span>` : ""}<span class="go">Details ›</span></div><i class="lbar" style="width:${Math.max(3, x.amt / mx * 100)}%"></i></button>`;
+            }).join("");
         }
-        let bmode = "recent"; const ago = t => { const m = Math.floor((Date.now() - t) / 6e4); return m < 1 ? "now" : m < 60 ? m + "m" : m < 1440 ? Math.floor(m / 60) + "h" : Math.floor(m / 1440) + "d" };
-        const boardList = () => bmode === "recent" ? [...todays()].sort((a, b) => b.t - a.t) : todays();
-        const topAll = () => all().slice().sort((a, b) => b.amt - a.amt || a.t - b.t).slice(0, 100);
+
+        const ago = t => { const m = Math.floor((Date.now() - t) / 6e4); return m < 1 ? "now" : m < 60 ? m + "m" : m < 1440 ? Math.floor(m / 60) + "h" : Math.floor(m / 1440) + "d" };
+
         function render() {
-            setMeal(); if (!moved) home(); const T = todays(); setTotal(T.reduce((a, b) => a + b.amt, 0)); $("#cnt").textContent = T.length; $("#topv").textContent = T[0] ? T[0].name : "Nobody";
+            setMeal();
+            if (!moved) home();
+            const allItems = all();
+            setTotal(allItems.reduce((a, b) => a + b.amt, 0));
+            $("#cnt").textContent = allItems.length;
+            const topEntry = topPlayersList()[0];
+            $("#topv").textContent = topEntry ? topEntry.name : "Nobody";
             $("#pvBar").innerHTML = CFG.pay ? "" : `<p class="hint" style="margin-bottom:12px"><b>Preview mode:</b> no real payments are connected. Entries shown here stay in this browser.</p>`;
-            const BL = boardList(); $("#bt").innerHTML = [["recent", "Recent"], ["top", "Top"]].map(([k, l]) => `<button class="chip ${bmode === k ? "on" : ""}" data-bm="${k}">${l}</button>`).join("");
-            $("#board").innerHTML = BL.length ? lbHTML(BL, bmode, "data-i") : ghostHTML();
-            const HF = topAll(); $("#hof").innerHTML = HF.length ? `<p class="hint" style="margin-bottom:10px">${all().length} payments so far. Showing the top ${HF.length}.</p>` + lbHTML(HF, "top", "data-h") : ghostHTML()
+
+            // Update sliding switch active UI
+            const sw = $("#lbSwitch");
+            if (sw) {
+                sw.setAttribute("data-active", bmode);
+                const tabR = $("#tabRecent"), tabT = $("#tabTop");
+                if (tabR) tabR.classList.toggle("on", bmode === "recent");
+                if (tabT) tabT.classList.toggle("on", bmode === "top");
+            }
+
+            if (bmode === "recent") {
+                const fullList = recentList();
+                const totalPages = Math.max(1, Math.ceil(fullList.length / PAGE_SIZE));
+                if (currentPage > totalPages) currentPage = totalPages;
+                if (currentPage < 1) currentPage = 1;
+                const pageItems = fullList.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+                let boardContent = pageItems.length ? lbHTML(pageItems, "recent", "data-i") : ghostHTML();
+                if (totalPages > 1) {
+                    boardContent += `<div class="pg-controls">
+                        <button class="btn sm w" id="pgPrev" ${currentPage <= 1 ? 'disabled style="opacity:0.4;cursor:not-allowed"' : ''}>‹ Previous</button>
+                        <span class="pg-info">Page ${currentPage} of ${totalPages} (${fullList.length} total)</span>
+                        <button class="btn sm" id="pgNext" ${currentPage >= totalPages ? 'disabled style="opacity:0.4;cursor:not-allowed"' : ''}>Next ›</button>
+                    </div>`;
+                }
+                $("#board").innerHTML = boardContent;
+            } else {
+                const topList = topPlayersList();
+                $("#board").innerHTML = topList.length ? lbHTML(topList, "top", "data-i") : ghostHTML();
+            }
         }
-        setInterval(() => { const s = left(); $("#rst").textContent = [Math.floor(s / 3600), Math.floor(s % 3600 / 60), s % 60].map(n => String(n).padStart(2, "0")).join(":"); if (s === 86399) render() }, 1000);
-        function showDetail(x) { if (!x) return; const u = safeUrl(x.url); $("#mb").innerHTML = `<div style="display:flex;gap:14px;align-items:center">${avatar(x)}<div><h2 style="font-size:28px">${esc(x.name)}</h2><b>${money(x.amt)}</b></div></div><p style="white-space:pre-wrap">${esc(x.desc || "No description.")}</p>${u ? `<p><a class="btn sm" href="${esc(u)}" target="_blank" rel="nofollow noopener ugc">Visit ${esc(host(x.url))}</a></p>` : (x.url ? `<p><b>${esc(x.url)}</b></p>` : "")}<p><button class="chip" id="cl">Close</button></p>`; $("#md").classList.add("on"); $("#cl").onclick = close_ }
-        $("#board").addEventListener("click", e => { const r = e.target.closest("[data-i]"); if (r) showDetail(boardList()[+r.dataset.i]) });
-        $("#hof").addEventListener("click", e => { const r = e.target.closest("[data-h]"); if (r) showDetail(topAll()[+r.dataset.h]) });
-        $("#bt").onclick = e => { const b = e.target.closest("[data-bm]"); if (b) { bmode = b.dataset.bm; render() } };
+
+        setInterval(() => { const s = left(); $("#rst").textContent = [Math.floor(s / 3600), Math.floor(s % 3600 / 60), s % 60].map(n => String(n).padStart(2, "0")).join(":"); }, 1000);
+
+        function showDetail(x) {
+            if (!x) return;
+            const u = safeUrl(x.url);
+            const totalInfo = x.totalAmt && x.totalAmt > x.amt ? `<div style="font-size:14px;color:var(--blue);font-weight:700;margin-top:4px;">Cumulative Lifetime Total: ${money(x.totalAmt)}</div>` : "";
+            $("#mb").innerHTML = `<div style="display:flex;gap:14px;align-items:center">${avatar(x)}<div><h2 style="font-size:28px">${esc(x.name)}</h2><b>${money(x.amt)}</b>${totalInfo}</div></div><p style="white-space:pre-wrap">${esc(x.desc || "No description.")}</p>${u ? `<p><a class="btn sm" href="${esc(u)}" target="_blank" rel="nofollow noopener ugc">Visit ${esc(host(x.url))}</a></p>` : (x.url ? `<p><b>${esc(x.url)}</b></p>` : "")}<p><button class="chip" id="cl">Close</button></p>`;
+            $("#md").classList.add("on");
+            $("#cl").onclick = close_;
+        }
+
+        $("#board").addEventListener("click", e => {
+            const prev = e.target.closest("#pgPrev");
+            if (prev && !prev.hasAttribute("disabled")) {
+                const fullList = recentList();
+                const totalPages = Math.max(1, Math.ceil(fullList.length / PAGE_SIZE));
+                if (currentPage > 1) {
+                    currentPage--;
+                    render();
+                    const b = $("#board");
+                    if (b) scrollTo({ top: b.offsetTop - 70, behavior: "smooth" });
+                }
+                return;
+            }
+            const next = e.target.closest("#pgNext");
+            if (next && !next.hasAttribute("disabled")) {
+                const fullList = recentList();
+                const totalPages = Math.max(1, Math.ceil(fullList.length / PAGE_SIZE));
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    render();
+                    const b = $("#board");
+                    if (b) scrollTo({ top: b.offsetTop - 70, behavior: "smooth" });
+                }
+                return;
+            }
+            const r = e.target.closest("[data-i]");
+            if (r) {
+                const idx = +r.dataset.i;
+                if (bmode === "recent") {
+                    const fullList = recentList();
+                    const pageItems = fullList.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+                    showDetail(pageItems[idx]);
+                } else {
+                    showDetail(topPlayersList()[idx]);
+                }
+            }
+        });
+
+        const lbSwitch = $("#lbSwitch");
+        if (lbSwitch) {
+            lbSwitch.onclick = e => {
+                const b = e.target.closest("[data-bm]");
+                if (b) {
+                    bmode = b.dataset.bm;
+                    if (bmode === "recent") currentPage = 1;
+                    render();
+                }
+            };
+        }
+
         // payment modal
         const close_ = () => $("#md").classList.remove("on"); let img = "";
         function openFund() {
@@ -354,7 +597,18 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
         const KN = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"]; let ki = 0;
         addEventListener("keydown", e => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; ki = k === KN[ki] ? ki + 1 : (k === KN[0] ? 1 : 0); if (ki === KN.length) { ki = 0; snd("fan"); toast("Party mode. Absolutely nothing was achieved."); if (!RM2) for (let i = 0; i < 10; i++)setTimeout(() => { const x = Math.random() * innerWidth, y = Math.random() * innerHeight; window.burstAt(x, y); if (window.shock) shock(x, y, 1.6) }, i * 160) } });
         const slp = document.querySelector(".sleeper"); if (slp) slp.addEventListener("click", () => { toast("Huh? I wasn’t sleeping. I was resting my eyes."); snd("yawn") });
-        route(); showLine(); setInterval(showLine, 3800);
+        // Initial route handling
+        if (location.search.includes("tab=top")) bmode = "top";
+        if (location.hash) {
+            const h = location.hash.replace("#", "");
+            const page = resolvePage("/" + h);
+            history.replaceState(null, "", PAGE_URLS[page] || "/");
+            routeTo(page, false);
+        } else {
+            routeTo(resolvePage(location.pathname), false);
+        }
+        showLine();
+        setInterval(showLine, 3800);
     
 // Supabase Backend Sync
 (async () => {

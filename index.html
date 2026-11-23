@@ -19,10 +19,16 @@
 <body>
     <canvas id="gl" aria-hidden="true"></canvas>
     <header>
-        <div class="hd"><a class="logo" href="#home">doingnothing<i>.lol</i></a>
-            <nav id="nav"><a href="#home">Home</a><a href="#red">Don’t press</a><a href="#roast">Get roasted</a><a
-                    href="#hall-of-fame">Hall of fame</a><a href="#challenge">Challenge</a><a
-                    href="#excuses">Excuses</a><a href="#soundboard">Soundboard</a><a href="#about">About</a></nav>
+        <div class="hd"><a class="logo" href="/" data-route="home">doingnothing<i>.lol</i></a>
+            <nav id="nav">
+            <a href="/" data-route="home">Home</a>
+            <a href="/dont-press" data-route="red">Don’t press</a>
+            <a href="/get-roasted" data-route="roast">Get roasted</a>
+            <a href="/challenge" data-route="challenge">Challenge</a>
+            <a href="/excuses" data-route="excuses">Excuses</a>
+            <a href="/soundboard" data-route="soundboard">Soundboard</a>
+            <a href="/about" data-route="about">About</a>
+        </nav>
             <div class="hd-ctrls"><button class="chip" id="snd">Sound: on</button><button class="chip" id="mot">Motion: on</button></div>
         </div>
     </header>
@@ -73,7 +79,13 @@
                     <h2>Today’s board</h2>
                     <p style="margin:0 0 16px;color:var(--mut)">Switch between the newest supporters and the biggest
                         ones. Pay any amount you like. The board resets every day. <b>Tap any card for details.</b></p>
-                    <div class="chips" id="bt" style="margin:0 0 12px"></div>
+                    <div class="lb-switch-wrap">
+                    <div class="lb-switch" id="lbSwitch" data-active="recent">
+                        <button class="lb-tab on" id="tabRecent" data-bm="recent" type="button">Recent</button>
+                        <button class="lb-tab" id="tabTop" data-bm="top" type="button">Top Players</button>
+                        <div class="lb-slider"></div>
+                    </div>
+                </div>
                     <div id="pvBar"></div>
                     <div id="board"></div>
                 </div>
@@ -179,7 +191,7 @@
             </div>
         </section>
     </div>
-    <footer>doingnothing.lol · built while doing nothing · <a href="#admin">admin</a></footer>
+    <footer>doingnothing.lol · built while doing nothing · <a href="/admin" data-route="admin">admin</a></footer>
     <div class="modal" id="md">
         <div class="mbox" id="mb"></div>
     </div>

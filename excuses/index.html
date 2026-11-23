@@ -1,13 +1,204 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>The Excuse Machine | doingnothing.lol</title>
-  <link rel="canonical" href="https://doingnothing.lol/excuses">
-  <script>window.location.replace("/#excuses");</script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>The Excuse Machine | Doing Nothing</title>
+    <meta name="description" content="Generate hilarious reasons why your work is not done.">
+    <link rel="canonical" href="https://doingnothing.lol/excuses">
+    <meta property="og:title" content="Doing Nothing: a full-time career">
+    <meta property="og:description" content="I do nothing. You can buy me a meal and get on today’s board.">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
 </head>
+
 <body>
-  <p style="font-family:sans-serif;padding:24px">Redirecting to <a href="/#excuses">The Excuse Machine</a>...</p>
+    <canvas id="gl" aria-hidden="true"></canvas>
+    <header>
+        <div class="hd"><a class="logo" href="/" data-route="home">doingnothing<i>.lol</i></a>
+            <nav id="nav">
+            <a href="/" data-route="home">Home</a>
+            <a href="/dont-press" data-route="red">Don’t press</a>
+            <a href="/get-roasted" data-route="roast">Get roasted</a>
+            <a href="/challenge" data-route="challenge">Challenge</a>
+            <a href="/excuses" data-route="excuses">Excuses</a>
+            <a href="/soundboard" data-route="soundboard">Soundboard</a>
+            <a href="/about" data-route="about">About</a>
+        </nav>
+            <div class="hd-ctrls"><button class="chip" id="snd">Sound: on</button><button class="chip" id="mot">Motion: on</button></div>
+        </div>
+    </header>
+    <div class="wrap">
+
+        <section class="pg" id="home">
+            <div class="hero"><svg class="sleeper" viewBox="0 0 320 250" aria-hidden="true">
+                    <ellipse class="sh" cx="160" cy="228" rx="122" ry="14" fill="#10101022" />
+                    <rect x="36" y="168" width="248" height="54" rx="27" fill="#FFD23F" stroke="#101010"
+                        stroke-width="4" />
+                    <g class="br">
+                        <path d="M52 172c0-64 50-98 108-98s108 34 108 98z" fill="#2F4BFF" stroke="#101010"
+                            stroke-width="4" />
+                        <path d="M104 128q12 11 24 0M192 128q12 11 24 0M146 148q14 12 28 0" fill="none" stroke="#fff"
+                            stroke-width="5" stroke-linecap="round" />
+                        <circle class="dr" cx="174" cy="154" r="4.5" fill="#cfdcff" />
+                    </g><text class="zz" x="236" y="72">Z</text><text class="zz" x="254" y="52"
+                        style="animation-delay:1.2s">Z</text><text class="zz" x="272" y="32"
+                        style="animation-delay:2.4s">z</text>
+                </svg><span class="tag" id="tag"></span>
+                <h1 class="big">I do<br><span class="hl">nothing.</span></h1>
+                <div class="line" id="line"></div>
+                <div class="cta"><button class="btn" id="fund"></button><span id="slot"
+                        style="display:inline-block;width:150px;height:52px"></span></div>
+                <button class="btn w" id="run">Go get a job</button>
+            </div>
+
+            <div class="lbx">
+                <div class="strip">
+                    <div>
+                        <div class="k">Collected today</div>
+                        <div class="v m" id="tot">$0</div>
+                    </div>
+                    <div>
+                        <div class="k">Feeders today</div>
+                        <div class="v" id="cnt">0</div>
+                    </div>
+                    <div>
+                        <div class="k">Top today</div>
+                        <div class="v" id="topv" style="font-size:24px;word-break:break-word">Nobody</div>
+                    </div>
+                    <div>
+                        <div class="k">Board resets in</div>
+                        <div class="v" id="rst">--:--:--</div>
+                    </div>
+                </div>
+                <div class="sec">
+                    <h2>Today’s board</h2>
+                    <p style="margin:0 0 16px;color:var(--mut)">Switch between the newest supporters and the biggest
+                        ones. Pay any amount you like. The board resets every day. <b>Tap any card for details.</b></p>
+                    <div class="lb-switch-wrap">
+                    <div class="lb-switch" id="lbSwitch" data-active="recent">
+                        <button class="lb-tab on" id="tabRecent" data-bm="recent" type="button">Recent</button>
+                        <button class="lb-tab" id="tabTop" data-bm="top" type="button">Top Players</button>
+                        <div class="lb-slider"></div>
+                    </div>
+                </div>
+                    <div id="pvBar"></div>
+                    <div id="board"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="pg" id="red">
+            <div class="pgx">
+                <h1>Don’t press <span class="hl">it.</span></h1>
+                <p style="color:var(--mut);max-width:30em">Seriously. Nothing good happens. I’m only telling you once.
+                </p>
+                <div class="panel" style="text-align:center"><button class="rbtn" id="rb">DO NOT PRESS</button>
+                    <p id="rm" style="font-weight:700;min-height:1.6em;margin-top:18px"></p>
+                    <p class="hint" id="rc"></p>
+                </div>
+            </div>
+        </section>
+
+        <section class="pg" id="roast">
+            <div class="pgx">
+                <h1>Get <span class="hl">roasted.</span></h1>
+                <p style="color:var(--mut);max-width:30em">Type your name or product. I’ll be rude. Lovingly.</p>
+                <div class="panel"><input id="ri" maxlength="40" placeholder="Your name or product"
+                        style="margin:0 0 12px"><button class="btn" id="rg">Roast me</button>
+                    <div class="disp" id="ro"
+                        style="font-size:clamp(22px,3.4vw,34px);line-height:1.15;margin-top:18px;min-height:3em"></div>
+                    <p id="ra" style="display:none"><button class="btn y sm" id="rs">Copy roast</button> <button
+                            class="btn sm" id="rf"></button></p>
+                </div>
+            </div>
+        </section>
+
+        <section class="pg" id="hall-of-fame">
+            <div class="pgx">
+                <h1>Hall of <span class="hl">fame.</span></h1>
+                <p style="color:var(--mut);max-width:34em">The 100 biggest payments of all time, highest first. Tap a
+                    card for details.</p>
+                <div id="hof"></div>
+            </div>
+        </section>
+
+        <section class="pg" id="challenge">
+            <div class="pgx">
+                <h1>The do-nothing <span class="hl">challenge.</span></h1>
+                <p style="max-width:32em">Press start, then touch nothing. No mouse, no keys, no scrolling, no tapping.
+                    The clock stops the moment you do anything.</p>
+                <div class="panel" style="text-align:center">
+                    <div class="big2" id="ct">0.0s</div>
+                    <p id="cm" style="font-weight:700;min-height:1.6em"></p><button class="btn" id="cs">Start doing
+                        nothing</button>
+                    <p class="hint" id="cb"></p>
+                </div>
+            </div>
+        </section>
+
+        <section class="pg on" id="excuses">
+            <div class="pgx">
+                <h1>The excuse <span class="hl">machine.</span></h1>
+                <p style="color:var(--mut)">For when you have to explain why it isn’t done.</p>
+                <div class="panel">
+                    <div class="disp" style="font-size:clamp(30px,5vw,54px);line-height:1.05;min-height:3.2em" id="ex">
+                        Press the button. I won’t.</div><button class="btn" id="exb">Generate my reason</button> <button
+                        class="btn w" id="exc">Copy</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="pg" id="soundboard">
+            <div class="pgx">
+                <h1>The <span class="hl">soundboard.</span></h1>
+                <p style="color:var(--mut);max-width:34em"><b id="sbn">0</b> sounds, every one built from scratch in
+                    your browser. Press any of them. Turn Sound on in the header first.</p>
+                <div class="sb" id="sbg"></div>
+            </div>
+        </section>
+
+        <section class="pg" id="about">
+            <div class="pgx">
+                <h1>About <span class="hl">nothing.</span></h1>
+                <p style="max-width:34em;font-size:20px">I do nothing and I’m honest about it. If that makes you smile,
+                    buy me a meal. If you have a product, a page or a profile, put it on today’s board while you’re at
+                    it.</p>
+                <div class="panel" style="margin-top:20px;max-width:34em">
+                    <h3 style="font-size:20px;margin-bottom:8px">The Founder</h3>
+                    <p style="margin:0 0 6px;color:var(--mut)">Operated by The Founder (Chief Couch Operator). Reach out at <a href="mailto:founder@doingnothing.lol">founder@doingnothing.lol</a></p>
+                    <p style="margin:0">Connect: <a href="https://x.com/YugRathee" target="_blank" rel="noopener">@YugRathee on X</a></p>
+                </div>
+                <h3 style="font-size:28px;margin-top:26px">The rules</h3>
+                <ol style="max-width:36em">
+                    <li>Payments are voluntary and go to the founder personally. It isn’t charity.</li>
+                    <li>Pay any amount you like. The board ranks by amount, highest first.</li>
+                    <li>The board resets every day. Daily winners go to the Hall of fame.</li>
+                    <li>Placement is recognition. No promises about traffic or sales.</li>
+                    <li>Spam, scams and unsafe links are removed.</li>
+                </ol>
+            </div>
+        </section>
+
+        <section class="pg" id="admin">
+            <div class="pgx">
+                <h1>Admin.</h1>
+                <div id="adm"></div>
+            </div>
+        </section>
+    </div>
+    <footer>doingnothing.lol · built while doing nothing · <a href="/admin" data-route="admin">admin</a></footer>
+    <div class="modal" id="md">
+        <div class="mbox" id="mb"></div>
+    </div>
+    <div id="toast"></div>
+    <div id="cube" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div id="tapTag" aria-hidden="true"><i></i><span id="tapT">tap anywhere</span></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script type="module" src="/src/main.ts"></script>
 </body>
+
 </html>
