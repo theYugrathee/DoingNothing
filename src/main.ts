@@ -31,7 +31,7 @@ declare global {
         // ===== SOUNDS: original effects synthesized in the browser. Real meme clips are copyrighted and can't be loaded here. Mute button in the header. =====
         let SOUND = true; try { SOUND = localStorage.getItem("idn_snd") !== "off" } catch (e) { }
         let AC = null, MG = null, welcomed = false; const lastS = {};
-        function ctx() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); MG = AC.createGain(); MG.gain.value = .35; MG.connect(AC.destination) } catch (e) { return null } } if (AC.state === "suspended") AC.resume(); return AC }
+        function ctx() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); MG = AC.createGain(); MG.gain.value = .35; MG.connect(AC.destination) } catch (e) { return null } } if (AC.state === "suspended") AC.resume().catch(() => { }); return AC }
         function tone(f, d, type = "sine", v = .4, to = null, at = 0) { const c = ctx(); if (!c) return; const t = c.currentTime + at, o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (to) o.frequency.exponentialRampToValueAtTime(to, t + d); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(g); g.connect(MG); o.start(t); o.stop(t + d + .02) }
         function noise(d, v = .3, f = 1500, at = 0) { const c = ctx(); if (!c) return; const t = c.currentTime + at, n = Math.floor(c.sampleRate * d), b = c.createBuffer(1, n, c.sampleRate), a = b.getChannelData(0); for (let i = 0; i < n; i++)a[i] = Math.random() * 2 - 1; const s = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain(); s.buffer = b; fl.type = "bandpass"; fl.frequency.value = f; g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d); s.connect(fl); fl.connect(g); g.connect(MG); s.start(t) }
         const SND = { pop: () => tone(700, .07, "sine", .4, 300), bonk: () => tone(260, .13, "triangle", .6, 80), squeak: () => tone(1300, .09, "square", .12, 2000), boing: () => { tone(200, .22, "sine", .5, 700); tone(700, .3, "sine", .4, 240, .2) }, blorp: () => tone(150, .22, "sawtooth", .2, 55), honk: () => { tone(233, .3, "sawtooth", .18); tone(247, .3, "sawtooth", .18) }, up: () => tone(300, .25, "sine", .35, 1500), tick: () => tone(1500, .02, "square", .07), kaching: () => { tone(1568, .12, "sine", .4); tone(2093, .35, "sine", .4, null, .1); noise(.08, .15, 6000) }, sad: () => [[293, .3, 0], [277, .3, .32], [261, .3, .64], [233, .9, .96]].forEach(([f, d, a]) => tone(f, d, "sawtooth", .18, f * .92, a)), rim: () => { tone(130, .12, "triangle", .7, 70); tone(110, .12, "triangle", .7, 60, .18); noise(.5, .35, 5000, .4) }, horn: () => { [440, 554, 659].forEach(f => tone(f, .6, "sawtooth", .14, f * .9)); noise(.15, .1, 3000) }, boom: () => { tone(80, .7, "sine", .9, 30); noise(.25, .35, 200) }, alarm: () => { for (let i = 0; i < 4; i++)tone(i % 2 ? 660 : 880, .12, "square", .12, null, i * .14) }, scratch: () => noise(.35, .4, 2500), fan: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, .18, "triangle", .4, null, i * .09)), dun: () => [[196, 0], [196, .28], [165, .6]].forEach(([f, a]) => tone(f, .4, "sawtooth", .2, f * .97, a)), yay: () => { tone(400, .15, "sine", .4, 900); tone(900, .2, "sine", .4, 1300, .14) } };
@@ -51,7 +51,9 @@ declare global {
             yawn: () => tone(420, .7, "sine", .3, 240), twinkle: () => tone(2400, .06, "sine", .12, 3300), swish: () => noise(.07, .07, 2400),
             clack: () => clack(1), spaceclack: () => { noise(.06, .35, 1800); tone(90, .09, "square", .2, 50) }, enterclack: () => { clack(1.3); tone(110, .12, "square", .18, 60, .03) }, tk: () => tone(1800 + Math.random() * 300, .018, "square", .06)
         });
-        function snd(n, gap = 60) { if (!SOUND || !welcomed) return; const t = performance.now(); if (lastS[n] && t - lastS[n] < gap) return; lastS[n] = t; try { SND[n]() } catch (e) { } }
+        const CURSOR_NOTES = [261.6, 293.7, 329.6, 392, 440, 523.3, 587.3, 659.3, 784, 880];
+        SND.softnote = () => { const f = CURSOR_NOTES[Math.floor(Math.random() * CURSOR_NOTES.length)]; tone(f, .55, "sine", .07); tone(f * 2, .3, "triangle", .02); };
+        function snd(n, gap = 60) { if (!SOUND) return; const t = performance.now(); if (lastS[n] && t - lastS[n] < gap) return; lastS[n] = t; try { SND[n]() } catch (e) { } }
         const CLK = ["pop", "bonk", "squeak", "boing", "blorp", "yay", "coin", "bubble", "blip", "drip", "xylo", "glock", "jump", "spring", "squeeze", "pew", "quack", "meow", "kazoo", "clap", "dingding", "gulp", "whistle", "woo", "bubblepop", "cowbell"];
         const welcome = () => { if (welcomed) return; welcomed = true; snd("fan") };["pointerdown", "keydown", "touchstart"].forEach(v => addEventListener(v, welcome, { passive: true }));
         document.addEventListener("click", e => {
@@ -245,6 +247,22 @@ declare global {
             about: "/about"
         };
 
+        // The wipe is purely decorative and only runs after the first route is painted.
+        let hasRoutedOnce = false;
+        function playPageWipe() {
+            if (RM2) return;
+            let wipe = document.querySelector(".page-wipe");
+            if (!wipe) {
+                wipe = document.createElement("div");
+                wipe.className = "page-wipe";
+                wipe.setAttribute("aria-hidden", "true");
+                document.body.appendChild(wipe);
+            }
+            wipe.classList.remove("play");
+            void wipe.offsetWidth;
+            wipe.classList.add("play");
+        }
+
         function resolvePage(path) {
             const clean = (path || "/").replace(/\/$/, "") || "/";
             if (clean === "/hall-of-fame") {
@@ -256,6 +274,9 @@ declare global {
 
         function routeTo(pageId, updateUrl = true) {
             if (!pages.includes(pageId)) pageId = "home";
+            const routeChanged = hasRoutedOnce && !$("#" + pageId)?.classList.contains("on");
+            if (routeChanged) playPageWipe();
+            hasRoutedOnce = true;
             if (updateUrl) {
                 const dest = PAGE_URLS[pageId] || "/";
                 if (location.pathname !== dest) {
@@ -304,6 +325,7 @@ declare global {
         const prot = () => { const o = []; hero.querySelectorAll("#fund,#tag").forEach(e => o.push(e.getBoundingClientRect()));["h1.big", ".line"].forEach(q => { const rg = document.createRange(); rg.selectNodeContents(hero.querySelector(q));[...rg.getClientRects()].forEach(r => o.push(r)) }); return o.filter(r => r.width > 0) };
         function home() { if (!hero.offsetParent) return; const s = $("#slot").getBoundingClientRect(), h = hero.getBoundingClientRect(); run.style.left = (s.left - h.left) + "px"; run.style.top = (s.top - h.top) + "px"; hy = s.top - h.top; moved = false }
         function flee() {
+            if (window.charReact && Math.random() < .35) window.charReact("nope");
             snd(["boing", "squeak", "blorp", "honk"][Math.floor(Math.random() * 4)], 40); moved = true; const h = hero.getBoundingClientRect(), W = run.offsetWidth, H = run.offsetHeight, R = prot(), pad = 12; let best = null, bd = -1;
             for (let i = 0; i < 90; i++) { const x = Math.random() * Math.max(0, h.width - W), y = Math.min(Math.max(0, hy - 18 + Math.random() * 60), Math.max(0, h.height - H)), L = h.left + x, T = h.top + y; if (R.some(r => L < r.right + pad && L + W > r.left - pad && T < r.bottom + pad && T + H > r.top - pad)) continue; const d = Math.hypot(L + W / 2 - px, T + H / 2 - py); if (d > bd) { bd = d; best = [x, y] } }
             if (best) { run.style.left = best[0] + "px"; run.style.top = best[1] + "px" }
@@ -506,6 +528,7 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
                     render();
                 });
                 snd("horn");
+                if (window.charReact) window.charReact("happy");
                 close_();
                 render();
                 toast(CFG.pay ? "Added to the board!" : "Preview only: added to the board. No money moved.");
@@ -731,31 +754,43 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
             try {
                 const cv = document.getElementById("gl"), R = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true }); R.setPixelRatio(Math.min(devicePixelRatio, 1.75));
                 const S = new THREE.Scene(), C = new THREE.PerspectiveCamera(45, 1, .1, 100); C.position.z = 14;
-                S.add(new THREE.AmbientLight(0xffffff, .85)); const dl = new THREE.DirectionalLight(0xffffff, .9); dl.position.set(4, 6, 8); S.add(dl);
+                S.add(new THREE.AmbientLight(0xffffff, .7)); const dl = new THREE.DirectionalLight(0xffffff, .8); dl.position.set(4, 6, 8); S.add(dl);
+                const blueLight = new THREE.PointLight(0x2F4BFF, 1.5, 40), yellowLight = new THREE.PointLight(0xFFD23F, 1.5, 40); S.add(blueLight, yellowLight);
                 const COLS = [0x2F4BFF, 0xFFD23F, 0x101010, 0xE8412C, 0x0E9F6E, 0xffffff];
-                const GEO = [() => new THREE.IcosahedronGeometry(1, 0), () => new THREE.OctahedronGeometry(1, 0), () => new THREE.BoxGeometry(1.4, 1.4, 1.4), () => new THREE.TorusGeometry(.9, .34, 12, 24), () => new THREE.ConeGeometry(.9, 1.6, 5), () => new THREE.SphereGeometry(1, 14, 10), () => new THREE.DodecahedronGeometry(1, 0), () => new THREE.TorusKnotGeometry(.7, .24, 64, 8)];
-                let HW = 8, HH = 5.8, P = 35; const sh = [], N = innerWidth < 700 ? 16 : 26, mob = () => innerWidth < 700;
+                const GEO = [() => new THREE.IcosahedronGeometry(1, 0), () => new THREE.OctahedronGeometry(1, 0), () => new THREE.BoxGeometry(1.3, 1.3, 1.3), () => new THREE.TorusGeometry(.8, .28, 12, 28), () => new THREE.ConeGeometry(.8, 1.5, 5), () => new THREE.SphereGeometry(.9, 16, 12), () => new THREE.DodecahedronGeometry(1, 0), () => new THREE.TorusKnotGeometry(.6, .2, 72, 8), () => new THREE.TetrahedronGeometry(1.1, 0), () => new THREE.CylinderGeometry(.7, .7, .4, 18)];
+                let HW = 8, HH = 5.8, P = 35; const sh = [], N = innerWidth < 700 ? 20 : 38, mob = () => innerWidth < 700;
                 function dims() { const w = innerWidth, h = innerHeight; R.setSize(w, h, false); C.aspect = w / h; C.updateProjectionMatrix(); HH = Math.tan(C.fov * Math.PI / 360) * C.position.z; HW = HH * C.aspect; P = 6 * HH } dims();
                 for (let i = 0; i < N; i++) {
-                    const m = new THREE.Mesh(GEO[i % GEO.length](), new THREE.MeshStandardMaterial({ color: COLS[i % COLS.length], flatShading: true, roughness: .55, metalness: .05 })); S.add(m);
-                    const side = Math.random() < .5 ? -1 : 1; sh.push({ m, x: side * (.45 + Math.random() * .55), f: i / N, z: -4 + Math.random() * 6, s: .9 + Math.random() * 1.2, rx: (Math.random() - .5) * 1.6, ry: (Math.random() - .5) * 2, o: [0, 0, 0], v: [0, 0, 0], pulse: 0, sp: 0 })
+                    const wire = i % 5 === 4, m = new THREE.Mesh(GEO[i % GEO.length](), wire ? new THREE.MeshBasicMaterial({ color: 0x101010, wireframe: true }) : new THREE.MeshStandardMaterial({ color: COLS[i % COLS.length], flatShading: true, roughness: .4, metalness: .15 })); S.add(m);
+                    sh.push({ m, x: (Math.random() < .5 ? -1 : 1) * (.35 + Math.random() * .65), f: i / N, z: -5 + Math.random() * 7, s: .35 + Math.random() * .55, rx: (Math.random() - .5) * 1.6, ry: (Math.random() - .5) * 2, o: [0, 0, 0], v: [0, 0, 0], pulse: 0, sp: 0 })
                 }
                 // one big hero shape, top right
-                sh[7].x = .55; sh[7].f = .99; sh[7].z = -1; sh[7].s = 2.8; sh[0].x = -.7;
+                sh[7].x = .6; sh[7].f = .985; sh[7].z = -1; sh[7].s = 1.5;
+                const PN = mob() ? 120 : 260, dustPos = new Float32Array(PN * 3), dustX = [], dustF = [];
+                for (let i = 0; i < PN; i++) { dustX.push(Math.random() * 2 - 1); dustF.push(Math.random()); dustPos[i * 3 + 2] = -6 + Math.random() * 10; }
+                const dustGeo = new THREE.BufferGeometry(); dustGeo.setAttribute("position", new THREE.BufferAttribute(dustPos, 3));
+                const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({ color: 0x101010, size: .07, transparent: true, opacity: .5, sizeAttenuation: true })); dust.frustumCulled = false; S.add(dust);
                 let px = 0, py = 0, cy = 0, last = performance.now();
                 addEventListener("pointermove", e => { px = e.clientX / innerWidth * 2 - 1; py = -(e.clientY / innerHeight * 2 - 1) }, { passive: true });
                 addEventListener("resize", () => { dims(); frame(0, performance.now()) });
                 window.shock = (cx, cyp, k = 1) => { if (RM2) return; const wx = (cx / innerWidth * 2 - 1) * HW, wy = cy + (-(cyp / innerHeight * 2 - 1)) * HH; sh.forEach(s => { const p = s.m.position, dx = p.x - wx, dy = p.y - wy, d = Math.hypot(dx, dy) || .01, f = k * 9 / (1 + d * d * .07); s.v[0] += dx / d * f; s.v[1] += dy / d * f; s.v[2] += (Math.random() - .4) * f * .5; s.sp += (Math.random() - .5) * f * 1.2; s.pulse = Math.max(s.pulse, Math.min(1, f / 6)) }) };
                 function frame(dt, t) {
                     cy = -scrollY / innerHeight * 2 * HH; C.position.set(px * .5, cy + py * .35, 14); C.lookAt(px * .2, cy, 0);
+                    blueLight.position.set(Math.sin(t * .0007) * 9, cy + 4 + Math.cos(t * .0005) * 3, 6);
+                    yellowLight.position.set(Math.cos(t * .0006) * 9, cy - 3 + Math.sin(t * .0008) * 3, 6);
+                    const wx = px * HW, wy = cy + py * HH;
                     sh.forEach(s => {
                         const base = -s.f * P, off = (((base - cy) % P) + P) % P - P / 2;
+                        const current = s.m.position;
+                        if (dt) { const dx = current.x - wx, dy = current.y - wy, d = Math.hypot(dx, dy); if (d < 3.4) { const f = (3.4 - d) / 3.4 * 16 * dt; s.v[0] += dx / (d || .1) * f; s.v[1] += dy / (d || .1) * f; } }
                         for (let a = 0; a < 3; a++) { s.v[a] += -3 * s.o[a] * dt; s.v[a] *= Math.pow(.04, dt); s.o[a] += s.v[a] * dt }
                         s.sp *= Math.pow(.15, dt); s.pulse *= Math.pow(.02, dt);
                         s.m.position.set(s.x * HW * (mob() ? .9 : 1) + Math.cos(t * .0008 + s.f * 13) * .6 + s.o[0], cy + off + Math.sin(t * .0012 + s.f * 20) * .8 + s.o[1], s.z + s.o[2]);
                         s.m.rotation.x += (s.rx + s.sp) * dt; s.m.rotation.y += (s.ry + s.sp * .7) * dt;
-                        const k = (mob() ? .7 : 1) * s.s * (1 + s.pulse * .35); s.m.scale.setScalar(k)
+                        s.m.scale.setScalar((mob() ? .75 : 1) * s.s * (1 + s.pulse * .35))
                     });
+                    for (let i = 0; i < PN; i++) { dustPos[i * 3] = dustX[i] * HW * 1.3; dustPos[i * 3 + 1] = cy + (((-dustF[i] * P - cy) % P) + P) % P - P / 2 + Math.sin(t * .0004 + i) * .3; }
+                    dustGeo.attributes.position.needsUpdate = true;
                     R.render(S, C)
                 }
                 (function loop(now) { requestAnimationFrame(loop); if (document.hidden) { last = now; return } const dt = RM2 ? 0 : Math.min(.05, (now - last) / 1000); last = now; frame(dt, RM2 ? 0 : now) })(performance.now());
@@ -783,7 +818,7 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
             function spark(x, y) { if (document.querySelectorAll(".sk").length > 50) return; const p = document.createElement("div"), z = 8 + Math.random() * 9; p.className = "cb sk"; p.style.cssText = `left:${x}px;top:${y}px;width:${z}px;height:${z}px;background:${CL[Math.floor(Math.random() * 5)]}`; document.body.appendChild(p); p.animate([{ transform: "translate(-50%,-50%) scale(1) rotate(0)", opacity: 1 }, { transform: `translate(calc(-50% + ${(Math.random() - .5) * 50}px),calc(-50% + ${30 + Math.random() * 50}px)) scale(.1) rotate(${Math.random() * 360}deg)`, opacity: 0 }], { duration: 700 + Math.random() * 300, easing: "ease-out" }).onfinish = () => p.remove() }
             addEventListener("pointermove", e => {
                 const x = e.clientX, y = e.clientY; if (lx < 0) { lx = x; ly = y } const dx = x - lx, dy = y - ly, d = Math.hypot(dx, dy); lx = x; ly = y; vx = dx; vy = dy; tx = x + 22; ty = y + 22;
-                if (e.pointerType === "mouse") { a1 += d; if (a1 > 24 && !RM2) { a1 = 0; spark(x, y) } if (fine && !RM2) cube.style.display = "block"; }
+                if (e.pointerType === "mouse") { a1 += d; if (a1 > 24 && !RM2) { a1 = 0; spark(x, y) } a2 += d; if (a2 > 230) { a2 = 0; snd("softnote", 130) } if (fine && !RM2) cube.style.display = "block"; }
             }, { passive: true });
             (function loop() { requestAnimationFrame(loop); if (RM2) { cube.style.display = "none"; return } cx += (tx - cx) * .2; cy += (ty - cy) * .2; ax += vy * .5 + .9; ay += vx * .5 + 1.6; vx *= .88; vy *= .88; cube.style.transform = `translate3d(${cx}px,${cy}px,0) perspective(300px) rotateX(${ax}deg) rotateY(${ay}deg)` })()
         })();
@@ -796,7 +831,59 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
         // easter eggs: konami code, and poking the sleeper
         const KN = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"]; let ki = 0;
         addEventListener("keydown", e => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; ki = k === KN[ki] ? ki + 1 : (k === KN[0] ? 1 : 0); if (ki === KN.length) { ki = 0; snd("fan"); toast("Party mode. Absolutely nothing was achieved."); if (!RM2) for (let i = 0; i < 10; i++)setTimeout(() => { const x = Math.random() * innerWidth, y = Math.random() * innerHeight; window.burstAt(x, y); if (window.shock) shock(x, y, 1.6) }, i * 160) } });
-        const slp = document.querySelector(".sleeper"); if (slp) slp.addEventListener("click", () => { toast("Huh? I wasn’t sleeping. I was resting my eyes."); snd("yawn") });
+        // Sleeper expressions and reactions are isolated from the site's data and payment logic.
+        (function () {
+            const get = id => document.getElementById(id), svg = get("chs"), body = get("chw"), bubble = get("bub");
+            if (!svg || !body || !bubble) return;
+            const ids = ["eLc", "eRc", "eLo", "eRo", "eH", "eB", "mF", "mO", "mS", "mG", "hts", "stm"];
+            const faces = { sleep: ["eLc", "eRc", "mF"], peek: ["eLo", "eRc", "mF"], wake: ["eLo", "eRo", "mO"], yawn: ["eLc", "eRc", "mO"], dizzy: ["eLo", "eRo", "mO"], happy: ["eH", "mS", "hts"], angry: ["eLo", "eRo", "eB", "mG", "stm"] };
+            let face = "sleep", busy = false, bubbleTimer, resetTimer, lastReaction = "", fastTaps = [];
+            const setFace = next => { face = next; ids.forEach(id => { const node = get(id); if (node) node.style.display = (faces[next] || faces.sleep).includes(id) ? "" : "none"; }); svg.classList.toggle("awake", next !== "sleep" && next !== "peek"); };
+            const say = (message, duration = 1900) => { clearTimeout(bubbleTimer); bubble.textContent = message; bubble.classList.toggle("on", !!message); if (message) bubbleTimer = setTimeout(() => bubble.classList.remove("on"), duration); };
+            const motion = (frames, duration = 620) => { if (!RM2) body.animate(frames, { duration, easing: "ease-in-out" }); };
+            const jump = () => motion([{ transform: "none" }, { transform: "translateY(-30px) scale(.94,1.1)", offset: .4 }, { transform: "translateY(0) scale(1.08,.9)", offset: .72 }, { transform: "none" }]);
+            const shake = () => motion([{ transform: "none" }, { transform: "translateX(-9px)" }, { transform: "translateX(9px)" }, { transform: "translateX(-6px)" }, { transform: "none" }], 520);
+            const reactions = {
+                startle: () => { setFace("wake"); jump(); say("HUH?!"); snd("boing"); },
+                yawn: () => { setFace("yawn"); motion([{ transform: "none" }, { transform: "scale(.95,1.16)" }, { transform: "none" }], 1300); say("Yaaawn…", 2200); snd("yawn"); },
+                dizzy: () => { setFace("dizzy"); motion([{ transform: "rotate(0)" }, { transform: "rotate(-9deg)" }, { transform: "rotate(8deg)" }, { transform: "rotate(-6deg)" }, { transform: "none" }], 1100); say("Whoa. Everything is spinning."); snd("woo"); },
+                hungry: () => { setFace("wake"); shake(); say("Is that food?"); snd("gulp"); },
+                angry: () => { setFace("angry"); shake(); say("I was in a meeting. With my pillow.", 2300); snd("blorp"); },
+                happy: () => { setFace("happy"); jump(); setTimeout(jump, 650); say("Aww. You’re nice."); snd("dingding"); },
+                nope: () => { setFace("wake"); shake(); say("Nope. Not today.", 1400); }
+            };
+            window.charReact = kind => {
+                if (RM2 || !$("#home").classList.contains("on") || busy && kind === "nope") return;
+                clearTimeout(resetTimer); busy = true; (reactions[kind] || reactions.startle)();
+                resetTimer = setTimeout(() => { busy = false; setFace("sleep"); say(""); }, kind === "nope" ? 1500 : 2400);
+            };
+            svg.addEventListener("click", () => {
+                if (RM2) return;
+                const choices = ["startle", "yawn", "dizzy", "hungry", "angry", "happy"];
+                let next; do { next = choices[Math.floor(Math.random() * choices.length)]; } while (next === lastReaction);
+                lastReaction = next; window.charReact(next);
+            });
+            addEventListener("pointermove", e => {
+                if (RM2 || !svg.getBoundingClientRect().width) return;
+                const r = svg.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2), d = Math.hypot(dx, dy), n = Math.min(5, d / 60);
+                svg.querySelectorAll(".pu").forEach(p => p.style.transform = `translate(${dx / (d || 1) * n}px,${dy / (d || 1) * n}px)`);
+                if (busy) return;
+                if (face === "sleep" && d < 150) setFace("peek"); else if (face === "peek" && d > 210) setFace("sleep");
+            }, { passive: true });
+            const sleepTalk = ["five more minutes…", "no… not the job…", "noodles…", "zzz", "I’m not asleep. I’m thinking.", "just resting my eyes…"];
+            setInterval(() => { if (!RM2 && !busy && face === "sleep" && $("#home").classList.contains("on") && Math.random() < .6) say(sleepTalk[Math.floor(Math.random() * sleepTalk.length)], 2200); }, 14000);
+            addEventListener("pointerdown", () => { const now = performance.now(); fastTaps.push(now); while (fastTaps.length && now - fastTaps[0] > 2500) fastTaps.shift(); if (fastTaps.length >= 9) { fastTaps.length = 0; window.charReact("angry"); } }, { passive: true });
+            setFace("sleep");
+        })();
+        // Small press and outline feedback, respecting the saved Motion setting.
+        document.addEventListener("pointerdown", e => {
+            const target = e.target.closest("a,button,.row,.lr,.pc,.opt,.chip,.rbtn");
+            if (!target || RM2 || target.id === "run") return;
+            target.animate([{ scale: "1" }, { scale: ".86" }, { scale: "1.1" }, { scale: "1" }], { duration: 430, easing: "cubic-bezier(.3,1.5,.5,1)" });
+            const rect = target.getBoundingClientRect(), ring = document.createElement("div");
+            ring.className = "press-ring"; ring.style.cssText = `left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;border-radius:${getComputedStyle(target).borderRadius}`;
+            document.body.appendChild(ring); ring.animate([{ transform: "scale(1)", opacity: .9 }, { transform: "scale(1.35,1.6)", opacity: 0 }], { duration: 520, easing: "ease-out" }).onfinish = () => ring.remove();
+        }, { passive: true });
         // Initial route handling
         if (location.search.includes("tab=top")) bmode = "top";
         if (location.hash) {

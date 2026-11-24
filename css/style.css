@@ -1645,3 +1645,39 @@
     margin-top: 3px;
     white-space: nowrap;
 }
+
+/* Decorative page transition; created only after the initial route. */
+.page-wipe {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    pointer-events: none;
+    transform: translateX(-105%);
+    background: linear-gradient(112deg, #2F4BFF 0 53%, #FFD23F 53% 100%);
+    clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
+}
+.page-wipe.play { animation: page-wipe-pass 650ms cubic-bezier(.7, 0, .2, 1) both; }
+@keyframes page-wipe-pass {
+    0% { transform: translateX(-105%); }
+    42% { transform: translateX(0); }
+    58% { transform: translateX(0); }
+    100% { transform: translateX(105%); }
+}
+
+/* Sleeper interactions adapted from the supplied visual reference. */
+.slw { position: absolute; right: 0; top: 3vh; width: min(340px, 34vw); z-index: 0; }
+.slw .sleeper { position: static; display: block; width: 100%; overflow: visible; pointer-events: auto; cursor: pointer; }
+.slw #chw { transform-box: fill-box; transform-origin: 50% 100%; }
+.fc { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; }
+.pu { transition: transform 80ms linear; }
+.nbub { transform-box: fill-box; transform-origin: center; animation: sleeper-snore 3.4s ease-in-out infinite; }
+@keyframes sleeper-snore { 0%, 100% { transform: scale(.2); opacity: 0; } 15% { opacity: 1; } 70% { transform: scale(1.6); opacity: 1; } 76% { transform: scale(1.8); opacity: 0; } }
+.ht { fill: #E8412C; font: 800 24px sans-serif; opacity: 0; animation: sleeper-heart 1.4s ease-out infinite; }
+@keyframes sleeper-heart { 0% { opacity: 0; transform: translateY(20px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(-40px); } }
+.sm { fill: #ffffffcc; opacity: 0; animation: sleeper-steam 1s ease-out infinite; }
+@keyframes sleeper-steam { 0% { opacity: 0; transform: translateY(10px); } 40% { opacity: .9; } 100% { opacity: 0; transform: translateY(-26px); } }
+.awake .zz, .awake .nbub, .awake .dr { display: none; }
+.bub { position: absolute; left: 0; top: -34px; max-width: 220px; padding: 6px 12px; border: 2px solid var(--ink); border-radius: 14px; background: #fff; color: var(--ink); font-size: 13px; font-weight: 700; opacity: 0; transform: scale(.6); transform-origin: 20% 100%; transition: opacity .2s, transform .2s; pointer-events: none; }
+.bub.on { opacity: 1; transform: none; }
+.press-ring { position: fixed; z-index: 9997; pointer-events: none; border: 3px solid #2F4BFF; }
+@media (max-width: 700px) { .slw { display: none; } }
