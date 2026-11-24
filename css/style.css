@@ -2472,7 +2472,7 @@
     font:900 16px/1 'Bricolage Grotesque',sans-serif;
     letter-spacing:-.025em;
     box-shadow:5px 5px 0 #101010,0 0 0 3px #ffffffb8;
-    transition:left .08s,top .08s,transform .16s,box-shadow .16s,filter .16s;
+    transition:left .03s,top .03s,transform .16s,box-shadow .16s,filter .16s;
 }
 #run::before {
     content:'↗';
@@ -2513,3 +2513,9 @@
     #run::before { width:28px; height:28px; }
     #run::after { top:-12px; right:-8px; }
 }
+
+/* Give the Top Supporter stat its own bright palette color. */
+.lbx .strip > .score-stat.score-topstat { background:#0e9f6e; color:#fff; }
+.lbx .strip .score-topstat .k { color:#e7fff4; }
+.lbx .strip .score-topstat .v { color:#fff; }
+.lbx .strip .score-topstat .score-icon { background:#ffd23f; color:#101010; border-color:#ffd23f; }
