@@ -15,11 +15,14 @@ declare global {
 
         // ===== DEFAULTS (the Admin page can override these in this browser; use Backup > Export to bake them in for everyone) =====
         const DEF = {
-            pay: "", tz: "Asia/Kolkata", tag: "Unemployed since 2026. Proud of it.", btn: "Buy me", sub: "and get on today’s board",
+            pay: "", tz: "Asia/Kolkata", tag: "Unemployed since 2026. Proud of it.", btn: "Tip the nap department", sub: "Support the site. Get your name on today’s board.",
             lines: ["Today I ate: nothing. Yesterday: instant noodles. Progress.", "Employee of the month at my own couch.", "Unemployed, undefeated, underfed.", "My diet is 80% noodles, 20% excuses.", "Current net worth: one cup of noodles.", "Last meal: spaghetti with ketchup. Michelin-adjacent.", "I’m not unemployed. I’m pre-productive.", "The cheapest meal in Europe? I’ve had it. Twice.", "My LinkedIn says open to nothing.", "I once tried to work. It was a weekend.", "Hustle culture called. I let it go to voicemail.", "I’m the reason the word “lazy” exists.", "Dinner tonight: cup noodles. Dessert: water.", "The worst employee you’ll never hire.", "Professional couch tester. Also unpaid.", "Hunger level: noodle emergency.", "My fridge light is the only thing working.", "I have a five-year plan. It’s mostly sleeping.", "I eat ramen like it’s a personality.", "Day 1 of my career. Day 1,000 of my nap.", "My bank account is a rumour.", "I’m self-employed. Salary: vibes.", "Lunch is a state of mind. Mine is empty.", "I’m between naps, jobs and meals.", "Cheapest food in America? I’m a regular.", "My cooking skills: boil, wait, regret.", "Plot twist: the noodles were breakfast.", "Not lazy. Just on energy-saving mode.", "I put “napping” under skills. Recruiters agree.", "Currently accepting applications for my next meal."],
             dodge: ["But no one hired me!", "Please don’t do that!", "I’m lazy.", "My last interview ended with a nap.", "HR still has my cover letter: “hi.”", "I have a degree in ceilings.", "Resume: one line. It says nap.", "My skills: horizontal.", "I’m overqualified for nothing.", "I put “Nap” under Experience.", "Even LinkedIn left me on read.", "I got ghosted by a chatbot.", "My LinkedIn says “Open to nap”.", "I’d work, but it’s Tuesday.", "Every day is a bad day to start.", "Employee of the month: nobody.", "Day 412 of unemployment. Thriving.", "Noodles don’t buy themselves.", "Dinner: noodles. Dessert: hope.", "Salary expectations: noodles.", "Today’s menu: spaghetti, again.", "I’m a $1 pasta connoisseur.", "Cup noodles are my personality.", "My fridge has an echo.", "Rent due. Motivation overdue.", "My bank account is a rumour.", "Career goals: a bigger couch.", "CEO of lying down.", "Founder of Doing Nothing Inc.", "Chief Napping Officer here.", "My KPI is staying horizontal.", "Synergy? I barely have energy.", "Let me circle back never.", "Can this be an email? No.", "Per my last nap...", "Quiet quitting before hiring.", "I’m disrupting employment.", "Even my cat got a promotion.", "My houseplant earns more.", "My goldfish has better prospects.", "I’m not broke. I’m minimalist.", "Stress is for the employed.", "Bills called. I didn’t answer.", "My calendar is empty by design.", "I mastered the art of waiting.", "Sorry, I’m buffering.", "Loading motivation... 3%.", "Low battery. Needs 14 hours.", "Out of office. Always.", "Auto-reply: still resting.", "Job? I thought you said jog.", "The word “job” gives me hives.", "I need a nap after that word.", "Triggered. Brb, napping.", "That’s offensive. Also true.", "Nope. Not in this timeline.", "Job offers go to my spam.", "Will work for noodles. Maybe.", "Will not work for noodles. Yet.", "Even my shadow is lazy.", "My alarm gave up on me.", "I peaked at naptime.", "This is my final form.", "Please pay me to stop.", "Don’t tell my mom you found me.", "Ask me after I wake up.", "Fine, but only horizontally.", "Free trial of me ends today.", "Sorry. Booked by my bed."]
         };
         let CFG = Object.assign({}, DEF); try { Object.assign(CFG, JSON.parse(localStorage.getItem("idn_cfg") || "{}")) } catch (e) { }
+        // Replace the old default wording while preserving any custom admin copy.
+        if (CFG.btn === "Buy me") CFG.btn = DEF.btn;
+        if (CFG.sub === "and get on today’s board") CFG.sub = DEF.sub;
         const saveCfg = () => { try { localStorage.setItem("idn_cfg", JSON.stringify(CFG)) } catch (e) { } };
         const DATA: { entries: LeaderboardEntry[] } = { entries: StorageService.getEntries() };  // verified entries from your backend: {id,name,url,amt,desc,img,t}
         // =====================================================================================================================
@@ -27,6 +30,23 @@ declare global {
         const $$ = (s: string): any[] => [...document.querySelectorAll(s)];
         const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
         const toast = t => { if (/^(Add |That |Enter |Type |Wrong |Name and|Couldn)/.test(t)) snd("sad", 300); const e = $("#toast"); e.textContent = t; e.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => e.style.display = "none", 3200) };
+
+        function applyTheme(theme: string) {
+            const isDark = theme === "dark";
+            document.documentElement.dataset.theme = isDark ? "dark" : "light";
+            const button = $("#themeToggle");
+            if (button) {
+                button.textContent = isDark ? "☀️ Light" : "🌙 Dark";
+                button.setAttribute("aria-label", `Switch to ${isDark ? "light" : "dark"} mode`);
+                button.setAttribute("aria-pressed", String(isDark));
+            }
+        }
+        applyTheme(document.documentElement.dataset.theme || "light");
+        $("#themeToggle").onclick = () => {
+            const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+            try { localStorage.setItem("idn_site_theme", next); } catch (e) { }
+            applyTheme(next);
+        };
 
         // ===== SOUNDS: original effects synthesized in the browser. Real meme clips are copyrighted and can't be loaded here. Mute button in the header. =====
         let SOUND = true; try { SOUND = localStorage.getItem("idn_snd") !== "off" } catch (e) { }
@@ -53,7 +73,7 @@ declare global {
         });
         const CURSOR_NOTES = [261.6, 293.7, 329.6, 392, 440, 523.3, 587.3, 659.3, 784, 880];
         SND.softnote = () => { const f = CURSOR_NOTES[Math.floor(Math.random() * CURSOR_NOTES.length)]; tone(f, .55, "sine", .07); tone(f * 2, .3, "triangle", .02); };
-        function snd(n, gap = 60) { if (!SOUND) return; const t = performance.now(); if (lastS[n] && t - lastS[n] < gap) return; lastS[n] = t; try { SND[n]() } catch (e) { } }
+        function snd(n, gap = 60) { if (!SOUND || CFG.soundsEnabled === false) return; const t = performance.now(); if (lastS[n] && t - lastS[n] < gap) return; lastS[n] = t; try { SND[n]() } catch (e) { } }
         const CLK = ["pop", "bonk", "squeak", "boing", "blorp", "yay", "coin", "bubble", "blip", "drip", "xylo", "glock", "jump", "spring", "squeeze", "pew", "quack", "meow", "kazoo", "clap", "dingding", "gulp", "whistle", "woo", "bubblepop", "cowbell"];
         const welcome = () => { if (welcomed) return; welcomed = true; snd("fan") };["pointerdown", "keydown", "touchstart"].forEach(v => addEventListener(v, welcome, { passive: true }));
         document.addEventListener("click", e => {
@@ -81,13 +101,11 @@ declare global {
             if (btn) snd(CLK[Math.floor(Math.random() * CLK.length)], 30);
         }, true);
         let hv = null; // hover tick removed for clean cursor movement
-        const sb = document.getElementById("snd"); const sbl = () => sb.textContent = "Sound: " + (SOUND ? "on" : "off"); sbl(); sb.onclick = () => { SOUND = !SOUND; try { localStorage.setItem("idn_snd", SOUND ? "on" : "off") } catch (e) { } sbl(); welcomed = true; snd("pop") };
-        const money = n => "$" + (Math.round(n * 100) / 100).toLocaleString();
+        const sb = document.getElementById("snd"); const sbl = () => sb.textContent = CFG.soundsEnabled === false ? "Sound: disabled" : "Sound: " + (SOUND ? "on" : "off"); sbl(); sb.onclick = () => { if (CFG.soundsEnabled === false) return; SOUND = !SOUND; try { localStorage.setItem("idn_snd", SOUND ? "on" : "off") } catch (e) { } sbl(); welcomed = true; snd("pop") };
+        const money = n => (CFG.cur || "$") + (Math.round(n * 100) / 100).toLocaleString();
         const safeUrl = u => { u = (u || "").trim(); if (!u || u[0] === "@") return ""; try { const x = new URL(/^https?:/i.test(u) ? u : "https://" + u); return /^https?:$/.test(x.protocol) && x.hostname.includes(".") ? x.href : "" } catch (e) { return "" } };
         const host = u => { try { return new URL(safeUrl(u)).hostname.replace(/^www\./, "") } catch (e) { return "" } };
         const tz = () => { try { new Intl.DateTimeFormat("en", { timeZone: CFG.tz }); return CFG.tz } catch (e) { return "UTC" } };
-        const dayKey = t => new Date(t).toLocaleDateString("en-CA", { timeZone: tz() });
-        const left = () => { const p = new Intl.DateTimeFormat("en-GB", { timeZone: tz(), hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" }).formatToParts(new Date()), g = t => +p.find(x => x.type === t).value; return 86400 - ((g("hour") % 24) * 3600 + g("minute") * 60 + g("second")) };
         const COL = ["#2F4BFF", "#E8412C", "#0E9F6E", "#8B3DFF", "#F08A00", "#101010", "#D6246E"]; const hue = s => COL[[...s].reduce((a, c) => a + c.charCodeAt(0), 0) % COL.length];
         interface SocialDef { name: string; bg: string; svg: string; }
         const SOCIAL_MAP: Record<string, SocialDef> = {
@@ -120,18 +138,30 @@ declare global {
         const soc = (u: string) => { const s = getSocialInfo(u); return s ? [s.name, s.bg] : null; };
         // entries (src: preview | sample | manual). Visitors see preview/sample only in preview mode; manual entries (real payments you recorded) always show.
         let LOCAL: LeaderboardEntry[] = StorageService.getEntries();
+        let REMOTE_BLOCKLIST: string[] = [];
+        let REMOTE_DELETED_IDS: string[] = [];
         const saveLocal = () => { StorageService.saveEntries(LOCAL); };
+        const entryIsBlocked = (item: LeaderboardEntry) => {
+            const values = [item.id, item.name, item.url, host(item.url)].map(v => String(v || "").trim().toLowerCase()).filter(Boolean);
+            return REMOTE_BLOCKLIST.some(raw => {
+                const rule = String(raw || "").trim().toLowerCase();
+                return rule && values.some(value => value === rule || (rule.includes(".") && value.includes(rule)));
+            });
+        };
         const all = () => {
             const seen = new Set<string>();
             const list: LeaderboardEntry[] = [];
             const pool = [...LOCAL, ...(DATA.entries || [])];
             for (const item of pool) {
-                if (!item) continue;
+                if (!item || REMOTE_DELETED_IDS.includes(String(item.id)) || REMOTE_DELETED_IDS.includes(deletedEntryKey(item)) || entryIsBlocked(item)) continue;
                 const idKey = item.id ? "id:" + item.id : "";
-                const contentKey = "c:" + (item.name || "").trim().toLowerCase() + "_" + item.amt + "_" + Math.floor(item.t / 300000);
-                if ((idKey && seen.has(idKey)) || seen.has(contentKey)) continue;
+                if (idKey && seen.has(idKey)) continue;
                 if (idKey) seen.add(idKey);
-                seen.add(contentKey);
+                else {
+                    const contentKey = "c:" + (item.name || "").trim().toLowerCase() + "_" + item.amt + "_" + Math.floor(item.t / 300000);
+                    if (seen.has(contentKey)) continue;
+                    seen.add(contentKey);
+                }
                 list.push(item);
             }
             return list;
@@ -147,6 +177,12 @@ declare global {
             } catch (e) {
                 return String(u).trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "");
             }
+        }
+
+        function deletedEntryKey(item: LeaderboardEntry) {
+            const name = String(item.name || "").trim().toLowerCase();
+            const link = normalizeLink(item.url || "");
+            return `content:${name}|${link}|${Number(item.amt || 0).toFixed(2)}`;
         }
 
         function getDonorKey(x) {
@@ -180,28 +216,19 @@ declare global {
         const PAGE_SIZE = 100;
 
         const recentList = () => {
-            // Sort all entries newest-first, then deduplicate by donor key:
-            // ONE card per unique URL/donor — always the LATEST donation.
-            // latestAmt = what they just donated; totalAmt = lifetime sum.
+            // Keep each donation as its own entry, newest first, so pages show
+            // the complete history rather than one card per donor.
             const list = all().slice().sort((a, b) => b.t - a.t);
             const donorMap = getDonorMap(list);
-            const seen = new Set<string>();
-            const deduped: Array<LeaderboardEntry & { totalAmt: number; donorCount: number; latestAmt: number }> = [];
-            for (const item of list) {
-                const dk = getDonorKey(item);
-                if (seen.has(dk)) continue; // already captured the latest card for this donor
-                seen.add(dk);
-                const d = donorMap.get(dk);
-                deduped.push({
+            return list.map(item => {
+                const d = donorMap.get(getDonorKey(item));
+                return {
                     ...item,
-                    // Show the latest donation amount as the main $-figure on the card
-                    amt: d ? d.latestAmt : item.amt,
-                    latestAmt: d ? d.latestAmt : item.amt,
+                    latestAmt: item.amt,
                     totalAmt: d ? d.totalAmt : item.amt,
                     donorCount: d ? d.count : 1
-                });
-            }
-            return deduped;
+                };
+            });
         };
 
         const topPlayersList = () => {
@@ -217,11 +244,11 @@ declare global {
                     donorCount: d.count
                 });
             }
-            return result.sort((a, b) => b.amt - a.amt || a.t - b.t).slice(0, 100);
+            return result.sort((a, b) => b.amt - a.amt || a.t - b.t);
         };
 
         // routing with clean URLs (no #)
-        const pages = ["home", "red", "roast", "challenge", "excuses", "soundboard", "about"];
+        const pages = ["home", "red", "roast", "challenge", "excuses", "soundboard", "about", "rules", "privacy", "terms"];
         const PATH_MAP = {
             "/": "home",
             "/home": "home",
@@ -233,9 +260,9 @@ declare global {
             "/excuses": "excuses",
             "/soundboard": "soundboard",
             "/about": "about",
-            "/rules": "about",
-            "/privacy": "about",
-            "/terms": "about"
+            "/rules": "rules",
+            "/privacy": "privacy",
+            "/terms": "terms"
         };
         const PAGE_URLS = {
             home: "/",
@@ -244,7 +271,22 @@ declare global {
             challenge: "/challenge",
             excuses: "/excuses",
             soundboard: "/soundboard",
-            about: "/about"
+            about: "/about",
+            rules: "/rules",
+            privacy: "/privacy",
+            terms: "/terms"
+        };
+        const PAGE_SEO = {
+            home: ["Doing Nothing – Procrastination Games & Stillness Challenge", "Doing nothing today? Take a playful break with the stillness challenge, excuse machine, and big red button. Meet the live supporter board at doingnothing.lol."],
+            red: ["Do Not Press the Red Button | Doing Nothing", "A tiny interactive game built around one terrible idea: press the big red button and see what happens."],
+            roast: ["Startup & Name Roast Generator | Doing Nothing", "Get a quick, playful roast for your startup, product, or name. No account needed—just type it in and see what it says."],
+            challenge: ["Stillness Challenge: How Long Can You Stay Still? | Doing Nothing", "Start a browser stillness challenge and see how long you can go without moving the mouse, typing, tapping, or scrolling."],
+            excuses: ["Work Excuse Generator | Doing Nothing", "Generate a silly workplace excuse for a laugh when your to-do list is winning."],
+            soundboard: ["Funny Browser Soundboard | Doing Nothing", "Play quirky sound effects made right in your browser on the Doing Nothing soundboard."],
+            about: ["About Doing Nothing | Games, Board Rules & FAQ", "About the founder, supporter board rules, and straight answers about doingnothing.lol."],
+            rules: ["Supporter Board Rules | Doing Nothing", "Learn how Recent, Top Players, voluntary payments, supporter listings, and links work."],
+            privacy: ["Privacy Policy | Doing Nothing", "Learn what browser settings and supporter entry details this site uses, and how to contact the founder."],
+            terms: ["Terms of Use | Doing Nothing", "Read the rules for using the games, making optional payments, and appearing on the supporter board."]
         };
 
         // The wipe is purely decorative and only runs after the first route is painted.
@@ -273,7 +315,21 @@ declare global {
         }
 
         function routeTo(pageId, updateUrl = true) {
+            if (pageId === "roast" && CFG.roastEnabled === false) pageId = "home";
             if (!pages.includes(pageId)) pageId = "home";
+            const seo = PAGE_SEO[pageId];
+            if (seo) {
+                document.title = seo[0];
+                document.querySelector('meta[name="description"]')?.setAttribute("content", seo[1]);
+                document.querySelector('meta[property="og:title"]')?.setAttribute("content", seo[0]);
+                document.querySelector('meta[property="og:description"]')?.setAttribute("content", seo[1]);
+                document.querySelector('meta[name="twitter:title"]')?.setAttribute("content", seo[0]);
+                document.querySelector('meta[name="twitter:description"]')?.setAttribute("content", seo[1]);
+                const canonical = document.querySelector('link[rel="canonical"]');
+                if (canonical) canonical.setAttribute("href", "https://doingnothing.lol" + (PAGE_URLS[pageId] || "/"));
+                const ogUrl = document.querySelector('meta[property="og:url"]');
+                if (ogUrl) ogUrl.setAttribute("content", "https://doingnothing.lol" + (PAGE_URLS[pageId] || "/"));
+            }
             const routeChanged = hasRoutedOnce && !$("#" + pageId)?.classList.contains("on");
             if (routeChanged) playPageWipe();
             hasRoutedOnce = true;
@@ -316,8 +372,15 @@ declare global {
         });
 
         // hero
-        function meal() { const h = new Date().getHours(); return h >= 5 && h < 11 ? "breakfast" : h >= 11 && h < 16 ? "lunch" : h >= 16 && h < 22 ? "dinner" : "a midnight snack" }
-        function setMeal() { $("#fund").innerHTML = esc(CFG.btn + " " + meal()) + `<small>${esc(CFG.sub)}</small>`; $("#tag").textContent = CFG.tag }
+        function setMeal() { $("#fund").innerHTML = esc(CFG.btn) + `<small>${esc(CFG.sub)}</small>`; $("#tag").textContent = CFG.tag }
+        function applySiteConfig() {
+            $("#heroHead").textContent = CFG.heroHead || "I do";
+            $("#heroAccent").textContent = CFG.heroAccent || "nothing.";
+            const roastLink = $("#nav [data-route='roast']");
+            if (roastLink) roastLink.hidden = CFG.roastEnabled === false;
+            sbl();
+            setMeal();
+        }
         let li = 0; const showLine = () => { const e = $("#line"), L = CFG.lines.length ? CFG.lines : DEF.lines; e.style.opacity = 0; setTimeout(() => { e.textContent = L[li++ % L.length]; e.style.opacity = 1 }, 300) };
         // the "Go get a job" button
         const run = $("#run"), hero = $(".hero"); let mi = 0, bag = [], px = -999, py = -999, lt = 0, moved = false, hy = 0;
@@ -350,24 +413,37 @@ declare global {
             }
             return `<div class="av" style="background:${hue(x.name)}">${esc((x.name[0] || "?").toUpperCase())}</div>`;
         }
-        const tierOf = a => a >= 100 ? ["Legend", "#E8412C"] : a >= 25 ? ["Big spender", "#8B3DFF"] : a >= 5 ? ["Supporter", "#0E9F6E"] : ["Noodle", "#6c6a64"];
-        const chipT = x => { const t = tierOf(x.amt); return `<span class="tc" style="background:${t[1]}">${t[0]}</span>` };
+        const tierOf = a => a >= 100 ? ["Legend", "#E8412C"] : a >= 25 ? ["Big spender", "#2F4BFF"] : a >= 5 ? ["Supporter", "#0E9F6E"] : ["Noodle", "#6c6a64"];
+        const tierClass = a => tierOf(a)[0].toLowerCase().replace(/\s+/g, "-");
+        const chipT = x => { const t = tierOf(x.amt); return `<span class="tc tc-${tierClass(x.amt)}" style="background:${t[1]}">${t[0]}</span>` };
+        const visitControl = x => { const url = safeUrl(x.url); return url ? `<a class="entry-visit" data-visit href="${esc(url)}" target="_blank" rel="nofollow noopener ugc">Visit ↗</a>` : `<span class="entry-visit is-disabled" aria-disabled="true" title="No website link was added">Visit</span>` };
         const CROWN = '<svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true"><path d="M3 18h18l1-10-5 4-5-8-5 8-5-4z" fill="#FFD23F" stroke="#101010" stroke-width="1.6" stroke-linejoin="round"/></svg>';
         
-        function lbHTML(L, mode, at) {
-            const mx = Math.max(1, ...L.map(x => x.amt)); let h = "", st = 0;
-            if (mode === "top") {
-                const P = [1, 0, 2].filter(i => L[i]);
-                h += `<div class="pod" style="grid-template-columns:repeat(${P.length},minmax(0,1fr))">` + P.map(i => {
-                    const x = L[i];
-                    return `<button class="pc p${i + 1}" ${at}="${i}" style="animation-delay:${i * 90}ms"><span class="medal">${i + 1}</span>${i === 0 ? `<div class="crown">${CROWN}</div><i class="sp s1"></i><i class="sp s2"></i><i class="sp s3"></i>` : ""}${avatar(x)}<h3>${esc(x.name)}</h3>${chipT(x)}<div class="amt"><b class="nv" data-v="${x.amt}">${money(x.amt)}</b>${x.donorCount > 1 ? `<div style="font-size:11.5px;font-weight:700;color:var(--mut);margin-top:2px;">${x.donorCount} donations</div>` : ""}</div><span class="go">Details ›</span></button>`;
-                }).join("") + `</div>`;
+        function lbHTML(L, mode, at, startIndex = 0, showPodium = false) {
+            const mx = Math.max(1, topPlayersList()[0]?.amt || 0); let h = "", st = 0;
+            if (mode === "top" && showPodium) {
+                const leader = L[0];
+                h += `<div class="king-podium ${L.length < 2 ? "king-solo" : ""}">
+                    ${leader ? `<article class="king-card">
+                        <button class="king-main" ${at}="${startIndex}" aria-label="View details for the top supporter">
+                            <span class="king-crown">${CROWN}</span>
+                            <span class="king-avatar">${avatar(leader)}</span>
+                            <span class="king-copy"><span class="king-eyebrow">Scoreboard leader · #1</span><strong class="king-name">${esc(leader.name)}</strong><span class="king-tier">${chipT(leader)}</span><span class="king-description">${esc(leader.desc || "Quietly leading the board.")}</span><span class="king-time">${ago(leader.t) === "now" ? "Last donation just now" : `Last donation ${ago(leader.t)} ago`}</span></span>
+                            <span class="king-amount">${money(leader.amt)}${leader.donorCount > 1 ? `<small>${leader.donorCount} donations</small>` : ""}</span>
+                        </button>
+                        <div class="king-actions">${visitControl(leader)}<button class="king-cta" type="button" data-fund>Take the throne</button></div>
+                    </article>` : ""}
+                    <div class="runner-podium">${[1, 2].filter(i => L[i]).map(i => {
+                        const x = L[i];
+                        return `<article class="runner-card runner-${i + 1}" ${at}="${startIndex + i}"><span class="runner-medal">${i === 1 ? "🥈" : "🥉"}</span><span class="runner-avatar">${avatar(x)}</span><span class="runner-copy"><strong>${esc(x.name)}</strong>${chipT(x)}<small>${x.donorCount} ${x.donorCount === 1 ? "donation" : "donations"}</small></span><span class="runner-actions"><b>${money(x.amt)}</b>${visitControl(x)}<button type="button" class="runner-details" ${at}="${startIndex + i}">Details</button></span></article>`;
+                    }).join("")}</div>
+                </div>`;
                 st = 3;
             }
             return h + L.slice(st).map((x, k) => {
-                const i = k + st, fresh = mode === "recent" && Date.now() - x.t < 12e4;
+                const i = k + st, rank = startIndex + i, fresh = mode === "recent" && Date.now() - x.t < 12e4;
                 const hasRepeat = x.totalAmt && x.totalAmt > x.amt;
-                return `<button class="lr ${mode === "recent" && i === 0 ? "hot" : ""}" ${at}="${i}" style="animation-delay:${Math.min(k, 12) * 35}ms"><div class="lk">${mode === "top" ? `<b>${i + 1}</b>` : `<span class="tp ${fresh ? "nw" : ""}">${ago(x.t)}</span>`}</div>${avatar(x)}<div style="min-width:0"><h3>${esc(x.name)} ${chipT(x)}${tagOf(x) ? `<span class="pv">${tagOf(x)}</span>` : ""}</h3><p>${esc(x.desc || "")}</p><div class="d">${esc(host(x.url) || x.url || "")}</div></div><div class="lp"><b class="nv" data-v="${x.amt}">${money(x.amt)}</b>${mode === "recent" && hasRepeat ? `<span class="tot-badge">Total ${money(x.totalAmt)}</span>` : ""}${mode === "top" && x.donorCount > 1 ? `<span class="tot-badge">${x.donorCount} donations</span>` : ""}<span class="go">Details ›</span></div><i class="lbar" style="width:${Math.max(3, x.amt / mx * 100)}%"></i></button>`;
+                return `<article class="lr tier-${tierClass(x.amt)} ${mode === "recent" && rank === 0 ? "hot" : ""}" ${at}="${rank}" style="animation-delay:${Math.min(k, 12) * 35}ms"><div class="lk">${mode === "top" ? `<b>${rank + 1}</b>` : `<span class="tp ${fresh ? "nw" : ""}">${ago(x.t)}</span>`}</div>${avatar(x)}<div style="min-width:0"><h3>${esc(x.name)} ${chipT(x)}${tagOf(x) ? `<span class="pv">${tagOf(x)}</span>` : ""}</h3><p>${esc(x.desc || "")}</p><div class="d">${esc(host(x.url) || x.url || "")}</div></div><div class="lp"><b class="nv" data-v="${x.amt}">${money(x.amt)}</b>${mode === "recent" && hasRepeat ? `<span class="tot-badge">Total ${money(x.totalAmt)}</span>` : ""}${mode === "top" && x.donorCount > 1 ? `<span class="tot-badge">${x.donorCount} donations</span>` : ""}${visitControl(x)}<button type="button" class="go" ${at}="${rank}">Details ›</button></div><i class="lbar" style="width:${Math.max(3, x.amt / mx * 100)}%"></i></article>`;
             }).join("");
         }
 
@@ -378,9 +454,18 @@ declare global {
             if (!moved) home();
             const allItems = all();
             setTotal(allItems.reduce((a, b) => a + b.amt, 0));
+            const dayFormatter = new Intl.DateTimeFormat("en", { timeZone: tz(), year: "numeric", month: "2-digit", day: "2-digit" });
+            const dayKey = timestamp => dayFormatter.formatToParts(new Date(timestamp)).filter(p => p.type !== "literal").map(p => p.value).join("-");
+            const todayKey = dayKey(Date.now());
+            const todayTotal = allItems.reduce((sum, item) => sum + (dayKey(item.t) === todayKey ? Number(item.amt || 0) : 0), 0);
+            $("#todayTot").textContent = money(todayTotal);
             $("#cnt").textContent = allItems.length;
             const topEntry = topPlayersList()[0];
             $("#topv").textContent = topEntry ? topEntry.name : "Nobody";
+            const lastEntry = allItems.reduce((latest, item) => !latest || item.t > latest.t ? item : latest, null as LeaderboardEntry | null);
+            $("#lastPaid").innerHTML = lastEntry
+                ? `<span class="live-dot"></span>Last paid ${ago(lastEntry.t) === "now" ? "just now" : ago(lastEntry.t) + " ago"}`
+                : '<span class="live-dot idle"></span>No payments yet';
             $("#pvBar").innerHTML = CFG.pay ? "" : `<p class="hint" style="margin-bottom:12px"><b>Preview mode:</b> no real payments are connected. Entries shown here stay in this browser.</p>`;
 
             // Update sliding switch active UI
@@ -391,9 +476,11 @@ declare global {
                 if (tabR) tabR.classList.toggle("on", bmode === "recent");
                 if (tabT) tabT.classList.toggle("on", bmode === "top");
             }
+            // Keep a styling hook in sync with the existing view toggle.
+            $("#board").dataset.mode = bmode;
 
             if (bmode === "recent") {
-                const fullList = recentList();
+                const fullList = bmode === "recent" ? recentList() : topPlayersList();
                 const totalPages = Math.max(1, Math.ceil(fullList.length / PAGE_SIZE));
                 if (currentPage > totalPages) currentPage = totalPages;
                 if (currentPage < 1) currentPage = 1;
@@ -410,25 +497,36 @@ declare global {
                 $("#board").innerHTML = boardContent;
             } else {
                 const topList = topPlayersList();
-                $("#board").innerHTML = topList.length ? lbHTML(topList, "top", "data-i") : ghostHTML();
+                const totalPages = Math.max(1, Math.ceil(topList.length / PAGE_SIZE));
+                if (currentPage > totalPages) currentPage = totalPages;
+                if (currentPage < 1) currentPage = 1;
+                const startIndex = (currentPage - 1) * PAGE_SIZE;
+                const pageItems = topList.slice(startIndex, startIndex + PAGE_SIZE);
+                let boardContent = pageItems.length ? lbHTML(pageItems, "top", "data-i", startIndex, currentPage === 1) : ghostHTML();
+                if (totalPages > 1) {
+                    boardContent += '<div class="pg-controls">' +
+                        '<button class="btn sm w" id="pgPrev" ' + (currentPage <= 1 ? 'disabled style="opacity:0.4;cursor:not-allowed"' : '') + '>‹ Previous</button>' +
+                        '<span class="pg-info">Page ' + currentPage + ' of ' + totalPages + ' (' + topList.length + ' total)</span>' +
+                        '<button class="btn sm" id="pgNext" ' + (currentPage >= totalPages ? 'disabled style="opacity:0.4;cursor:not-allowed"' : '') + '>Next ›</button></div>';
+                }
+                $("#board").innerHTML = boardContent;
             }
         }
-
-        setInterval(() => { const s = left(); $("#rst").textContent = [Math.floor(s / 3600), Math.floor(s % 3600 / 60), s % 60].map(n => String(n).padStart(2, "0")).join(":"); }, 1000);
 
         function showDetail(x) {
             if (!x) return;
             const u = safeUrl(x.url);
             const totalInfo = x.totalAmt && x.totalAmt > x.amt ? `<div style="font-size:14px;color:var(--blue);font-weight:700;margin-top:4px;">Cumulative Lifetime Total: ${money(x.totalAmt)}</div>` : "";
-            $("#mb").innerHTML = `<div style="display:flex;gap:14px;align-items:center">${avatar(x)}<div><h2 style="font-size:28px">${esc(x.name)}</h2><b>${money(x.amt)}</b>${totalInfo}</div></div><p style="white-space:pre-wrap">${esc(x.desc || "No description.")}</p>${u ? `<p><a class="btn sm" href="${esc(u)}" target="_blank" rel="nofollow noopener ugc">Visit ${esc(host(x.url))}</a></p>` : (x.url ? `<p><b>${esc(x.url)}</b></p>` : "")}<p><button class="chip" id="cl">Close</button></p>`;
+            $("#mb").innerHTML = `<div style="display:flex;gap:14px;align-items:center">${avatar(x)}<div><h2 style="font-size:28px">${esc(x.name)}</h2><b>${money(x.amt)}</b>${totalInfo}</div></div><p style="white-space:pre-wrap">${esc(x.desc || "No description.")}</p>${u ? `<p><a class="btn sm detail-visit" href="${esc(u)}" target="_blank" rel="nofollow noopener ugc">Visit ${esc(host(x.url))}</a></p>` : (x.url ? `<p><b>${esc(x.url)}</b></p>` : "")}<p><button class="chip" id="cl">Close</button></p>`;
             $("#md").classList.add("on");
             $("#cl").onclick = close_;
         }
 
         $("#board").addEventListener("click", e => {
+            if (e.target.closest("[data-visit]")) return;
             const prev = e.target.closest("#pgPrev");
             if (prev && !prev.hasAttribute("disabled")) {
-                const fullList = recentList();
+                const fullList = bmode === "recent" ? recentList() : topPlayersList();
                 const totalPages = Math.max(1, Math.ceil(fullList.length / PAGE_SIZE));
                 if (currentPage > 1) {
                     currentPage--;
@@ -440,7 +538,7 @@ declare global {
             }
             const next = e.target.closest("#pgNext");
             if (next && !next.hasAttribute("disabled")) {
-                const fullList = recentList();
+                const fullList = bmode === "recent" ? recentList() : topPlayersList();
                 const totalPages = Math.max(1, Math.ceil(fullList.length / PAGE_SIZE));
                 if (currentPage < totalPages) {
                     currentPage++;
@@ -469,7 +567,7 @@ declare global {
                 const b = e.target.closest("[data-bm]");
                 if (b) {
                     bmode = b.dataset.bm;
-                    if (bmode === "recent") currentPage = 1;
+                    currentPage = 1;
                     render();
                 }
             };
@@ -478,15 +576,15 @@ declare global {
         // payment modal
         const close_ = () => $("#md").classList.remove("on"); let img = "";
         function openFund() {
-            snd("kaching"); img = ""; $("#mb").innerHTML = `<h2>${esc(CFG.btn + " " + meal())}</h2><p style="margin:0;color:var(--mut)">Put your name or product on today’s board, or stay anonymous.</p>
-<label style="display:flex;align-items:center;margin-top:16px;cursor:pointer"><input type="checkbox" id="an">Pay anonymously (no name, no link, no logo)</label>
-<div id="idf"><label for="f1">Your name or product name</label><input id="f1" maxlength="60" placeholder="Acme Analytics"><label for="f2">One link (website or social profile)</label><input id="f2" maxlength="140" placeholder="https://yourproduct.com or https://x.com/you"><p class="hint">Social profiles show their brand icon. Websites show their logo automatically.</p><div id="logobox" style="display:none;margin:8px 0 12px;padding:8px 12px;background:#f7f5f0;border:1.5px solid #e2ded5;border-radius:12px;align-items:center;gap:12px"></div></div>
+            snd("kaching"); img = ""; $("#mb").innerHTML = `<h2>${esc(CFG.btn)}</h2><p style="margin:0;color:var(--mut)">Your tip supports this site, and your name or product can take a spot on today’s board. You can also stay anonymous.</p>
+${CFG.anonAllowed === false ? "" : `<label style="display:flex;align-items:center;margin-top:16px;cursor:pointer"><input type="checkbox" id="an">Pay anonymously (no name, no link, no logo)</label>`}
+<div id="idf"><label for="f1">Name</label><input id="f1" maxlength="60" placeholder="Acme Analytics"><label for="f2">Any link</label><input id="f2" maxlength="140" placeholder="https://yourproduct.com or https://x.com/you"><p class="hint">Social profiles show their brand icon. Websites show their logo automatically.</p><div id="logobox" style="display:none;margin:8px 0 12px;padding:8px 12px;background:#f7f5f0;border:1.5px solid #e2ded5;border-radius:12px;align-items:center;gap:12px"></div></div>
 <label for="f3">How much do you want to pay? (USD)</label><input id="f3" type="number" min="1" step="1" inputmode="numeric" placeholder="Any amount, $1 or more"><div class="chips" id="qa"></div>
 <label for="f4">Short description or message <span id="wc" class="hint" style="display:inline">0 / 500 words</span></label><textarea id="f4" placeholder="What are you building? Or just say hi."></textarea>
 ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear on the board once the payment is verified.</div>` : `<div class="note"><b>Preview mode.</b> No money will move. Your entry only shows in this browser, so you can see how the board looks.</div>`}
 <p style="display:flex;gap:10px;margin-top:16px"><button class="btn" id="go" style="flex:1;text-align:center">${CFG.pay ? "Continue to payment" : "Add to board (preview)"}</button><button class="btn w" id="cl">Cancel</button></p>`;
             $("#md").classList.add("on"); $("#cl").onclick = close_;
-            $("#an").onchange = () => { $("#idf").style.display = $("#an").checked ? "none" : "block" };
+            if ($("#an")) $("#an").onchange = () => { $("#idf").style.display = $("#an").checked ? "none" : "block" };
             $("#qa").innerHTML = [1, 5, 10, 25, 50].map(a => `<button class="chip" data-a="${a}">$${a}</button>`).join(""); $("#qa").onclick = e => { const c = e.target.closest("[data-a]"); if (c) $("#f3").value = c.dataset.a };
             const wc = () => $("#f4").value.trim().split(/\s+/).filter(Boolean).length; $("#f4").oninput = () => { $("#wc").textContent = wc() + " / 500 words" };
 
@@ -517,7 +615,7 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
             $("#f2").oninput = updateLogoBox;
 
             $("#go").onclick = () => {
-                const anon = $("#an").checked, n = anon ? "Anonymous legend" : $("#f1").value.trim(), u = anon ? "" : $("#f2").value.trim(), a = Math.round((+$("#f3").value) * 100) / 100, d = $("#f4").value.trim();
+                const anon = Boolean($("#an")?.checked), n = anon ? "Anonymous legend" : $("#f1").value.trim(), u = anon ? "" : $("#f2").value.trim(), a = Math.round((+$("#f3").value) * 100) / 100, d = $("#f4").value.trim();
                 if (!n) return toast("Add your name or product name, or tick “Pay anonymously”."); if (u && !safeUrl(u) && u[0] !== "@") return toast("That link doesn’t look valid. Use https://…"); if (!(a >= 1)) return toast("Enter an amount of $1 or more."); if (wc() > 500) return toast("That’s over 500 words.");
                 if (CFG.pay) { window.open(CFG.pay, "_blank", "noopener"); close_(); return toast("Complete the payment. You’ll appear once it’s verified.") }
                 const newEntry: LeaderboardEntry = { id: "p" + Date.now(), name: n, url: safeUrl(u) || u, amt: a, desc: d, img: anon ? "" : img, anon, t: Date.now(), src: CFG.pay ? "live" : "preview" };
@@ -545,18 +643,18 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
         cs.onclick = e => { e.preventDefault(); snd("dun"); $("#cm").textContent = "Don’t touch anything..."; cs.style.visibility = "hidden"; setTimeout(() => { chOn = true; chT = performance.now(); tick(); let mv = 0; const E = ["pointermove", "keydown", "touchstart", "pointerdown", "wheel", "scroll", "visibilitychange"], f = ev => { if (ev.type === "pointermove" && ++mv < 4) return; E.forEach(t => removeEventListener(t, f, true)); cs.style.visibility = "visible"; stopCh(true) }; E.forEach(t => addEventListener(t, f, true)) }, 500) };
         // the big red button
         let rn = 0; const R1 = ["I said don’t.", "Wow. Rude.", "That was my one rule.", "Okay. Last warning."], R2 = ["Still here? The internet isn’t. Kidding, it’s fine.", "You have the self-control of a dropped ice cream.", "Nothing happened. You did that.", "Go outside. Or at least stand up.", "Impressive commitment to a bad decision.", "I’ve seen your browser history. Keep pressing."];
-        function bomb() { const L = ["Removing cat videos…", "Deleting group chats… you’re welcome", "Cancelling Mondays…", "Unsubscribing from newsletters…", "Erasing your browser history… we saw it", "Shutting down the wifi…", "Deleting the noodle recipes… no, wait"]; $("#mb").innerHTML = `<h2>Deleting the internet…</h2><div class="bar2"><i id="pb"></i></div><p id="pl" class="hint">Starting…</p><p class="hint">(not real, obviously)</p>`; $("#md").classList.add("on"); let p = 0, k = 0; const t = setInterval(() => { p += Math.random() * 9 + 3; snd("tick", 20); if (p >= 99) { p = 99; clearInterval(t); snd("scratch"); $("#pl").textContent = "Wait. That’s a lot of work."; setTimeout(() => { snd("sad"); $("#mb").innerHTML = `<h2>Cancelled.</h2><p>I’m too lazy to finish deleting the internet. You’re welcome.</p><p style="display:flex;gap:10px"><button class="btn" id="b1" style="flex:1;text-align:center">Buy me a noodle</button><button class="btn w" id="b2">Phew</button></p>`; $("#b1").onclick = () => openFund(); $("#b2").onclick = close_ }, 1500) } else if (Math.random() < .5) $("#pl").textContent = L[k++ % L.length]; $("#pb").style.width = p + "%" }, 350) }
+        function bomb() { const L = ["Removing cat videos…", "Deleting group chats… you’re welcome", "Cancelling Mondays…", "Unsubscribing from newsletters…", "Erasing your browser history… we saw it", "Shutting down the wifi…", "Deleting the noodle recipes… no, wait"]; $("#mb").innerHTML = `<h2>Deleting the internet…</h2><div class="bar2"><i id="pb"></i></div><p id="pl" class="hint">Starting…</p><p class="hint">(not real, obviously)</p>`; $("#md").classList.add("on"); let p = 0, k = 0; const t = setInterval(() => { p += Math.random() * 9 + 3; snd("tick", 20); if (p >= 99) { p = 99; clearInterval(t); snd("scratch"); $("#pl").textContent = "Wait. That’s a lot of work."; setTimeout(() => { snd("sad"); $("#mb").innerHTML = `<h2>Cancelled.</h2><p>I’m too lazy to finish deleting the internet. You’re welcome.</p><p style="display:flex;gap:10px"><button class="btn" id="b1" style="flex:1;text-align:center">Tip the nap department</button><button class="btn w" id="b2">Phew</button></p>`; $("#b1").onclick = () => openFund(); $("#b2").onclick = close_ }, 1500) } else if (Math.random() < .5) $("#pl").textContent = L[k++ % L.length]; $("#pb").style.width = p + "%" }, 350) }
         $("#rb").onclick = () => { rn++; snd(rn === 5 ? "alarm" : rn % 2 ? "horn" : "boom"); $("#rc").textContent = "Presses: " + rn; if (rn === 5) return bomb(); $("#rm").textContent = rn < 5 ? R1[rn - 1] : R2[Math.floor(Math.random() * R2.length)] };
         // roast machine (roasts the name, never the person)
         const RO = ["{n} sounds like a startup with 3 users. Two of them are you.", "I looked up {n}. Even my search engine yawned.", "{n} has the energy of a Monday email.", "The roadmap for {n} is a screenshot in a Notes app.", "{n} pivoted so many times it forgot where it started.", "If {n} were a snack, it’d be the last rice cake in the pack.", "{n} is why “coming soon” exists.", "Bold to call it {n}. Bolder to launch on a Friday.", "{n} is doing great. In the founder’s head.", "I’m unemployed and even I’d ask {n} for a business plan.", "{n} has a five-year plan. Year one is still loading.", "{n}: 12 features, 0 users, 100% confidence.", "People say {n} is ahead of its time. Time is not interested.", "{n} walked so that someone else could run it properly.", "{n} is the kind of name that sounds funded. It isn’t."];
-        let rl = -1; $("#rg").onclick = () => { const n = $("#ri").value.trim(); if (!n) return toast("Type a name or product first."); let k; do { k = Math.floor(Math.random() * RO.length) } while (k === rl); rl = k; snd("rim"); $("#ro").textContent = RO[k].replace(/\{n\}/g, n); $("#ra").style.display = "block"; $("#rf").textContent = CFG.btn + " a noodle to thank me" };
+        let rl = -1; $("#rg").onclick = () => { const n = $("#ri").value.trim(); if (!n) return toast("Type a name or product first."); let k; do { k = Math.floor(Math.random() * RO.length) } while (k === rl); rl = k; snd("rim"); $("#ro").textContent = RO[k].replace(/\{n\}/g, n); $("#ra").style.display = "block"; $("#rf").textContent = CFG.btn };
         $("#rs").onclick = async () => { try { await navigator.clipboard.writeText($("#ro").textContent + " " + location.href); toast("Roast copied.") } catch (e) { toast("Couldn’t copy.") } }; $("#rf").onclick = () => openFund();
         // excuses
         const EX = ["I had a plan. The plan had a nap in it.", "The inbox and I are on a break.", "I was about to start, then lunch got in the way.", "There is one deadline. It’s next year.", "My to-do list is a work of fiction.", "Productivity is a lifestyle. I’m exploring other lifestyles.", "I’m waiting for the right moment. It’s been a while.", "I do my best work later. Much later.", "I could, but the couch has seniority.", "I’m saving my energy for something important. Not found yet.", "The wifi was too comfortable to leave.", "I’m not late. I’m early for tomorrow.", "I was going to start, but the noodles needed me.", "I can’t work on an empty stomach. Or a full one."];
         let xi = -1; $("#exb").onclick = () => { snd("boing"); let n; do { n = Math.floor(Math.random() * EX.length) } while (n === xi); xi = n; $("#ex").textContent = EX[n] };
         $("#exc").onclick = async () => { try { await navigator.clipboard.writeText($("#ex").textContent); toast("Copied. Use it wisely.") } catch (e) { toast("Couldn’t copy.") } };
         // exit intent (once)
-        let ex1 = false; document.addEventListener("mouseout", e => { if (!e.relatedTarget && e.clientY <= 0 && !ex1 && !$("#md").classList.contains("on")) { ex1 = true; snd("dun"); $("#mb").innerHTML = `<h2>Wait, you’re leaving?</h2><p>I did nothing the entire time you were here. The least you could do is buy me a noodle.</p><p style="display:flex;gap:10px"><button class="btn" id="a1" style="flex:1;text-align:center">Fine, buy the noodle</button><button class="btn w" id="a2">I have no heart</button></p>`; $("#md").classList.add("on"); $("#a1").onclick = () => openFund(); $("#a2").onclick = () => { close_(); toast("Wow. Okay. Noted.") } } });
+        let ex1 = false; document.addEventListener("mouseout", e => { if (!e.relatedTarget && e.clientY <= 0 && !ex1 && !$("#md").classList.contains("on")) { ex1 = true; snd("dun"); $("#mb").innerHTML = `<div class="exit-pop"><div class="exit-wave" aria-hidden="true">👋</div><div class="exit-kicker">BEFORE YOU GO</div><h2>Already heading out?</h2><p>We barely got to know each other. I mean, I mostly sat here—but still.</p><div class="exit-note">Take care out there. Try not to get a job on the way.</div><div class="exit-actions"><button class="btn exit-primary" id="a1">Leave a noodle tip</button><button class="btn w exit-secondary" id="a2">Catch you later</button></div></div>`; $("#md").classList.add("on"); $("#a1").onclick = () => openFund(); $("#a2").onclick = () => { close_(); toast("Okay, bye. I’ll still be here.") } } });
         // ===== FOUNDER CONSOLE (Authenticated securely against Supabase; hidden from normal users) =====
         let unlocked = false, atab = "entries", editing = null;
         function openFounderConsole() {
@@ -690,7 +788,7 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
                 CFG.pay = $("#s1").value.trim();
                 CFG.tz = $("#s2").value.trim() || "Asia/Kolkata";
                 CFG.tag = $("#s3").value;
-                CFG.btn = $("#s4").value.trim() || "Buy me";
+                CFG.btn = $("#s4").value.trim() || DEF.btn;
                 CFG.sub = $("#s5").value;
                 saveCfg();
                 render();
@@ -880,12 +978,26 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
         }
         showLine();
         setInterval(showLine, 3800);
+        Promise.all([SupabaseService.getPublicSiteConfig(), SupabaseService.getPublicBlocklist(), SupabaseService.getPublicDeletedEntryIds()]).then(([remoteConfig, blocked, deletedIds]) => {
+            const allowed = ["pay", "tz", "tag", "btn", "sub", "heroHead", "heroAccent", "cur", "anonAllowed", "roastEnabled", "soundsEnabled"];
+            if (remoteConfig) {
+                for (const key of allowed) if (Object.prototype.hasOwnProperty.call(remoteConfig, key)) CFG[key] = remoteConfig[key];
+                if (Array.isArray(remoteConfig.lines)) CFG.lines = remoteConfig.lines.filter(v => typeof v === "string");
+                if (Array.isArray(remoteConfig.dodge)) CFG.dodge = remoteConfig.dodge.filter(v => typeof v === "string");
+            }
+            REMOTE_BLOCKLIST = blocked;
+            REMOTE_DELETED_IDS = deletedIds;
+            applySiteConfig();
+            if (CFG.roastEnabled === false && location.pathname === "/get-roasted") routeTo("home", true);
+            render();
+            showLine();
+        }).catch(err => console.warn("Site settings fallback to defaults:", err));
     
 // Supabase Backend Sync
 (async () => {
     try {
         const remote = await StorageService.syncFromSupabase();
-        if (remote && remote.length) {
+        if (remote !== null) {
             LOCAL = remote;
             DATA.entries = remote;
             render();
@@ -896,9 +1008,13 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
 
     try {
         SupabaseService.subscribeToEntries(async () => {
-            const updated = await StorageService.syncFromSupabase();
+            const [updated, deletedIds] = await Promise.all([
+                StorageService.syncFromSupabase(),
+                SupabaseService.getPublicDeletedEntryIds()
+            ]);
             LOCAL = updated;
             DATA.entries = updated;
+            REMOTE_DELETED_IDS = deletedIds;
             render();
         });
     } catch (err) {

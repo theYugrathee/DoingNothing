@@ -4,20 +4,62 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>The Soundboard | Doing Nothing</title>
-    <meta name="description" content="Interactive synthesized soundboard with dozens of browser-synthesized audio effects.">
+    <title>Funny Browser Soundboard | Doing Nothing</title>
+    <meta name="description" content="Play quirky sound effects made right in your browser on the Doing Nothing soundboard.">
     <link rel="canonical" href="https://doingnothing.lol/soundboard">
-    <meta property="og:title" content="Doing Nothing: a full-time career">
-    <meta property="og:description" content="I do nothing. You can buy me a meal and get on today’s board.">
+    <meta name="robots" content="index,follow,max-image-preview:large">
+    <meta name="theme-color" content="#F6F4EE">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta property="og:site_name" content="doingnothing.lol">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://doingnothing.lol/soundboard">
+    <meta property="og:title" content="Funny Browser Soundboard | Doing Nothing">
+    <meta property="og:description" content="A little soundboard for a very unproductive moment.">
+    <meta property="og:image" content="https://doingnothing.lol/og-image.png">
+    <meta property="og:image:width" content="1024">
+    <meta property="og:image:height" content="559">
+    <meta property="og:image:type" content="image/png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Funny Browser Soundboard | Doing Nothing">
+    <meta name="twitter:description" content="A little soundboard for a very unproductive moment.">
+    <meta name="twitter:image" content="https://doingnothing.lol/og-image.png">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Doing Nothing",
+      "url": "https://doingnothing.lol",
+      "description": "A playful website with procrastination games, a stillness challenge, an excuse machine, and a voluntary supporter leaderboard.",
+      "logo": "https://doingnothing.lol/icon-512.png",
+      "image": "https://doingnothing.lol/logo.png",
+      "sameAs": [
+        "https://x.com/YugRathee"
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Doing Nothing",
+      "alternateName": ["doingnothing.lol", "Doing Nothing LOL"],
+      "url": "https://doingnothing.lol",
+      "description": "A playful website with procrastination games, a stillness challenge, an excuse machine, and a voluntary supporter leaderboard."
+    }
+    </script>
     <link
         href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
+    <script>try { document.documentElement.dataset.theme = localStorage.getItem('idn_site_theme') || 'light'; } catch { document.documentElement.dataset.theme = 'light'; }</script>
     <script defer src="https://cloud.umami.is/script.js" data-website-id="5858479e-fb17-4d7b-83e5-7d62e1296230"></script>
-    <link rel="icon" href="/favicon.ico" sizes="any">
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 </head>
 
 <body>
@@ -33,27 +75,37 @@
             <a href="/soundboard" data-route="soundboard">Soundboard</a>
             <a href="/about" data-route="about">About</a>
         </nav>
-            <div class="hd-ctrls"><button class="chip" id="snd">Sound: on</button><button class="chip" id="mot">Motion: on</button></div>
+            <div class="hd-ctrls"><button class="chip" id="themeToggle" type="button" aria-label="Switch to dark mode" aria-pressed="false">🌙 Dark</button><button class="chip" id="snd">Sound: on</button><button class="chip" id="mot">Motion: on</button></div>
         </div>
     </header>
     <div class="wrap">
 
         <section class="pg" id="home">
-            <div class="hero"><svg class="sleeper" viewBox="0 0 320 250" aria-hidden="true">
+            <div class="hero"><div class="slw" id="slw"><svg class="sleeper" id="chs" viewBox="0 0 320 250" aria-hidden="true">
                     <ellipse class="sh" cx="160" cy="228" rx="122" ry="14" fill="#10101022" />
                     <rect x="36" y="168" width="248" height="54" rx="27" fill="#FFD23F" stroke="#101010"
                         stroke-width="4" />
-                    <g class="br">
+                    <g id="chw"><g class="br">
                         <path d="M52 172c0-64 50-98 108-98s108 34 108 98z" fill="#2F4BFF" stroke="#101010"
                             stroke-width="4" />
-                        <path d="M104 128q12 11 24 0M192 128q12 11 24 0M146 148q14 12 28 0" fill="none" stroke="#fff"
-                            stroke-width="5" stroke-linecap="round" />
+                        <g id="eLc" class="fc"><path d="M104 128q12 11 24 0"/></g><g id="eRc" class="fc"><path d="M192 128q12 11 24 0"/></g>
+                        <g id="eLo" style="display:none"><circle cx="116" cy="124" r="15" fill="#fff" stroke="#101010" stroke-width="3"/><circle class="pu" cx="116" cy="124" r="6.5" fill="#101010"/></g>
+                        <g id="eRo" style="display:none"><circle cx="204" cy="124" r="15" fill="#fff" stroke="#101010" stroke-width="3"/><circle class="pu" cx="204" cy="124" r="6.5" fill="#101010"/></g>
+                        <g id="eH" class="fc" style="display:none"><path d="M104 132q12 -14 24 0M192 132q12 -14 24 0"/></g>
+                        <g id="eB" style="display:none"><path d="M105 112l24 7M191 119l24-7" stroke="#101010" stroke-width="5" stroke-linecap="round"/></g>
+                        <g id="mF" class="fc"><path d="M146 148q14 12 28 0"/></g>
+                        <g id="mO" class="fc" style="display:none"><ellipse cx="160" cy="150" rx="9" ry="13"/></g>
+                        <g id="mS" class="fc" style="display:none"><path d="M140 146q20 24 40 0"/></g>
+                        <g id="mG" class="fc" style="display:none"><path d="M142 156l9-9 9 9 9-9 9 9"/></g>
+                        <circle class="nbub" cx="178" cy="148" r="9" fill="#ffffff55" stroke="#fff" stroke-width="2"/>
                         <circle class="dr" cx="174" cy="154" r="4.5" fill="#cfdcff" />
+                    </g><g id="hts" style="display:none"><text class="ht" x="110" y="70">♥</text><text class="ht" x="160" y="55" style="animation-delay:.3s">♥</text><text class="ht" x="210" y="70" style="animation-delay:.6s">♥</text></g>
+                    <g id="stm" style="display:none"><ellipse class="sm" cx="120" cy="60" rx="9" ry="7"/><ellipse class="sm" cx="160" cy="48" rx="11" ry="8" style="animation-delay:.25s"/><ellipse class="sm" cx="200" cy="60" rx="9" ry="7" style="animation-delay:.5s"/></g>
                     </g><text class="zz" x="236" y="72">Z</text><text class="zz" x="254" y="52"
                         style="animation-delay:1.2s">Z</text><text class="zz" x="272" y="32"
                         style="animation-delay:2.4s">z</text>
-                </svg><span class="tag" id="tag"></span>
-                <h1 class="big">I do<br><span class="hl">nothing.</span></h1>
+                </svg><div class="bub" id="bub"></div></div><span class="tag" id="tag"></span>
+                <h1 class="big"><span id="heroHead">I do</span><br><span class="hl" id="heroAccent">nothing.</span></h1>
                 <div class="line" id="line"></div>
                 <div class="cta"><button class="btn" id="fund"></button><span id="slot"
                         style="display:inline-block;width:150px;height:52px"></span></div>
@@ -62,27 +114,26 @@
 
             <div class="lbx">
                 <div class="strip">
-                    <div>
-                        <div class="k">Collected today</div>
-                        <div class="v m" id="tot">$0</div>
+                    <div class="score-collected score-today">
+                        <div class="k">Today’s collected</div>
+                        <div class="v m" id="todayTot" aria-live="polite">$0</div>
+                        <div class="last-paid"><span class="live-dot"></span>Today’s total</div>
                     </div>
-                    <div>
-                        <div class="k">Feeders today</div>
-                        <div class="v" id="cnt">0</div>
+                    <div class="score-collected">
+                        <div class="k">Total collected</div>
+                        <div class="v m" id="tot" aria-live="polite">$0</div>
+                        <div class="last-paid" id="lastPaid"><span class="live-dot idle"></span>No payments yet</div>
                     </div>
-                    <div>
-                        <div class="k">Top today</div>
-                        <div class="v" id="topv" style="font-size:24px;word-break:break-word">Nobody</div>
+                    <div class="score-stat">
+                        <span class="score-icon" aria-hidden="true">↗</span>
+                        <div><div class="k">Total entries</div><div class="v" id="cnt">0</div></div>
                     </div>
-                    <div>
-                        <div class="k">Board resets in</div>
-                        <div class="v" id="rst">--:--:--</div>
+                    <div class="score-stat score-topstat">
+                        <span class="score-icon" aria-hidden="true">♛</span>
+                        <div><div class="k">Top supporter</div><div class="v" id="topv" style="font-size:24px;word-break:break-word">Nobody</div></div>
                     </div>
                 </div>
                 <div class="sec">
-                    <h2>Today’s board</h2>
-                    <p style="margin:0 0 16px;color:var(--mut)">Switch between the newest supporters and the biggest
-                        ones. Pay any amount you like. The board resets every day. <b>Tap any card for details.</b></p>
                     <div class="lb-switch-wrap">
                     <div class="lb-switch" id="lbSwitch" data-active="recent">
                         <button class="lb-tab on" id="tabRecent" data-bm="recent" type="button">Recent</button>
@@ -91,7 +142,7 @@
                     </div>
                 </div>
                     <div id="pvBar"></div>
-                    <div id="board"></div>
+                    <div id="board"><div class="lb-skeleton" role="status" aria-label="Loading leaderboard"><span></span><span></span><span></span></div></div>
                 </div>
             </div>
         </section>
@@ -157,7 +208,7 @@
             </div>
         </section>
 
-        <section class="pg on" id="soundboard">
+        <section class="pg" id="soundboard">
             <div class="pgx">
                 <h1>The <span class="hl">soundboard.</span></h1>
                 <p style="color:var(--mut);max-width:34em"><b id="sbn">0</b> sounds, every one built from scratch in
@@ -181,16 +232,71 @@
                 <ol style="max-width:36em">
                     <li>Payments are voluntary and go to the founder personally. It isn’t charity.</li>
                     <li>Pay any amount you like. The board ranks by amount, highest first.</li>
-                    <li>The board resets every day. Daily winners go to the Hall of fame.</li>
+                    <li>Browse the latest entries or switch to Top Players to see lifetime totals. Older entries stay available on later pages.</li>
                     <li>Placement is recognition. No promises about traffic or sales.</li>
                     <li>Spam, scams and unsafe links are removed.</li>
                 </ol>
+                <div class="seo-faq" aria-labelledby="site-faq-title">
+                    <h2 id="site-faq-title">A few honest questions</h2>
+                    <h3>What should I do when I’m doing nothing?</h3>
+                    <p>If you need a real reset, get a glass of water, stretch, step outside for five minutes, or choose one tiny task. If you’re just here for a laugh, try the stillness challenge or excuse machine.</p>
+                    <h3>What is doingnothing.lol?</h3>
+                    <p>It’s a playful corner of the internet with tiny procrastination games, a stillness challenge, silly excuses, and a voluntary supporter board. It’s here to make a slow day a little more fun.</p>
+                    <h3>Do I have to pay to use the site?</h3>
+                    <p>No. The games and pages are free to use. Payments are optional, and the supporter board is for fun and recognition; a listing does not promise clicks, sales, or customers.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="pg" id="rules">
+            <div class="pgx">
+                <h1>Board <span class="hl">rules.</span></h1>
+                <p style="max-width:42em">Here’s how the Doing Nothing supporter board works, in plain English.</p>
+                <div class="panel policy-copy">
+                    <h2>Entries and rankings</h2>
+                    <p><b>Recent</b> shows individual donations, newest first. <b>Top Players</b> groups donations by supporter and ranks each person by their lifetime total. Older entries remain available on later pages.</p>
+                    <h2>Payments and placement</h2>
+                    <p>Supporting the site is optional, with a $1 minimum. Payments go to the founder personally; this is not a charity. A listing is for fun and recognition. It does not promise clicks, sales, customers, or other results.</p>
+                    <h2>Names, messages, and links</h2>
+                    <p>Use a name and link you’re allowed to share. Keep messages and links lawful and safe for work. The site may hide or remove spam, scams, unsafe links, or content that doesn’t fit these rules.</p>
+                    <p>Questions? <a href="mailto:founder@doingnothing.lol">Email the founder</a>.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="pg" id="privacy">
+            <div class="pgx">
+                <h1>Your privacy, <span class="hl">plainly.</span></h1>
+                <div class="panel policy-copy">
+                    <p>Public games do not require an account. The site uses browser storage for preferences and preview entries, so those preview entries stay in that browser.</p>
+                    <h2>Supporter entries</h2>
+                    <p>If you submit a live supporter entry, the name you choose, optional link and message, amount, and entry time may be displayed on the public board. The anonymous option hides your name, link, and logo from the public listing. The configured checkout opens an external payment page; payment details are handled by that provider.</p>
+                    <h2>Browser storage and analytics</h2>
+                    <p>Theme, sound, motion, and preview settings may be saved in your browser. This site also loads Umami analytics to understand basic site visits. For analytics details, see <a href="https://umami.is/privacy" target="_blank" rel="noopener">Umami’s privacy information</a>.</p>
+                    <h2>Questions or removal requests</h2>
+                    <p>Contact <a href="mailto:founder@doingnothing.lol">founder@doingnothing.lol</a> if you have a privacy question or want to ask about an entry.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="pg" id="terms">
+            <div class="pgx">
+                <h1>Terms, without the <span class="hl">legal fog.</span></h1>
+                <div class="panel policy-copy">
+                    <h2>Just-for-fun site</h2>
+                    <p>Doing Nothing is an entertainment site with browser games and a supporter board. Use the games for fun; they are not professional, financial, or health advice.</p>
+                    <h2>Optional payments</h2>
+                    <p>Payments are voluntary, have a $1 minimum, and go to the founder personally. This is not a charity. Checkout is handled by the configured external payment provider and its terms also apply to that transaction.</p>
+                    <h2>Board listings</h2>
+                    <p>Recent lists donations individually; Top Players groups a supporter’s entries by lifetime total. Listings are moderated and may be hidden or removed if they break the board rules. A listing is recognition only—there is no promise of traffic, sales, or customers.</p>
+                    <p>Questions about a payment or listing? <a href="mailto:founder@doingnothing.lol">Contact the founder</a>.</p>
+                </div>
             </div>
         </section>
 
         
     </div>
-    <footer>doingnothing.lol · built while doing nothing </footer>
+    <footer>doingnothing.lol · built while doing nothing · <a href="/rules" data-route="rules">Rules</a> · <a href="/privacy" data-route="privacy">Privacy</a> · <a href="/terms" data-route="terms">Terms</a></footer>
     <div class="modal" id="md">
         <div class="mbox" id="mb"></div>
     </div>

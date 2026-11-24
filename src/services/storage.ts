@@ -82,7 +82,7 @@ export class StorageService {
 
   public static async syncFromSupabase(): Promise<LeaderboardEntry[]> {
     const remote = await SupabaseService.fetchEntries();
-    if (remote && remote.length > 0) {
+    if (remote !== null) {
       // Filter out any dummy data
       const cleanedRemote = remote.filter(
         (r) =>
@@ -100,20 +100,8 @@ export class StorageService {
         if (!map.has(key)) map.set(key, r);
       }
 
-      // Merge only un-synced recent local entries
-      const local = this.getEntries();
-      for (const loc of local) {
-        const isDuplicate = Array.from(map.values()).some(
-          (m) =>
-            m.id === loc.id ||
-            (m.name.trim().toLowerCase() === loc.name.trim().toLowerCase() && Math.abs(m.amt - loc.amt) < 0.01)
-        );
-        if (!isDuplicate && Date.now() - loc.t < 7200000) {
-          const key = loc.id || (loc.name.trim().toLowerCase() + '_' + loc.amt);
-          map.set(key, loc);
-        }
-      }
-
+      // A successful Supabase read is authoritative. Merging recent cached
+      // entries here resurrected rows that an admin had deleted remotely.
       const combined = Array.from(map.values());
       this.saveEntries(combined);
       return combined;
@@ -133,7 +121,10 @@ export class StorageService {
 
     // Persist to Supabase
     try {
-      await SupabaseService.insertEntry(entry);
+      const synced = await SupabaseService.insertEntry(entry);
+      // insertEntry may replace a temporary browser ID with the database ID;
+      // persist that ID so later admin deletions also filter the local copy.
+      if (synced) this.saveEntries(list);
     } catch (err) {
       console.warn('Supabase remote insert fallback:', err);
     }

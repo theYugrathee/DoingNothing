@@ -7,6 +7,9 @@
   <meta name="googlebot" content="noindex, nofollow" />
   <title>Founder Console — Doing Nothing</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
       --bg: #0d0d0d;
@@ -543,7 +546,96 @@
       font-size: 14px;
     }
     .empty-state .empty-icon { font-size: 36px; margin-bottom: 10px; display: block; }
+
+    /* Doing Nothing brand system */
+    :root {
+      --bg: #f7f5ef; --bg2: #fff; --bg3: #f0eee7;
+      --border: #101010; --border2: #d8d5cb;
+      --ink: #101010; --ink2: #6c6a64;
+      --accent: #2F4BFF; --accent2: #213bd8;
+      --danger: #E8412C; --success: #0E9F6E; --warn: #FFD23F;
+      --card: #fff; --radius: 18px; --radius-sm: 12px;
+    }
+    body { font-family: 'DM Sans', system-ui, sans-serif; background-color: var(--bg); background-image: radial-gradient(#10101012 1px, transparent 1px); background-size: 24px 24px; }
+    h1, h2, h3, .topbar-title, .sidebar-logo h2 { font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif; }
+    #lockScreen { background: radial-gradient(ellipse at 84% 12%, #FFD23F55, transparent 36%), var(--bg); }
+    .lock-box { background: #fff; border: 2px solid var(--ink); border-radius: 24px; box-shadow: 7px 7px 0 var(--ink); }
+    .lock-icon { filter: none; color: var(--accent); }
+    .lock-input, input, select, textarea { background: #fff; color: var(--ink); border-color: var(--border2); }
+    .lock-input:focus, input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #2F4BFF20; }
+    .lock-btn, .btn-primary { background: var(--accent); border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+    .lock-btn:hover, .btn-primary:hover { background: var(--accent2); }
+    .sidebar { background: #fff; border-right: 2px solid var(--ink); }
+    .sidebar-logo { border-bottom: 2px solid var(--ink); }
+    .sidebar-logo h2 { font-size: 20px; }
+    .nav-item { color: var(--ink2); border: 1.5px solid transparent; border-radius: 12px; }
+    .nav-item:hover { color: var(--ink); background: var(--bg3); }
+    .nav-item.active { color: var(--ink); background: #FFD23F; border-color: var(--ink); box-shadow: 2px 2px 0 var(--ink); }
+    .sidebar-footer { border-top: 2px solid var(--ink); }
+    .sidebar-footer button { color: var(--ink); }
+    .main-content { background: transparent; }
+    .topbar { background: #ffffffed; border-bottom: 2px solid var(--ink); backdrop-filter: blur(12px); }
+    .topbar-title { font-size: 25px; }
+    .page-content { max-width: 1480px; }
+    .card, .stat-card { background: #fff; border: 1.5px solid var(--ink); border-radius: 18px; box-shadow: 4px 4px 0 #10101016; }
+    .stat-card { position: relative; overflow: hidden; }
+    .stat-card:after { content: ''; position: absolute; right: -18px; top: -18px; width: 64px; height: 64px; border-radius: 50%; background: #2F4BFF10; }
+    .card-title { font-family: 'Bricolage Grotesque', sans-serif; color: var(--ink); font-size: 19px; }
+    .btn { border-radius: 12px; font-weight: 700; }
+    .btn-secondary { background: #fff; color: var(--ink); border: 1.5px solid var(--ink); box-shadow: 2px 2px 0 #10101018; }
+    .btn-secondary:hover { background: var(--bg3); border-color: var(--ink); }
+    .btn-danger { background: #fff; color: var(--danger); border: 1.5px solid var(--danger); }
+    .table-wrap { border: 1.5px solid var(--ink); border-radius: 14px; }
+    table thead { background: var(--bg3); color: var(--ink); }
+    table th { border-bottom: 1.5px solid var(--ink); }
+    table tr:hover { background: #2F4BFF08; }
+    .badge { border-radius: 999px; }
+    .modal-box { background: #fff; border: 2px solid var(--ink); border-radius: 20px; box-shadow: 7px 7px 0 #10101030; }
+    #toast { border: 1.5px solid var(--ink); border-radius: 12px; box-shadow: 3px 3px 0 var(--ink); }
+    .pg button:disabled { opacity: .45; }
+    @media (max-width: 768px) {
+      .sidebar { width: 72px; }
+      .sidebar .nav-item span, .sidebar-logo span, .sidebar-logo h2 span { display: none; }
+      .sidebar .nav-item { justify-content: center; padding: 12px 8px; }
+      .sidebar-logo { padding-inline: 12px; }
+      .sidebar-logo h2 { font-size: 17px; }
+      .main-content { margin-left: 72px; }
+    }
+    html[data-theme="dark"] {
+      --bg: #101114; --bg2: #181a1f; --bg3: #22252c;
+      --border: #363a43; --border2: #454a55;
+      --ink: #f4f2ec; --ink2: #aaaeb8; --card: #191b20;
+    }
+    html[data-theme="dark"] body { background-color: var(--bg); background-image: radial-gradient(#f4f2ec12 1px, transparent 1px); }
+    html[data-theme="dark"] #lockScreen { background: radial-gradient(ellipse at 84% 12%, #2F4BFF30, transparent 36%), var(--bg); }
+    html[data-theme="dark"] .lock-box,
+    html[data-theme="dark"] .card,
+    html[data-theme="dark"] .stat-card,
+    html[data-theme="dark"] .modal-box { background: var(--card); color: var(--ink); border-color: var(--ink); }
+    html[data-theme="dark"] .sidebar { background: var(--bg2); border-color: var(--ink); }
+    html[data-theme="dark"] .sidebar-logo,
+    html[data-theme="dark"] .sidebar-footer { border-color: var(--border2); }
+    html[data-theme="dark"] .topbar { background: #181a1fed; border-color: var(--ink); }
+    html[data-theme="dark"] input,
+    html[data-theme="dark"] select,
+    html[data-theme="dark"] textarea,
+    html[data-theme="dark"] .lock-input { background: #121419; color: var(--ink); border-color: var(--border2); }
+    html[data-theme="dark"] .btn-secondary { background: var(--bg3); color: var(--ink); border-color: var(--ink); }
+    html[data-theme="dark"] .btn-danger { background: #241917; }
+    html[data-theme="dark"] table thead { background: var(--bg3); color: var(--ink); }
+    html[data-theme="dark"] table tr:hover { background: #8292ff12; }
+    html[data-theme="dark"] .table-wrap { border-color: var(--border2); }
+    html[data-theme="dark"] .nav-item { color: var(--ink2); }
+    html[data-theme="dark"] .nav-item:hover { color: var(--ink); background: var(--bg3); }
+    html[data-theme="dark"] .nav-item.active { color: #101010; background: #FFD23F; }
+    html[data-theme="dark"] .empty-state,
+    html[data-theme="dark"] .blocked-entry,
+    html[data-theme="dark"] .log-item,
+    html[data-theme="dark"] .import-drop { color: var(--ink); }
+    html[data-theme="dark"] .lock-icon { filter: drop-shadow(0 4px 12px #2F4BFF66); }
+    html[data-theme="dark"] #toast { background: var(--bg2); color: var(--ink); }
   </style>
+  <script>try { document.documentElement.dataset.theme = localStorage.getItem('idn_admin_theme') || 'light'; } catch { document.documentElement.dataset.theme = 'light'; }</script>
 </head>
 <body>
 
@@ -617,6 +709,7 @@
       </div>
       <div style="display:flex;gap:10px;align-items:center;">
         <span id="syncStatus" style="font-size:12px;color:var(--ink2);">⬤ Connecting…</span>
+        <button class="btn btn-secondary btn-sm" id="themeToggle" type="button" aria-pressed="false">🌙 Dark mode</button>
         <a href="/" class="btn btn-secondary btn-sm" style="text-decoration:none;" target="_blank">↗ View Site</a>
       </div>
     </div>
@@ -650,6 +743,11 @@
             <div class="stat-label">Blocked Entries</div>
             <div class="stat-value" id="st-blocked">0</div>
             <div class="stat-sub">on blocklist</div>
+          </div>
+          <div class="stat-card warn">
+            <div class="stat-label">Pending Review</div>
+            <div class="stat-value" id="st-pending">0</div>
+            <div class="stat-sub">hidden until approved</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Avg. Donation</div>
@@ -712,6 +810,7 @@
                   <th>Message</th>
                   <th>Source</th>
                   <th>Date</th>
+                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -803,7 +902,8 @@
           <div class="card-title">🛠️ Bulk Utilities</div>
           <div class="btn-row">
             <button class="btn btn-secondary" id="bulkExportSel">💾 Export Selected as JSON</button>
-            <button class="btn btn-secondary" id="bulkApproveAllBtn">✅ Mark All as Approved</button>
+            <button class="btn btn-secondary" id="bulkApproveBtn">✅ Approve Selected</button>
+            <button class="btn btn-secondary" id="bulkHideBtn">🙈 Hide Selected</button>
             <button class="btn btn-danger" id="bulkClearAllBtn">🧹 Clear ALL Entries (Danger!)</button>
           </div>
         </div>
@@ -836,6 +936,14 @@
 
           <div class="settings-section-title">Branding & Payments</div>
           <div class="form-grid">
+            <div class="form-group">
+              <label>Headline (first line)</label>
+              <input type="text" id="cfg-hero-head" placeholder="I do" />
+            </div>
+            <div class="form-group">
+              <label>Headline (highlighted line)</label>
+              <input type="text" id="cfg-hero-accent" placeholder="nothing." />
+            </div>
             <div class="form-group full">
               <label>Payment URL (Stripe, BuyMeACoffee, UPI, etc.)</label>
               <input type="url" id="cfg-pay" placeholder="https://buymeacoffee.com/…" />
@@ -851,6 +959,14 @@
             <div class="form-group full">
               <label>Sub Text Under Button</label>
               <input type="text" id="cfg-sub" placeholder="For just $1. Because I did nothing." />
+            </div>
+            <div class="form-group full">
+              <label>Rotating homepage lines (one per line)</label>
+              <textarea id="cfg-lines" rows="7" placeholder="One line appears at a time…"></textarea>
+            </div>
+            <div class="form-group full">
+              <label>“Go get a job” button responses (one per line)</label>
+              <textarea id="cfg-dodge" rows="7" placeholder="Text shown when the button runs away…"></textarea>
             </div>
           </div>
 
@@ -931,8 +1047,8 @@
       <!-- ===== AUDIT LOG ===== -->
       <div id="sec-audit" class="admin-section">
         <div class="card">
-          <div class="card-title">📝 Audit Log <small style="font-weight:400;font-size:12px;color:var(--ink2);">(session only)</small></div>
-          <div id="auditList"><div class="empty-state"><span class="empty-icon">🗒️</span>No actions yet this session.</div></div>
+          <div class="card-title">📝 Audit Log <small style="font-weight:400;font-size:12px;color:var(--ink2);">(this browser)</small></div>
+          <div id="auditList"><div class="empty-state"><span class="empty-icon">🗒️</span>No saved actions in this browser yet.</div></div>
           <button class="btn btn-secondary btn-sm" id="clearAuditBtn" style="margin-top:12px;">Clear Log</button>
         </div>
       </div>
@@ -1029,12 +1145,29 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ==================== STATE ====================
 let ALL_ENTRIES = [];
 let BLOCKLIST = [];
-let AUDIT_LOG = [];
+let DELETED_ENTRY_IDS = [];
+let AUDIT_LOG = (() => { try { const saved = JSON.parse(localStorage.getItem('idn_admin_audit') || '[]'); return Array.isArray(saved) ? saved.slice(0, 200) : []; } catch { return []; } })();
 let selectedIds = new Set();
 let currentPage = 1;
 const PAGE_SIZE = 50;
 let searchQ = '', filterSrc = '', filterSort = 'newest';
 let CFG = loadCfg();
+
+function applyTheme(theme) {
+  const dark = theme === 'dark';
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  const button = document.getElementById('themeToggle');
+  if (button) {
+    button.textContent = dark ? '☀️ Light mode' : '🌙 Dark mode';
+    button.setAttribute('aria-pressed', String(dark));
+  }
+}
+applyTheme(localStorage.getItem('idn_admin_theme') || 'light');
+document.getElementById('themeToggle').onclick = () => {
+  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  try { localStorage.setItem('idn_admin_theme', next); } catch {}
+  applyTheme(next);
+};
 
 // ==================== UTILS ====================
 const $ = id => document.getElementById(id);
@@ -1065,13 +1198,99 @@ function saveCfg(c) {
 function loadBlocklist() {
   try { return JSON.parse(localStorage.getItem('idn_blocklist') || '[]'); } catch { return []; }
 }
-function saveBlocklist() {
+function normalizeBlockValue(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (!raw) return '';
+  try {
+    const u = new URL(/^https?:\/\//i.test(raw) ? raw : 'https://' + raw);
+    if (u.hostname.includes('.')) return (u.hostname.replace(/^www\./, '') + u.pathname.replace(/\/$/, '')).toLowerCase();
+  } catch {}
+  return raw.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+}
+function isBlockedEntry(entry) {
+  const values = [entry.id, entry.name, entry.url];
+  try { if (entry.url) values.push(new URL(/^https?:\/\//i.test(entry.url) ? entry.url : 'https://' + entry.url).hostname); } catch {}
+  const normalized = values.map(normalizeBlockValue).filter(Boolean);
+  return BLOCKLIST.some(rule => normalized.includes(normalizeBlockValue(rule)));
+}
+async function saveBlocklist() {
   try { localStorage.setItem('idn_blocklist', JSON.stringify(BLOCKLIST)); } catch {}
+  try {
+    const { error } = await sb.from('admin_settings').upsert([{ key: 'site_blocklist', value: JSON.stringify(BLOCKLIST) }]);
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Could not sync blocklist:', err);
+    return false;
+  }
+}
+
+async function loadRemoteSiteState() {
+  const [configResult, blockResult, deletedResult] = await Promise.all([
+    sb.from('admin_settings').select('value').eq('key', 'site_config').maybeSingle(),
+    sb.from('admin_settings').select('value').eq('key', 'site_blocklist').maybeSingle(),
+    sb.from('admin_settings').select('value').eq('key', 'site_deleted_entry_ids').maybeSingle()
+  ]);
+  if (!configResult.error && configResult.data?.value) {
+    try { CFG = { ...CFG, ...JSON.parse(configResult.data.value) }; } catch { toast('Saved site settings could not be read.', 'error'); }
+  }
+  if (!blockResult.error && blockResult.data?.value) {
+    try {
+      const parsed = JSON.parse(blockResult.data.value);
+      if (Array.isArray(parsed)) BLOCKLIST = parsed.filter(v => typeof v === 'string');
+    } catch { toast('Saved blocklist could not be read.', 'error'); }
+  } else {
+    BLOCKLIST = loadBlocklist();
+  }
+  if (!deletedResult.error && deletedResult.data?.value) {
+    try {
+      const parsed = JSON.parse(deletedResult.data.value);
+      if (Array.isArray(parsed)) DELETED_ENTRY_IDS = parsed.filter(id => typeof id === 'string');
+    } catch { toast('Deleted-entry sync list could not be read.', 'error'); }
+  }
+}
+
+async function saveDeletedEntryIds(ids) {
+  const keys = ids.flatMap(item => {
+    if (!item || typeof item !== 'object') return [String(item)];
+    const name = String(item.name || '').trim().toLowerCase();
+    const link = normalizeBlockValue(item.url || '');
+    return [String(item.id), `content:${name}|${link}|${Number(item.amt || 0).toFixed(2)}`];
+  });
+  const next = [...new Set([...DELETED_ENTRY_IDS, ...keys])];
+  const { error } = await sb.from('admin_settings').upsert([{ key: 'site_deleted_entry_ids', value: JSON.stringify(next) }]);
+  if (error) return false;
+  DELETED_ENTRY_IDS = next;
+  return true;
+}
+async function restoreDeletedEntryIds(ids) {
+  const removing = new Set(ids.flatMap(item => {
+    if (!item || typeof item !== 'object') return [String(item)];
+    const name = String(item.name || '').trim().toLowerCase();
+    const link = normalizeBlockValue(item.url || '');
+    return [String(item.id), `content:${name}|${link}|${Number(item.amt || 0).toFixed(2)}`];
+  }));
+  const next = DELETED_ENTRY_IDS.filter(id => !removing.has(id));
+  const { error } = await sb.from('admin_settings').upsert([{ key: 'site_deleted_entry_ids', value: JSON.stringify(next) }]);
+  if (error) return false;
+  DELETED_ENTRY_IDS = next;
+  return true;
+}
+function removeLocalEntryCopies(entries) {
+  try {
+    const cached = JSON.parse(localStorage.getItem('idn_entries') || '[]');
+    if (!Array.isArray(cached)) return;
+    const identity = entry => `content:${String(entry.name || '').trim().toLowerCase()}|${normalizeBlockValue(entry.url || '')}|${Number(entry.amt ?? entry.amount ?? 0).toFixed(2)}`;
+    const ids = new Set(entries.map(entry => String(entry.id)));
+    const keys = new Set(entries.map(identity));
+    localStorage.setItem('idn_entries', JSON.stringify(cached.filter(entry => !ids.has(String(entry.id)) && !keys.has(identity(entry)))));
+  } catch {}
 }
 
 function addAudit(action, label) {
   AUDIT_LOG.unshift({ action, label, t: Date.now() });
   if (AUDIT_LOG.length > 200) AUDIT_LOG.pop();
+  try { localStorage.setItem('idn_admin_audit', JSON.stringify(AUDIT_LOG)); } catch {}
 }
 
 // ==================== LOCK / UNLOCK ====================
@@ -1148,16 +1367,21 @@ document.querySelectorAll('.nav-item').forEach(btn => {
 
 // ==================== INIT ====================
 async function init() {
-  BLOCKLIST = loadBlocklist();
   updateSyncStatus('Syncing…', '#FFD23F');
-  await fetchAll();
-  updateSyncStatus('Live ✓', '#0E9F6E');
+  try { await loadRemoteSiteState(); } catch (err) { BLOCKLIST = loadBlocklist(); console.warn('Site settings fallback:', err); }
+  const loaded = await fetchAll();
+  updateSyncStatus(loaded ? 'Live ✓' : 'Connection issue', loaded ? '#0E9F6E' : '#E8412C');
   $('topbarMeta').textContent = `${ALL_ENTRIES.length} entries loaded · ${new Date().toLocaleTimeString()}`;
   renderDashboard();
+  renderCurrentSection();
 
   // realtime
   sb.channel('admin_realtime')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'patrons' }, async () => {
+      await fetchAll();
+      renderCurrentSection();
+      $('topbarMeta').textContent = `${ALL_ENTRIES.length} entries · updated ${new Date().toLocaleTimeString()}`;
+    }).on('postgres_changes', { event: '*', schema: 'public', table: 'entries' }, async () => {
       await fetchAll();
       renderCurrentSection();
       $('topbarMeta').textContent = `${ALL_ENTRIES.length} entries · updated ${new Date().toLocaleTimeString()}`;
@@ -1172,9 +1396,12 @@ function updateSyncStatus(msg, color) {
 
 async function fetchAll() {
   try {
-    const { data, error } = await sb.from('patrons').select('*').order('created_at', { ascending: false });
-    if (!error && data) {
-      ALL_ENTRIES = data
+    const [patronsResult, legacyResult] = await Promise.all([
+      sb.from('patrons').select('*').order('created_at', { ascending: false }),
+      sb.from('entries').select('*').order('t', { ascending: false })
+    ]);
+    const combined = [];
+    if (!patronsResult.error && patronsResult.data) combined.push(...patronsResult.data
         .filter(r => r.category !== '__ADMIN_AUTH__')
         .map(r => ({
           id: String(r.id),
@@ -1186,13 +1413,29 @@ async function fetchAll() {
           anon: Boolean(!r.name || r.anon),
           t: r.created_at ? new Date(r.created_at).getTime() : Date.now(),
           src: r.category === 'sample' ? 'sample' : (r.category === 'manual' ? 'manual' : 'live'),
+          approved: r.is_approved !== false,
+          _table: 'patrons',
           raw: r
-        }));
+        })));
+    if (!legacyResult.error && legacyResult.data) combined.push(...legacyResult.data.map(r => ({
+        id: String(r.id), name: r.name || 'Anonymous', url: r.url || '', amt: Number(r.amt ?? r.amount ?? 0),
+        desc: r.desc ?? r.message ?? '', img: r.img ?? r.logo_url ?? '', anon: Boolean(r.anon),
+        t: Number(r.t) || (r.created_at ? new Date(r.created_at).getTime() : Date.now()),
+        src: r.src || 'live', approved: true, _table: 'entries', raw: r
+      })));
+    if (patronsResult.error && legacyResult.error) {
+      console.error('Both Supabase entry queries failed:', patronsResult.error, legacyResult.error);
+      return false;
     }
+    ALL_ENTRIES = combined.sort((a, b) => b.t - a.t);
+    return true;
   } catch (e) {
     console.warn('fetch error', e);
+    return false;
   }
 }
+
+function tableForEntry(id) { return ALL_ENTRIES.find(e => e.id === String(id))?._table || 'patrons'; }
 
 function renderCurrentSection() {
   const active = document.querySelector('.nav-item.active');
@@ -1205,7 +1448,7 @@ function renderCurrentSection() {
 
 // ==================== DASHBOARD ====================
 function renderDashboard() {
-  const real = ALL_ENTRIES.filter(e => !BLOCKLIST.includes(e.id) && !BLOCKLIST.includes(e.url));
+  const real = ALL_ENTRIES.filter(e => e.approved !== false && !isBlockedEntry(e));
   const total = real.reduce((s, e) => s + e.amt, 0);
   const today = new Date(); today.setHours(0,0,0,0);
   const todayCount = real.filter(e => new Date(e.t) >= today).length;
@@ -1217,6 +1460,7 @@ function renderDashboard() {
   $('st-today').textContent = todayCount;
   $('st-donors').textContent = donors;
   $('st-blocked').textContent = BLOCKLIST.length;
+  $('st-pending').textContent = ALL_ENTRIES.filter(e => e._table === 'patrons' && !e.approved).length;
   $('st-avg').textContent = money(avg);
 
   // Top 5
@@ -1293,7 +1537,7 @@ function renderTable() {
   $('pgNext').disabled = currentPage >= pages;
 
   $('entriesTable').innerHTML = slice.length ? slice.map(e => {
-    const blocked = BLOCKLIST.includes(e.id) || BLOCKLIST.includes(e.url);
+    const blocked = isBlockedEntry(e);
     return `<tr style="${blocked ? 'opacity:0.4;' : ''}">
       <td><input type="checkbox" class="row-cb" data-id="${e.id}" ${selectedIds.has(e.id) ? 'checked' : ''}></td>
       <td>
@@ -1310,13 +1554,14 @@ function renderTable() {
       <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink2);font-size:12px;">${esc(e.desc) || '—'}</td>
       <td><span class="badge badge-${e.src}">${e.src}</span></td>
       <td style="font-size:12px;color:var(--ink2);white-space:nowrap;">${date(e.t)}</td>
+      <td>${e._table === 'patrons' ? `<span class="badge badge-${e.approved ? 'live' : 'manual'}">${e.approved ? 'Approved' : 'Pending'}</span>` : '<span class="badge badge-manual">Legacy</span>'}</td>
       <td><div class="td-actions">
-        <button class="btn btn-secondary btn-sm" onclick="openEdit('${e.id}')">✏️</button>
-        <button class="btn btn-${blocked ? 'success' : 'secondary'} btn-sm" onclick="toggleBlock('${e.id}','${esc(e.url || e.name)}')" title="${blocked ? 'Unblock' : 'Block'}">${blocked ? '✅' : '🚫'}</button>
-        <button class="btn btn-danger btn-sm" onclick="confirmDelete('${e.id}','${esc(e.name)}')">🗑️</button>
+        <button class="btn btn-secondary btn-sm" data-edit="${esc(e.id)}" title="Edit entry">✏️</button>
+        <button class="btn btn-${blocked ? 'success' : 'secondary'} btn-sm" data-block="${esc(e.id)}" title="${blocked ? 'Unblock' : 'Block'}">${blocked ? '✅' : '🚫'}</button>
+        <button class="btn btn-danger btn-sm" data-delete="${esc(e.id)}" title="Delete entry">🗑️</button>
       </div></td>
     </tr>`;
-  }).join('') : `<tr><td colspan="8" style="text-align:center;color:var(--ink2);padding:32px;">No entries match your filters.</td></tr>`;
+  }).join('') : `<tr><td colspan="9" style="text-align:center;color:var(--ink2);padding:32px;">No entries match your filters.</td></tr>`;
 
   // checkbox listeners
   document.querySelectorAll('.row-cb').forEach(cb => {
@@ -1325,14 +1570,21 @@ function renderTable() {
       if (e.target.checked) selectedIds.add(id);
       else selectedIds.delete(id);
       $('selectAll').checked = filteredEntries().slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE).every(x=>selectedIds.has(x.id));
+      renderBulkInfo();
     };
+  });
+  $('entriesTable').querySelectorAll('[data-edit]').forEach(btn => btn.onclick = () => openEdit(btn.dataset.edit));
+  $('entriesTable').querySelectorAll('[data-block]').forEach(btn => btn.onclick = () => toggleBlock(btn.dataset.block));
+  $('entriesTable').querySelectorAll('[data-delete]').forEach(btn => btn.onclick = () => {
+    const entry = ALL_ENTRIES.find(item => item.id === btn.dataset.delete);
+    if (entry) confirmDelete(entry.id, entry.name);
   });
 }
 
 // ==================== TOP PLAYERS ====================
 function renderTopPlayers() {
   const byUrl = {};
-  ALL_ENTRIES.filter(e => !BLOCKLIST.includes(e.id)).forEach(e => {
+  ALL_ENTRIES.filter(e => e.approved !== false && !isBlockedEntry(e)).forEach(e => {
     const k = e.url || ('__name__' + e.name);
     if (!byUrl[k]) byUrl[k] = { name: e.name, url: e.url, total: 0, count: 0, latest: e.t };
     byUrl[k].total += e.amt;
@@ -1448,7 +1700,10 @@ $('modSaveBtn').onclick = async () => {
   };
   if (!payload.name || !payload.amount) { toast('Name and amount required', 'error'); return; }
   $('modSaveBtn').disabled = true;
-  const { error } = await sb.from('patrons').update(payload).eq('id', id);
+  const table = tableForEntry(id);
+  const updatePayload = table === 'entries' ? { name: payload.name, amt: payload.amount, url: payload.url, img: payload.logo_url, desc: payload.message } : payload;
+  if (table === 'entries') updatePayload.anon = $('mod-anon').checked;
+  const { error } = await sb.from(table).update(updatePayload).eq('id', id);
   $('modSaveBtn').disabled = false;
   if (!error) {
     addAudit('edit', `Edited: ${payload.name}`);
@@ -1472,61 +1727,78 @@ $('confirmCancelBtn').onclick = () => { $('confirmDialog').classList.remove('sho
 $('confirmOkBtn').onclick = async () => {
   if (!pendingDeleteId) return;
   const entry = ALL_ENTRIES.find(e => e.id === pendingDeleteId);
+  const deletingId = pendingDeleteId;
   $('confirmOkBtn').disabled = true;
-  const { error } = await sb.from('patrons').delete().eq('id', pendingDeleteId);
+  const hiddenFromSite = await saveDeletedEntryIds([entry || deletingId]);
+  if (!hiddenFromSite) {
+    $('confirmOkBtn').disabled = false;
+    toast('Could not sync site removal; entry was not deleted.', 'error');
+    return;
+  }
+  const { error } = await sb.from(tableForEntry(deletingId)).delete().eq('id', deletingId);
   $('confirmOkBtn').disabled = false;
   if (!error) {
+    if (entry) removeLocalEntryCopies([entry]);
     addAudit('delete', `Deleted: ${entry?.name || pendingDeleteId}`);
-    toast('Deleted!', 'success');
+    toast('Deleted from the site.', 'success');
     $('confirmDialog').classList.remove('show');
     pendingDeleteId = null;
     await fetchAll();
     renderCurrentSection();
   } else {
+    await restoreDeletedEntryIds([entry || deletingId]);
     toast('Delete failed: ' + error.message, 'error');
   }
 };
 
 // ==================== BLOCKLIST ====================
-window.toggleBlock = function(id, urlOrName) {
-  const key = urlOrName || id;
-  if (BLOCKLIST.includes(id) || BLOCKLIST.includes(key)) {
-    BLOCKLIST = BLOCKLIST.filter(x => x !== id && x !== key);
-    toast('Unblocked.');
-  } else {
-    BLOCKLIST.push(id);
-    toast('Blocked (hidden from public board).');
-  }
-  saveBlocklist();
+window.toggleBlock = async function(id, urlOrName) {
+  const entry = ALL_ENTRIES.find(e => e.id === String(id));
+  const key = urlOrName || entry?.url || entry?.name || id;
+  const wasBlocked = Boolean(entry && isBlockedEntry(entry));
+  const normalizedKey = normalizeBlockValue(key);
+  if (wasBlocked) {
+    const values = [entry.id, entry.name, entry.url];
+    try { if (entry.url) values.push(new URL(/^https?:\/\//i.test(entry.url) ? entry.url : 'https://' + entry.url).hostname); } catch {}
+    const entryKeys = values.map(normalizeBlockValue);
+    const matchingRule = BLOCKLIST.find(x => entryKeys.includes(normalizeBlockValue(x)));
+    BLOCKLIST = BLOCKLIST.filter(x => normalizeBlockValue(x) !== normalizeBlockValue(matchingRule));
+  } else if (!BLOCKLIST.some(x => normalizeBlockValue(x) === normalizedKey)) BLOCKLIST.push(String(key));
+  const saved = await saveBlocklist();
   renderTable();
   renderBlocklist();
+  renderDashboard();
+  toast(saved ? (wasBlocked ? 'Block rule removed.' : 'Blocked on the public board.') : 'Could not sync the blocklist.', saved ? 'success' : 'error');
 };
 
 function renderBlocklist() {
   $('blocklistItems').innerHTML = BLOCKLIST.length
-    ? BLOCKLIST.map(b => `
+    ? BLOCKLIST.map((b, i) => `
         <div class="blocked-entry">
           <span>${esc(b)}</span>
-          <button class="btn btn-secondary btn-sm" onclick="unblock('${esc(b)}')">✅ Unblock</button>
+          <button class="btn btn-secondary btn-sm" data-unblock-index="${i}">✅ Unblock</button>
         </div>`).join('')
     : '<div class="empty-state"><span class="empty-icon">✅</span>No blocked entries.</div>';
+  $('blocklistItems').querySelectorAll('[data-unblock-index]').forEach(btn => btn.onclick = () => unblockIndex(Number(btn.dataset.unblockIndex)));
 }
 
-window.unblock = function(key) {
-  BLOCKLIST = BLOCKLIST.filter(x => x !== key);
-  saveBlocklist();
+window.unblockIndex = async function(index) {
+  BLOCKLIST.splice(index, 1);
+  const saved = await saveBlocklist();
   renderBlocklist();
-  toast('Unblocked.');
+  renderTable(); renderDashboard();
+  toast(saved ? 'Block rule removed.' : 'Could not sync the blocklist.', saved ? 'success' : 'error');
 };
 
-$('addBlockBtn').onclick = () => {
+$('addBlockBtn').onclick = async () => {
   const v = $('blockInput').value.trim();
   if (!v) return;
-  if (!BLOCKLIST.includes(v)) BLOCKLIST.push(v);
-  saveBlocklist();
+  if (!BLOCKLIST.some(x => normalizeBlockValue(x) === normalizeBlockValue(v))) BLOCKLIST.push(v);
+  const saved = await saveBlocklist();
   $('blockInput').value = '';
   renderBlocklist();
-  toast('Added to blocklist.');
+  renderTable(); renderDashboard();
+  toast(saved ? 'Block rule saved.' : 'Could not sync the blocklist.', saved ? 'success' : 'error');
 };
 
 // ==================== BULK ACTIONS ====================
@@ -1537,25 +1809,39 @@ function renderBulkInfo() {
 $('bulkDeleteBtn').onclick = async () => {
   if (!selectedIds.size) { toast('Nothing selected.'); return; }
   if (!confirm(`Delete ${selectedIds.size} entries? This cannot be undone.`)) return;
+  const selected = [...selectedIds];
+  const selectedEntries = selected.map(id => ALL_ENTRIES.find(entry => entry.id === id)).filter(Boolean);
+  const removalSynced = await saveDeletedEntryIds(selectedEntries);
+  if (!removalSynced) { toast('Could not sync site removals; nothing was deleted.', 'error'); return; }
   let deleted = 0;
-  for (const id of selectedIds) {
-    const { error } = await sb.from('patrons').delete().eq('id', id);
-    if (!error) deleted++;
+  const deletedIds = [];
+  const failedIds = [];
+  for (const id of selected) {
+    const { error } = await sb.from(tableForEntry(id)).delete().eq('id', id);
+    if (!error) { deleted++; deletedIds.push(id); }
+    else failedIds.push(id);
   }
+  if (deletedIds.length) removeLocalEntryCopies(selectedEntries.filter(entry => deletedIds.includes(entry.id)));
+  const hiddenFromSite = failedIds.length ? await restoreDeletedEntryIds(selectedEntries.filter(entry => failedIds.includes(entry.id))) : true;
   addAudit('delete', `Bulk deleted ${deleted} entries`);
-  toast(`Deleted ${deleted} entries.`, 'success');
+  toast(`Deleted ${deleted} of ${selected.length} selected entries${hiddenFromSite ? '.' : '; failed entries may remain hidden.'}`, deleted && hiddenFromSite ? 'success' : 'error');
   selectedIds.clear();
   await fetchAll();
-  renderBulkInfo();
+  renderBulkInfo(); renderTable(); renderDashboard();
 };
 
 $('bulkBlockBtn').onclick = () => {
   if (!selectedIds.size) { toast('Nothing selected.'); return; }
-  selectedIds.forEach(id => { if (!BLOCKLIST.includes(id)) BLOCKLIST.push(id); });
-  saveBlocklist();
-  toast(`Blocked ${selectedIds.size} entries.`);
+  selectedIds.forEach(id => {
+    const e = ALL_ENTRIES.find(item => item.id === id);
+    const rule = e?.url || e?.name || id;
+    if (!BLOCKLIST.some(x => normalizeBlockValue(x) === normalizeBlockValue(rule))) BLOCKLIST.push(rule);
+  });
+  const count = selectedIds.size;
+  saveBlocklist().then(saved => toast(saved ? `Blocked ${count} entries.` : 'Could not sync the blocklist.', saved ? 'success' : 'error'));
   selectedIds.clear();
   renderBulkInfo();
+  renderTable(); renderBlocklist(); renderDashboard();
 };
 
 $('bulkSelectAllBtn').onclick = () => { ALL_ENTRIES.forEach(e => selectedIds.add(e.id)); renderBulkInfo(); toast('All selected.'); };
@@ -1568,28 +1854,49 @@ $('bulkExportSel').onclick = () => {
   toast(`Exported ${sel.length} entries.`, 'success');
 };
 
-$('bulkApproveAllBtn').onclick = async () => {
-  if (!confirm('Mark ALL entries as approved in Supabase?')) return;
-  const { error } = await sb.from('patrons').update({ is_approved: true }).neq('id', '00000000-0000-0000-0000-000000000000');
-  if (!error) { toast('All approved!', 'success'); await fetchAll(); }
-  else toast('Failed: ' + error.message, 'error');
-};
+async function setSelectedApproval(approved) {
+  const ids = [...selectedIds];
+  const patronIds = ids.filter(id => tableForEntry(id) === 'patrons');
+  if (!patronIds.length) { toast('Select at least one entry from the patrons table.', 'error'); return; }
+  const { error } = await sb.from('patrons').update({ is_approved: approved }).in('id', patronIds);
+  if (error) { toast('Moderation failed: ' + error.message, 'error'); return; }
+  addAudit(approved ? 'approve' : 'hide', `${approved ? 'Approved' : 'Hidden'} ${patronIds.length} entries`);
+  selectedIds.clear();
+  await fetchAll(); renderBulkInfo(); renderTable(); renderDashboard();
+  toast(`${approved ? 'Approved' : 'Hidden'} ${patronIds.length} entries. Legacy entries were skipped.`, 'success');
+}
+$('bulkApproveBtn').onclick = () => setSelectedApproval(true);
+$('bulkHideBtn').onclick = () => setSelectedApproval(false);
 
 $('bulkClearAllBtn').onclick = async () => {
   if (!confirm('⚠️ DELETE ALL entries from Supabase? This is permanent!')) return;
   if (!confirm('Are you absolutely sure? All leaderboard data will be gone.')) return;
-  const { error } = await sb.from('patrons').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-  if (!error) {
+  const entriesToDelete = [...ALL_ENTRIES];
+  const idsToDelete = entriesToDelete.map(entry => entry.id);
+  const hiddenFromSite = idsToDelete.length ? await saveDeletedEntryIds(entriesToDelete) : true;
+  if (!hiddenFromSite) { toast('Could not sync site removals; nothing was deleted.', 'error'); return; }
+  const failedIds = [];
+  for (const entry of ALL_ENTRIES) {
+    const { error } = await sb.from(entry._table).delete().eq('id', entry.id);
+    if (error) failedIds.push(entry.id);
+  }
+  if (entriesToDelete.length > failedIds.length) removeLocalEntryCopies(entriesToDelete.filter(entry => !failedIds.includes(entry.id)));
+  if (failedIds.length) await restoreDeletedEntryIds(entriesToDelete.filter(entry => failedIds.includes(entry.id)));
+  const deletedCount = idsToDelete.length - failedIds.length;
+  if (!failedIds.length) {
     addAudit('delete', 'Cleared ALL entries');
-    toast('All entries cleared!', 'success');
+    toast('All entries cleared from the site.', 'success');
     ALL_ENTRIES = [];
     selectedIds.clear();
     renderDashboard();
-  } else toast('Failed: ' + error.message, 'error');
+    renderTable(); renderBulkInfo();
+  } else toast(`Deleted ${deletedCount}; ${failedIds.length} could not be deleted.`, deletedCount ? 'success' : 'error');
 };
 
 // ==================== SETTINGS ====================
 function loadSettingsForm() {
+  $('cfg-hero-head').value = CFG.heroHead || 'I do';
+  $('cfg-hero-accent').value = CFG.heroAccent || 'nothing.';
   $('cfg-pay').value = CFG.pay || '';
   $('cfg-tag').value = CFG.tag || '';
   $('cfg-btn').value = CFG.btn || '';
@@ -1599,10 +1906,14 @@ function loadSettingsForm() {
   $('cfg-anon-toggle').checked = CFG.anonAllowed !== false;
   $('cfg-roast-toggle').checked = CFG.roastEnabled !== false;
   $('cfg-sounds-toggle').checked = CFG.soundsEnabled !== false;
+  $('cfg-lines').value = Array.isArray(CFG.lines) ? CFG.lines.join('\n') : '';
+  $('cfg-dodge').value = Array.isArray(CFG.dodge) ? CFG.dodge.join('\n') : '';
 }
 
-$('saveSettingsBtn').onclick = () => {
-  saveCfg({
+$('saveSettingsBtn').onclick = async () => {
+  const next = {
+    heroHead: $('cfg-hero-head').value.trim() || 'I do',
+    heroAccent: $('cfg-hero-accent').value.trim() || 'nothing.',
     pay: $('cfg-pay').value.trim(),
     tag: $('cfg-tag').value,
     btn: $('cfg-btn').value.trim(),
@@ -1612,17 +1923,32 @@ $('saveSettingsBtn').onclick = () => {
     anonAllowed: $('cfg-anon-toggle').checked,
     roastEnabled: $('cfg-roast-toggle').checked,
     soundsEnabled: $('cfg-sounds-toggle').checked,
-  });
+    lines: $('cfg-lines').value.split(/\r?\n/).map(v => v.trim()).filter(Boolean),
+    dodge: $('cfg-dodge').value.split(/\r?\n/).map(v => v.trim()).filter(Boolean),
+  };
+  try { new Intl.DateTimeFormat('en', { timeZone: next.tz }); }
+  catch { toast('That timezone is not valid.', 'error'); return; }
+  if (!next.lines.length || !next.dodge.length) { toast('Add at least one line to both text lists.', 'error'); return; }
+  $('saveSettingsBtn').disabled = true;
+  $('saveSettingsBtn').textContent = 'Saving…';
+  const { error } = await sb.from('admin_settings').upsert([{ key: 'site_config', value: JSON.stringify(next) }]);
+  $('saveSettingsBtn').disabled = false;
+  $('saveSettingsBtn').textContent = '💾 Save Settings';
+  if (error) { toast('Could not save site-wide settings: ' + error.message, 'error'); return; }
+  saveCfg(next);
   addAudit('edit', 'Settings updated');
-  toast('Settings saved!', 'success');
+  toast('Site-wide settings saved.', 'success');
 };
 
-$('resetSettingsBtn').onclick = () => {
+$('resetSettingsBtn').onclick = async () => {
   if (!confirm('Reset all settings to defaults?')) return;
   localStorage.removeItem('idn_cfg');
+  const { error } = await sb.from('admin_settings').delete().eq('key', 'site_config');
+  if (error) { toast('Could not reset site-wide settings: ' + error.message, 'error'); return; }
   CFG = {};
+  addAudit('edit', 'Site settings reset');
   loadSettingsForm();
-  toast('Settings reset.');
+  toast('Site settings reset to defaults.', 'success');
 };
 
 // ==================== EXPORT / IMPORT ====================
@@ -1661,17 +1987,22 @@ $('importBtn').onclick = async () => {
     $('importBtn').disabled = true;
     $('importMsg').textContent = 'Importing…';
     let inserted = 0;
+    let skipped = 0;
+    const fingerprint = e => [String(e.name || '').trim().toLowerCase(), normalizeBlockValue(e.url || ''), Number(e.amt ?? e.amount ?? 0)].join('|');
+    const known = new Set(ALL_ENTRIES.map(fingerprint));
     for (const e of entries) {
+      const key = fingerprint(e);
+      if (known.has(key)) { skipped++; continue; }
       const { error } = await sb.from('patrons').insert([{
         name: e.name, url: e.url || '', logo_url: e.img || '',
         amount: e.amt || e.amount || 0, message: e.desc || e.message || '',
         category: e.src || 'manual', is_today: false, is_approved: true
       }]);
-      if (!error) inserted++;
+      if (!error) { inserted++; known.add(key); }
     }
     addAudit('add', `Imported ${inserted} entries`);
     $('importMsg').style.color = 'var(--success)';
-    $('importMsg').textContent = `✅ Imported ${inserted} of ${entries.length} entries.`;
+    $('importMsg').textContent = `✅ Imported ${inserted}; skipped ${skipped} duplicates (of ${entries.length}).`;
     if (j.cfg) saveCfg(j.cfg);
     toast(`Imported ${inserted} entries!`, 'success');
     await fetchAll();
@@ -1727,9 +2058,9 @@ function renderAudit() {
           <div>${esc(l.label)}</div>
           <div class="log-time">${new Date(l.t).toLocaleString()}</div>
         </div>`).join('')
-    : '<div class="empty-state"><span class="empty-icon">🗒️</span>No actions yet this session.</div>';
+    : '<div class="empty-state"><span class="empty-icon">🗒️</span>No saved actions in this browser yet.</div>';
 }
-$('clearAuditBtn').onclick = () => { AUDIT_LOG = []; renderAudit(); toast('Log cleared.'); };
+$('clearAuditBtn').onclick = () => { AUDIT_LOG = []; try { localStorage.removeItem('idn_admin_audit'); } catch {} renderAudit(); toast('Log cleared.'); };
 
 // ==================== CHANGE PASSCODE ====================
 $('changePassBtn').onclick = async () => {

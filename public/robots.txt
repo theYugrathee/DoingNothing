@@ -1,87 +1,31 @@
-# ==============================================================================
-# doingnothing.lol - robots.txt
-# Search Engine Optimization (SEO) & Generative Engine Optimization (GEO)
-# ==============================================================================
-
-# Default crawl permissions: full site access for all search engines
+# Public pages are open to all crawlers that honor the Robots Exclusion Protocol.
+# This includes search, AI search, user-requested fetch, and model-training crawlers.
 User-agent: *
 Allow: /
 
-# ------------------------------------------------------------------------------
-# Major Search Engine Crawlers
-# ------------------------------------------------------------------------------
-User-agent: Googlebot
-Allow: /
-
-User-agent: Googlebot-Image
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: DuckDuckBot
-Allow: /
-
-User-agent: YandexBot
-Allow: /
-
-User-agent: Baiduspider
-Allow: /
-
-# ------------------------------------------------------------------------------
-# AI & Generative Engine Optimization (GEO) Crawlers
-# Explicitly allowed for ChatGPT Search, Gemini, Claude, and Perplexity indexing
-# ------------------------------------------------------------------------------
-
-# OpenAI (ChatGPT Search & Retrieval)
-User-agent: GPTBot
-Allow: /
-
+# Explicit permission for widely used AI search, fetch, and model-development bots.
 User-agent: OAI-SearchBot
 Allow: /
 
-User-agent: ChatGPT-User
+User-agent: GPTBot
 Allow: /
 
-# Google Gemini & AI Overviews
-User-agent: Google-Extended
-Allow: /
-
-# Anthropic (Claude Search & Citations)
 User-agent: ClaudeBot
 Allow: /
 
-User-agent: Claude-Web
+User-agent: Claude-SearchBot
 Allow: /
 
-# Perplexity AI Search Engine
+User-agent: Claude-User
+Allow: /
+
 User-agent: PerplexityBot
 Allow: /
 
 User-agent: Perplexity-User
 Allow: /
 
-# Apple Intelligence
-User-agent: Applebot
+User-agent: Google-Extended
 Allow: /
 
-User-agent: Applebot-Extended
-Allow: /
-
-# Meta AI
-User-agent: meta-externalagent
-Allow: /
-
-# Cohere AI
-User-agent: Cohere-ai
-Allow: /
-
-# Diffbot AI Search
-User-agent: Diffbot
-Allow: /
-
-# ------------------------------------------------------------------------------
-# Sitemaps & Structured Knowledge Bases
-# ------------------------------------------------------------------------------
 Sitemap: https://doingnothing.lol/sitemap.xml
-# LLM Knowledge Document for AI models: https://doingnothing.lol/llms.txt

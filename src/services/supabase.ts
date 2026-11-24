@@ -83,7 +83,7 @@ export class SupabaseService {
         .order('created_at', { ascending: false });
 
       if (!patronsError && patronsData && patronsData.length > 0) {
-        return patronsData.map((row) => ({
+        return patronsData.filter((row) => row.is_approved !== false && row.category !== '__ADMIN_AUTH__').map((row) => ({
           id: String(row.id),
           name: row.name || 'Anonymous Supporter',
           url: row.url || '',
@@ -116,10 +116,62 @@ export class SupabaseService {
         }));
       }
 
+      // A successful empty query is different from a network failure: callers
+      // need an empty list to clear deleted rows from their local cache.
+      if (!entriesError || !patronsError) return [];
+
       return null;
     } catch (err) {
       console.warn('Failed to fetch from Supabase:', err);
       return null;
+    }
+  }
+
+  public static async getPublicSiteConfig(): Promise<Record<string, unknown> | null> {
+    try {
+      const { data, error } = await this.getClient()
+        .from('admin_settings')
+        .select('value')
+        .eq('key', 'site_config')
+        .maybeSingle();
+      if (error || !data?.value) return null;
+      const parsed = JSON.parse(data.value);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+    } catch (err) {
+      console.warn('Failed to fetch public site config:', err);
+      return null;
+    }
+  }
+
+  public static async getPublicBlocklist(): Promise<string[]> {
+    try {
+      const { data, error } = await this.getClient()
+        .from('admin_settings')
+        .select('value')
+        .eq('key', 'site_blocklist')
+        .maybeSingle();
+      if (error || !data?.value) return [];
+      const parsed = JSON.parse(data.value);
+      return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === 'string') : [];
+    } catch (err) {
+      console.warn('Failed to fetch public blocklist:', err);
+      return [];
+    }
+  }
+
+  public static async getPublicDeletedEntryIds(): Promise<string[]> {
+    try {
+      const { data, error } = await this.getClient()
+        .from('admin_settings')
+        .select('value')
+        .eq('key', 'site_deleted_entry_ids')
+        .maybeSingle();
+      if (error || !data?.value) return [];
+      const parsed = JSON.parse(data.value);
+      return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
+    } catch (err) {
+      console.warn('Failed to fetch deleted entry IDs:', err);
+      return [];
     }
   }
 
@@ -222,6 +274,11 @@ export class SupabaseService {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'entries' },
+        () => callback()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'admin_settings' },
         () => callback()
       )
       .subscribe();
