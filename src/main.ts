@@ -714,22 +714,6 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
 
         // Keyboard shortcut removed for security
 
-        // Secret sleeper click counter (5 clicks opens founder console)
-        let sleeperClicks = 0, sleeperResetTimer = null;
-        const slpEl = document.querySelector(".sleeper");
-        if (slpEl) {
-            slpEl.addEventListener("click", () => {
-                sleeperClicks++;
-                clearTimeout(sleeperResetTimer);
-                sleeperResetTimer = setTimeout(() => { sleeperClicks = 0; }, 2000);
-                if (sleeperClicks >= 5) {
-                    sleeperClicks = 0;
-                    snd("fan");
-                    window.location.href = "/dn-core-9842x-vault";
-                }
-            });
-        }
-
         // ===== CLICK EFFECTS: every click, even on empty space, bursts and shakes the 3D scene =====
         let RM2 = false; try { RM2 = localStorage.getItem("idn_motion") === "off" } catch (e) { }
         document.documentElement.classList.toggle("nomo", RM2);
@@ -872,7 +856,7 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
             }, { passive: true });
             const sleepTalk = ["five more minutes…", "no… not the job…", "noodles…", "zzz", "I’m not asleep. I’m thinking.", "just resting my eyes…"];
             setInterval(() => { if (!RM2 && !busy && face === "sleep" && $("#home").classList.contains("on") && Math.random() < .6) say(sleepTalk[Math.floor(Math.random() * sleepTalk.length)], 2200); }, 14000);
-            addEventListener("pointerdown", () => { const now = performance.now(); fastTaps.push(now); while (fastTaps.length && now - fastTaps[0] > 2500) fastTaps.shift(); if (fastTaps.length >= 9) { fastTaps.length = 0; window.charReact("angry"); } }, { passive: true });
+            svg.addEventListener("pointerdown", () => { const now = performance.now(); fastTaps.push(now); while (fastTaps.length && now - fastTaps[0] > 2500) fastTaps.shift(); if (fastTaps.length >= 9) { fastTaps.length = 0; window.charReact("angry"); } }, { passive: true });
             setFace("sleep");
         })();
         // Small press and outline feedback, respecting the saved Motion setting.
