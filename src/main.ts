@@ -835,7 +835,7 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
         // ===== 3D BACKGROUND (Three.js): floating shapes that drift with scroll, follow the mouse and get knocked around by clicks =====
         (function () {
             try {
-                const cv = document.getElementById("gl"), R = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true }); R.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+                const cv = document.getElementById("gl"), R = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: false, powerPreference: "high-performance" }); R.setPixelRatio(Math.min(devicePixelRatio, 1.25));
                 const S = new THREE.Scene(), C = new THREE.PerspectiveCamera(45, 1, .1, 100); C.position.z = 14;
                 S.add(new THREE.AmbientLight(0xffffff, .7)); const dl = new THREE.DirectionalLight(0xffffff, .8); dl.position.set(4, 6, 8); S.add(dl);
                 const blueLight = new THREE.PointLight(0x2F4BFF, 1.5, 40), yellowLight = new THREE.PointLight(0xFFD23F, 1.5, 40); S.add(blueLight, yellowLight);
@@ -853,12 +853,13 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
                 for (let i = 0; i < PN; i++) { dustX.push(Math.random() * 2 - 1); dustF.push(Math.random()); dustPos[i * 3 + 2] = -6 + Math.random() * 10; }
                 const dustGeo = new THREE.BufferGeometry(); dustGeo.setAttribute("position", new THREE.BufferAttribute(dustPos, 3));
                 const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({ color: 0x101010, size: .07, transparent: true, opacity: .5, sizeAttenuation: true })); dust.frustumCulled = false; S.add(dust);
-                let px = 0, py = 0, cy = 0, last = performance.now();
+                let px = 0, py = 0, cy = 0, scrollTop = window.scrollY, lastScrollAt = 0, lastFrame = performance.now();
                 addEventListener("pointermove", e => { px = e.clientX / innerWidth * 2 - 1; py = -(e.clientY / innerHeight * 2 - 1) }, { passive: true });
+                addEventListener("scroll", () => { scrollTop = window.scrollY; lastScrollAt = performance.now() }, { passive: true });
                 addEventListener("resize", () => { dims(); frame(0, performance.now()) });
                 window.shock = (cx, cyp, k = 1) => { if (RM2) return; const wx = (cx / innerWidth * 2 - 1) * HW, wy = cy + (-(cyp / innerHeight * 2 - 1)) * HH; sh.forEach(s => { const p = s.m.position, dx = p.x - wx, dy = p.y - wy, d = Math.hypot(dx, dy) || .01, f = k * 9 / (1 + d * d * .07); s.v[0] += dx / d * f; s.v[1] += dy / d * f; s.v[2] += (Math.random() - .4) * f * .5; s.sp += (Math.random() - .5) * f * 1.2; s.pulse = Math.max(s.pulse, Math.min(1, f / 6)) }) };
                 function frame(dt, t) {
-                    cy = -scrollY / innerHeight * 2 * HH; C.position.set(px * .5, cy + py * .35, 14); C.lookAt(px * .2, cy, 0);
+                    cy = -scrollTop / innerHeight * 2 * HH; C.position.set(px * .5, cy + py * .35, 14); C.lookAt(px * .2, cy, 0);
                     blueLight.position.set(Math.sin(t * .0007) * 9, cy + 4 + Math.cos(t * .0005) * 3, 6);
                     yellowLight.position.set(Math.cos(t * .0006) * 9, cy - 3 + Math.sin(t * .0008) * 3, 6);
                     const wx = px * HW, wy = cy + py * HH;
@@ -876,7 +877,16 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
                     dustGeo.attributes.position.needsUpdate = true;
                     R.render(S, C)
                 }
-                (function loop(now) { requestAnimationFrame(loop); if (document.hidden) { last = now; return } const dt = RM2 ? 0 : Math.min(.05, (now - last) / 1000); last = now; frame(dt, RM2 ? 0 : now) })(performance.now());
+                (function loop(now) {
+                    requestAnimationFrame(loop);
+                    if (document.hidden) { lastFrame = now; return }
+                    const scrolling = now - lastScrollAt < 140;
+                    const interval = 1000 / (scrolling ? 24 : 45);
+                    if (now - lastFrame < interval) return;
+                    const dt = RM2 ? 0 : Math.min(.05, (now - lastFrame) / 1000);
+                    lastFrame = now;
+                    frame(dt, RM2 ? 0 : now)
+                })(performance.now());
             } catch (e) { const c = document.getElementById("gl"); if (c) c.style.display = "none" }
         })();
 
