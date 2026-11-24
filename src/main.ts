@@ -384,7 +384,7 @@ declare global {
         }
         let li = 0; const showLine = () => { const e = $("#line"), L = CFG.lines.length ? CFG.lines : DEF.lines; e.style.opacity = 0; setTimeout(() => { e.textContent = L[li++ % L.length]; e.style.opacity = 1 }, 300) };
         // the "Go get a job" button
-        const run = $("#run"), hero = $(".hero"); let mi = 0, bag = [], px = -999, py = -999, lt = 0, moved = false, hy = 0;
+        const run = $("#run"), hero = $(".hero"); let mi = 0, bag = [], px = -999, py = -999, moved = false, hy = 0;
         const pick = () => { const D = CFG.dodge.length ? CFG.dodge : DEF.dodge; if (mi < 3 && D[mi]) return D[mi]; if (!bag.length) bag = D.slice(3).sort(() => Math.random() - .5); return bag.pop() || D[0] };
         const prot = () => { const o = []; hero.querySelectorAll("#fund,#tag").forEach(e => o.push(e.getBoundingClientRect()));["h1.big", ".line"].forEach(q => { const rg = document.createRange(); rg.selectNodeContents(hero.querySelector(q));[...rg.getClientRects()].forEach(r => o.push(r)) }); return o.filter(r => r.width > 0) };
         function home() { if (!hero.offsetParent) return; const s = $("#slot").getBoundingClientRect(), h = hero.getBoundingClientRect(); run.style.left = (s.left - h.left) + "px"; run.style.top = (s.top - h.top) + "px"; hy = s.top - h.top; moved = false }
@@ -394,10 +394,10 @@ declare global {
             for (let i = 0; i < 90; i++) { const x = Math.random() * Math.max(0, h.width - W), y = Math.min(Math.max(0, hy - 18 + Math.random() * 60), Math.max(0, h.height - H)), L = h.left + x, T = h.top + y; if (R.some(r => L < r.right + pad && L + W > r.left - pad && T < r.bottom + pad && T + H > r.top - pad)) continue; const d = Math.hypot(L + W / 2 - px, T + H / 2 - py); if (d > bd) { bd = d; best = [x, y] } }
             if (best) { run.style.left = best[0] + "px"; run.style.top = best[1] + "px" }
         }
-        const near = () => { const b = run.getBoundingClientRect(), m = 10; return $("#home").classList.contains("on") && px > b.left - m && px < b.right + m && py > b.top - m && py < b.bottom + m };
-        addEventListener("pointermove", e => { px = e.clientX; py = e.clientY; if (near()) { const n = performance.now(); if (n - lt > 30) { lt = n; flee() } } }, { passive: true });
-        ["pointerdown", "touchstart"].forEach(v => document.addEventListener(v, e => { const t = e.touches ? e.touches[0] : e; px = t.clientX; py = t.clientY; if (near()) { lt = performance.now(); flee(); if (e.target.closest("#run")) e.preventDefault() } }, { passive: false }));
-        run.addEventListener("click", e => { e.preventDefault(); flee() });
+        const near = () => { const b = run.getBoundingClientRect(), m = 40; return $("#home").classList.contains("on") && px > b.left - m && px < b.right + m && py > b.top - m && py < b.bottom + m };
+        addEventListener("pointermove", e => { px = e.clientX; py = e.clientY; if (near()) flee() }, { passive: true });
+        ["pointerdown", "touchstart"].forEach(v => document.addEventListener(v, e => { const t = e.touches ? e.touches[0] : e; px = t.clientX; py = t.clientY; if (near()) { flee(); if (e.target.closest("#run")) e.preventDefault() } }, { passive: false, capture: true }));
+        run.addEventListener("click", e => { e.preventDefault(); e.stopImmediatePropagation(); flee() });
         addEventListener("resize", home); document.fonts && document.fonts.ready.then(home);
         // counter
         let shown = 0; function setTotal(to) { const f = shown, s = performance.now(); shown = to; (function a(t) { const p = Math.min(1, (t - s) / 800); $("#tot").textContent = money(f + (to - f) * p); if (p < 1) requestAnimationFrame(a) })(s) }

@@ -2472,7 +2472,7 @@
     font:900 16px/1 'Bricolage Grotesque',sans-serif;
     letter-spacing:-.025em;
     box-shadow:5px 5px 0 #101010,0 0 0 3px #ffffffb8;
-    transition:left .03s,top .03s,transform .16s,box-shadow .16s,filter .16s;
+    transition:left 0s,top 0s,transform .16s,box-shadow .16s,filter .16s;
 }
 #run::before {
     content:'↗';
