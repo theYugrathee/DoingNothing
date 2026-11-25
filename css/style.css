@@ -2413,14 +2413,16 @@
     box-shadow:0 3px 0 #10101055,0 0 0 2px #ffffffb8;
 }
 #board .lr .lp .tot-badge {
-    padding:4px 8px;
-    border:1px solid #101010;
+    min-height:30px;
+    padding:6px 11px;
+    border:1px solid #101010 !important;
     border-radius:999px;
-    background:#fff;
-    color:#101010;
+    background:#101010 !important;
+    color:#fff !important;
+    font-size:14px;
     font-weight:900;
     line-height:1.2;
-    box-shadow:0 2px 0 #10101030;
+    box-shadow:0 2px 0 #ffffffa8;
 }
 #board .lr .tp {
     padding:6px 9px;
@@ -2514,8 +2516,43 @@
     #run::after { top:-12px; right:-8px; }
 }
 
+/* Keep leaderboard actions readable across every card color and theme. */
+#board .lr .entry-visit,
+#board .lr .go,
+#board .runner-actions .entry-visit,
+#board .runner-actions .runner-details {
+    min-height:30px;
+    padding:7px 11px;
+    border:1px solid #101010 !important;
+    border-radius:999px;
+    background:#101010 !important;
+    color:#fff !important;
+    font-weight:900;
+    line-height:1.1;
+    text-decoration:none;
+    box-shadow:0 2px 0 #ffffffb8;
+}
+#board .lr .entry-visit:hover,
+#board .lr .entry-visit:focus-visible,
+#board .lr .go:hover,
+#board .lr .go:focus-visible,
+#board .runner-actions .entry-visit:hover,
+#board .runner-actions .entry-visit:focus-visible,
+#board .runner-actions .runner-details:hover,
+#board .runner-actions .runner-details:focus-visible {
+    border-color:#101010 !important;
+    background:#ffd23f !important;
+    color:#101010 !important;
+    outline:2px solid #101010;
+    outline-offset:2px;
+}
+
 /* Give the Top Supporter stat its own bright palette color. */
 .lbx .strip > .score-stat.score-topstat { background:#0e9f6e; color:#fff; }
 .lbx .strip .score-topstat .k { color:#e7fff4; }
 .lbx .strip .score-topstat .v { color:#fff; }
 .lbx .strip .score-topstat .score-icon { background:#ffd23f; color:#101010; border-color:#ffd23f; }
+.public-entry-consent { margin-top:14px; padding:11px 13px; border:1px solid var(--line); border-radius:13px; background:color-mix(in srgb,var(--card) 90%,var(--blue) 10%); }
+.public-entry-consent label { display:flex; align-items:flex-start; gap:8px; margin:0; font-size:12px; line-height:1.45; }
+.public-entry-consent input[type=checkbox] { flex:0 0 auto; margin:2px 0 0; }
+.public-entry-consent .hint { margin:7px 0 0 25px; font-size:12px; }

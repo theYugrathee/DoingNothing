@@ -284,9 +284,9 @@ declare global {
             excuses: ["Work Excuse Generator | Doing Nothing", "Generate a silly workplace excuse for a laugh when your to-do list is winning."],
             soundboard: ["Funny Browser Soundboard | Doing Nothing", "Play quirky sound effects made right in your browser on the Doing Nothing soundboard."],
             about: ["About Doing Nothing | Games, Board Rules & FAQ", "About the founder, supporter board rules, and straight answers about doingnothing.lol."],
-            rules: ["Supporter Board Rules | Doing Nothing", "Learn how Recent, Top Players, voluntary payments, supporter listings, and links work."],
-            privacy: ["Privacy Policy | Doing Nothing", "Learn what browser settings and supporter entry details this site uses, and how to contact the founder."],
-            terms: ["Terms of Use | Doing Nothing", "Read the rules for using the games, making optional payments, and appearing on the supporter board."]
+            rules: ["Supporter Board Rules | Doing Nothing", "Learn how paid board listings, Recent, Top Players, entry content, and complaints work."],
+            privacy: ["Privacy Notice | Doing Nothing", "Learn what browser settings and supporter listing details this site uses, and how to contact the operator."],
+            terms: ["Terms of Use | Doing Nothing", "Read the terms for using the games and purchasing a place on the supporter board."]
         };
 
         // The wipe is purely decorative and only runs after the first route is painted.
@@ -577,12 +577,13 @@ declare global {
         // payment modal
         const close_ = () => $("#md").classList.remove("on"); let img = "";
         function openFund() {
-            snd("kaching"); img = ""; $("#mb").innerHTML = `<h2>${esc(CFG.btn)}</h2><p style="margin:0;color:var(--mut)">My couch has been saying that for years. Your tip helps keep the site going, and you can put your name or product on the board. Staying anonymous is fine too.</p>
+            snd("kaching"); img = ""; $("#mb").innerHTML = `<h2>${esc(CFG.btn)}</h2><p style="margin:0;color:var(--mut)">This payment buys a place on the supporter board. That’s the whole deal: no meal, charity, or other product is included. Staying anonymous is fine too.</p>
 ${CFG.anonAllowed === false ? "" : `<label style="display:flex;align-items:center;margin-top:16px;cursor:pointer"><input type="checkbox" id="an">Pay anonymously (no name, no link, no logo)</label>`}
 <div id="idf"><label for="f1">Name</label><input id="f1" maxlength="60" placeholder="Acme Analytics"><label for="f2">Any link</label><input id="f2" maxlength="140" placeholder="https://yourproduct.com or https://x.com/you"><p class="hint">Social profiles show their brand icon. Websites show their logo automatically.</p><div id="logobox" style="display:none;margin:8px 0 12px;padding:8px 12px;background:#f7f5f0;border:1.5px solid #e2ded5;border-radius:12px;align-items:center;gap:12px"></div></div>
 <label for="f3">How much do you want to pay? (USD)</label><input id="f3" type="number" min="1" step="1" inputmode="numeric" placeholder="Any amount, $1 or more"><div class="chips" id="qa"></div>
 <label for="f4">Short description or message <span id="wc" class="hint" style="display:inline">0 / 500 words</span></label><textarea id="f4" placeholder="What are you building? Or just say hi."></textarea>
-${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear on the board once the payment is verified.</div>` : `<div class="note"><b>Preview mode.</b> No money will move. Your entry only shows in this browser, so you can see how the board looks.</div>`}
+<div class="public-entry-consent"><label for="publicConsent"><input type="checkbox" id="publicConsent"> I agree to the <a href="/terms" data-route="terms">Terms</a> and <a href="/rules" data-route="rules">Board Rules</a>, have read the <a href="/privacy" data-route="privacy">Privacy Notice</a>, and consent to this listing being stored and shown publicly with its amount, message and entry time. Anonymous hides my name and link only. I confirm I’m 18 or older, or my parent/guardian has approved this listing and will complete checkout, and I have permission to submit its name, link and message.</label></div>
+${CFG.pay ? `<div class="note">You’ll continue to a separate payment page. This form does not send your entered amount or entry details to checkout automatically. Check the amount and currency shown there. The founder records listings after payment is confirmed.</div>` : `<div class="note"><b>Preview mode.</b> No money will move. Your entry only shows in this browser, so you can see how the board looks.</div>`}
 <p style="display:flex;gap:10px;margin-top:16px"><button class="btn" id="go" style="flex:1;text-align:center">${CFG.pay ? "Continue to payment" : "Add to board (preview)"}</button><button class="btn w" id="cl">Cancel</button></p>`;
             $("#md").classList.add("on"); $("#cl").onclick = close_;
             if ($("#an")) $("#an").onchange = () => { $("#idf").style.display = $("#an").checked ? "none" : "block" };
@@ -617,15 +618,13 @@ ${CFG.pay ? `<div class="note">You’ll continue to the payment page. You appear
 
             $("#go").onclick = () => {
                 const anon = Boolean($("#an")?.checked), n = anon ? "Anonymous legend" : $("#f1").value.trim(), u = anon ? "" : $("#f2").value.trim(), a = Math.round((+$("#f3").value) * 100) / 100, d = $("#f4").value.trim();
+                if (!$("#publicConsent").checked) return toast("Please agree to the terms and confirm you’re allowed to submit this listing.");
                 if (!n) return toast("Add your name or product name, or tick “Pay anonymously”."); if (u && !safeUrl(u) && u[0] !== "@") return toast("That link doesn’t look valid. Use https://…"); if (!(a >= 1)) return toast("Enter an amount of $1 or more."); if (wc() > 500) return toast("That’s over 500 words.");
                 if (CFG.pay) { window.open(CFG.pay, "_blank", "noopener"); close_(); return toast("Complete the payment. You’ll appear once it’s verified.") }
                 const newEntry: LeaderboardEntry = { id: "p" + Date.now(), name: n, url: safeUrl(u) || u, amt: a, desc: d, img: anon ? "" : img, anon, t: Date.now(), src: CFG.pay ? "live" : "preview" };
                 LOCAL.unshift(newEntry);
                 saveLocal();
-                StorageService.addEntry(newEntry).then(() => {
-                    DATA.entries = StorageService.getEntries();
-                    render();
-                });
+                render();
                 snd("horn");
                 if (window.charReact) window.charReact("happy");
                 close_();

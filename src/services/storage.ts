@@ -86,6 +86,7 @@ export class StorageService {
       // Filter out any dummy data
       const cleanedRemote = remote.filter(
         (r) =>
+          r.src !== 'preview' &&
           r.src !== 'seed' &&
           !String(r.id).startsWith('seed-') &&
           r.name !== 'Alex Dev Studios' &&
@@ -100,8 +101,14 @@ export class StorageService {
         if (!map.has(key)) map.set(key, r);
       }
 
-      // A successful Supabase read is authoritative. Merging recent cached
-      // entries here resurrected rows that an admin had deleted remotely.
+      // Keep preview-only submissions in this browser without ever syncing them.
+      for (const preview of this.getEntries().filter((entry) => entry.src === 'preview')) {
+        const key = preview.id || (preview.name.trim().toLowerCase() + '_' + preview.amt);
+        if (!map.has(key)) map.set(key, preview);
+      }
+
+      // Supabase is authoritative for live entries; only browser-local previews
+      // are retained so they never need to be uploaded to remain visible.
       const combined = Array.from(map.values());
       this.saveEntries(combined);
       return combined;
