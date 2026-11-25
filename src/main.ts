@@ -1,7 +1,7 @@
 // @ts-nocheck
 import '../css/style.css';
 import { StorageService } from './services/storage';
-import { SupabaseService } from './services/supabase';
+import { SupabaseService, SUPABASE_ANON_KEY, SUPABASE_URL } from './services/supabase';
 import { LeaderboardEntry } from './types';
 
 declare global {
@@ -128,11 +128,25 @@ declare global {
             "twitch.tv": { name: "Twitch", bg: "#9146FF", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>' },
             "substack.com": { name: "Substack", bg: "#FF6719", svg: '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z"/></svg>' }
         };
+        const SOCIAL_HOST_ALIASES: Record<string, string> = {
+            'instagr.am': 'instagram.com',
+            'twitter.com': 'x.com',
+            'lnkd.in': 'linkedin.com',
+            'redd.it': 'reddit.com',
+            'threads.com': 'threads.net'
+        };
         const getSocialInfo = (u: string): SocialDef | null => {
             if (!u) return null;
-            const clean = u.replace(/^https?:\/\//i, '').replace(/^www\./i, '');
-            const h = clean.split('/')[0].toLowerCase();
-            const k = Object.keys(SOCIAL_MAP).find(key => h === key || h.endsWith('.' + key));
+            const raw = String(u).trim();
+            let h = '';
+            try {
+                h = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`).hostname.toLowerCase().replace(/^www\./, '');
+            } catch (e) {
+                h = raw.replace(/^https?:\/\//i, '').replace(/^www\./i, '').split(/[/?#]/)[0].toLowerCase();
+            }
+            const alias = Object.keys(SOCIAL_HOST_ALIASES).find(domain => h === domain || h.endsWith('.' + domain));
+            const normalizedHost = alias ? SOCIAL_HOST_ALIASES[alias] : h;
+            const k = Object.keys(SOCIAL_MAP).find(key => normalizedHost === key || normalizedHost.endsWith('.' + key));
             return k ? SOCIAL_MAP[k] : null;
         };
         const soc = (u: string) => { const s = getSocialInfo(u); return s ? [s.name, s.bg] : null; };
@@ -153,7 +167,7 @@ declare global {
             const list: LeaderboardEntry[] = [];
             const pool = [...LOCAL, ...(DATA.entries || [])];
             for (const item of pool) {
-                if (!item || REMOTE_DELETED_IDS.includes(String(item.id)) || REMOTE_DELETED_IDS.includes(deletedEntryKey(item)) || entryIsBlocked(item)) continue;
+                if (!item || item.src === "pending" || REMOTE_DELETED_IDS.includes(String(item.id)) || REMOTE_DELETED_IDS.includes(deletedEntryKey(item)) || entryIsBlocked(item)) continue;
                 const idKey = item.id ? "id:" + item.id : "";
                 if (idKey && seen.has(idKey)) continue;
                 if (idKey) seen.add(idKey);
@@ -575,16 +589,17 @@ declare global {
         }
 
         // payment modal
-        const close_ = () => $("#md").classList.remove("on"); let img = "";
+        let adminOpen = false;
+        const close_ = () => { $("#md").classList.remove("on"); adminOpen = false; }; let img = "";
         function openFund() {
             snd("kaching"); img = ""; $("#mb").innerHTML = `<h2>${esc(CFG.btn)}</h2><p style="margin:0;color:var(--mut)">This payment buys a place on the supporter board. That’s the whole deal: no meal, charity, or other product is included. Staying anonymous is fine too.</p>
 ${CFG.anonAllowed === false ? "" : `<label style="display:flex;align-items:center;margin-top:16px;cursor:pointer"><input type="checkbox" id="an">Pay anonymously (no name, no link, no logo)</label>`}
 <div id="idf"><label for="f1">Name</label><input id="f1" maxlength="60" placeholder="Acme Analytics"><label for="f2">Any link</label><input id="f2" maxlength="140" placeholder="https://yourproduct.com or https://x.com/you"><p class="hint">Social profiles show their brand icon. Websites show their logo automatically.</p><div id="logobox" style="display:none;margin:8px 0 12px;padding:8px 12px;background:#f7f5f0;border:1.5px solid #e2ded5;border-radius:12px;align-items:center;gap:12px"></div></div>
 <label for="f3">How much do you want to pay? (USD)</label><input id="f3" type="number" min="1" step="1" inputmode="numeric" placeholder="Any amount, $1 or more"><div class="chips" id="qa"></div>
 <label for="f4">Short description or message <span id="wc" class="hint" style="display:inline">0 / 500 words</span></label><textarea id="f4" placeholder="What are you building? Or just say hi."></textarea>
-<div class="public-entry-consent"><label for="publicConsent"><input type="checkbox" id="publicConsent"> I agree to the <a href="/terms" data-route="terms">Terms</a> and <a href="/rules" data-route="rules">Board Rules</a>, have read the <a href="/privacy" data-route="privacy">Privacy Notice</a>, and consent to this listing being stored and shown publicly with its amount, message and entry time. Anonymous hides my name and link only. I confirm I’m 18 or older, or my parent/guardian has approved this listing and will complete checkout, and I have permission to submit its name, link and message.</label></div>
-${CFG.pay ? `<div class="note">You’ll continue to a separate payment page. This form does not send your entered amount or entry details to checkout automatically. Check the amount and currency shown there. The founder records listings after payment is confirmed.</div>` : `<div class="note"><b>Preview mode.</b> No money will move. Your entry only shows in this browser, so you can see how the board looks.</div>`}
-<p style="display:flex;gap:10px;margin-top:16px"><button class="btn" id="go" style="flex:1;text-align:center">${CFG.pay ? "Continue to payment" : "Add to board (preview)"}</button><button class="btn w" id="cl">Cancel</button></p>`;
+<div class="public-entry-consent"><label for="publicConsent"><input type="checkbox" id="publicConsent"><span>I agree to the <a href="/terms" data-route="terms">Terms</a> and <a href="/rules" data-route="rules">Board Rules</a>, have read the <a href="/privacy" data-route="privacy">Privacy Notice</a>, and consent to this listing being stored and shown publicly with its amount, message and entry time. Anonymous hides my name and link only. I confirm I’m 18 or older, or my parent/guardian has approved this listing and will complete checkout, and I have permission to submit its name, link and message.</span></label></div>
+${CFG.pay ? `<div class="note">Dodo Payments securely processes checkout. Your board entry is added automatically after Dodo confirms the payment.</div>` : `<div class="note"><b>Preview mode.</b> No money will move. Your entry only shows in this browser, so you can see how the board looks.</div>`}
+<p style="display:flex;gap:10px;margin-top:16px"><button class="btn" id="go" style="flex:1;text-align:center">${CFG.pay ? "Continue to secure checkout" : "Add to board (preview)"}</button><button class="btn w" id="cl">Cancel</button></p>`;
             $("#md").classList.add("on"); $("#cl").onclick = close_;
             if ($("#an")) $("#an").onchange = () => { $("#idf").style.display = $("#an").checked ? "none" : "block" };
             $("#qa").innerHTML = [1, 5, 10, 25, 50].map(a => `<button class="chip" data-a="${a}">$${a}</button>`).join(""); $("#qa").onclick = e => { const c = e.target.closest("[data-a]"); if (c) $("#f3").value = c.dataset.a };
@@ -616,11 +631,41 @@ ${CFG.pay ? `<div class="note">You’ll continue to a separate payment page. Thi
             };
             $("#f2").oninput = updateLogoBox;
 
-            $("#go").onclick = () => {
+            $("#go").onclick = async () => {
                 const anon = Boolean($("#an")?.checked), n = anon ? "Anonymous legend" : $("#f1").value.trim(), u = anon ? "" : $("#f2").value.trim(), a = Math.round((+$("#f3").value) * 100) / 100, d = $("#f4").value.trim();
                 if (!$("#publicConsent").checked) return toast("Please agree to the terms and confirm you’re allowed to submit this listing.");
                 if (!n) return toast("Add your name or product name, or tick “Pay anonymously”."); if (u && !safeUrl(u) && u[0] !== "@") return toast("That link doesn’t look valid. Use https://…"); if (!(a >= 1)) return toast("Enter an amount of $1 or more."); if (wc() > 500) return toast("That’s over 500 words.");
-                if (CFG.pay) { window.open(CFG.pay, "_blank", "noopener"); close_(); return toast("Complete the payment. You’ll appear once it’s verified.") }
+                if (CFG.pay) {
+                    const button = $("#go");
+                    button.disabled = true;
+                    button.textContent = "Preparing secure checkout…";
+                    try {
+                        const response = await fetch(`${SUPABASE_URL}/functions/v1/dodo-create-checkout`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+                            body: JSON.stringify({ name: n, url: safeUrl(u) || u, amount: a, desc: d, img: anon ? "" : img, anon, consent: true })
+                        });
+                        if (response.ok) {
+                            const result = await response.json();
+                            if (!result.checkout_url) throw new Error("Dodo did not return a checkout link.");
+                            window.location.assign(result.checkout_url);
+                            return;
+                        }
+                        if (response.status !== 404) {
+                            const result = await response.json().catch(() => ({}));
+                            throw new Error(result.error || "Secure checkout could not be started.");
+                        }
+                        // Keep the configured legacy payment link usable until the
+                        // Supabase checkout function has been deployed.
+                        window.open(CFG.pay, "_blank", "noopener");
+                        close_();
+                        return toast("Checkout opened. Automatic listing activates after Dodo setup is finished.");
+                    } catch (err) {
+                        button.disabled = false;
+                        button.textContent = "Continue to secure checkout";
+                        return toast("Could not start checkout: " + (err instanceof Error ? err.message : String(err)));
+                    }
+                }
                 const newEntry: LeaderboardEntry = { id: "p" + Date.now(), name: n, url: safeUrl(u) || u, amt: a, desc: d, img: anon ? "" : img, anon, t: Date.now(), src: CFG.pay ? "live" : "preview" };
                 LOCAL.unshift(newEntry);
                 saveLocal();
@@ -656,9 +701,81 @@ ${CFG.pay ? `<div class="note">You’ll continue to a separate payment page. Thi
         // exit intent (once)
         let ex1 = false; document.addEventListener("mouseout", e => { if (!e.relatedTarget && e.clientY <= 0 && !ex1 && !$("#md").classList.contains("on")) { ex1 = true; snd("dun"); $("#mb").innerHTML = `<div class="exit-pop"><div class="exit-wave" aria-hidden="true">👋</div><div class="exit-kicker">BEFORE YOU GO</div><h2>Already heading out?</h2><p>We barely got to know each other. I mean, I mostly sat here—but still.</p><div class="exit-note">Take care out there. Try not to get a job on the way.</div><div class="exit-actions"><button class="btn exit-primary" id="a1">Leave a noodle tip</button><button class="btn w exit-secondary" id="a2">Catch you later</button></div></div>`; $("#md").classList.add("on"); $("#a1").onclick = () => openFund(); $("#a2").onclick = () => { close_(); toast("Okay, bye. I’ll still be here.") } } });
         // ===== FOUNDER CONSOLE (Authenticated securely against Supabase; hidden from normal users) =====
-        let unlocked = false, atab = "entries", editing = null;
+        const ADMIN_SESSION_KEY = "dn_admin_unlocked_v1";
+        let unlocked = false;
+        try { unlocked = sessionStorage.getItem(ADMIN_SESSION_KEY) === "1"; } catch (e) { }
+        let atab = "entries", editing = null;
+        async function refreshAdminData() {
+            try {
+                const remote = await StorageService.syncFromSupabase();
+                if (remote !== null) {
+                    LOCAL = remote;
+                    DATA.entries = remote;
+                    render();
+                }
+            } catch (err) {
+                console.warn("Admin entry refresh failed:", err);
+            }
+            updateAdminDbStatus();
+        }
+        function updateAdminDbStatus() {
+            const status = $("#adminDbStatus");
+            if (!status) return;
+            status.textContent = SupabaseService.isConnected
+                ? "Supabase connected · entries shared across browsers"
+                : "Supabase not connected · local data is not shared";
+            status.style.color = SupabaseService.isConnected ? "#087e59" : "#b42318";
+            status.title = SupabaseService.isConnected ? "" : SupabaseService.lastErrorMessage;
+        }
+        function adminEntryMarkup() {
+            return LOCAL.map(x => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border:1.5px solid var(--ink);border-radius:10px;background:#fff;">
+                <div style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><b>${esc(x.name)}</b> - ${money(x.amt)} <small style="color:var(--mut);">(${new Date(x.t).toLocaleDateString()})</small>${x.src === "pending" ? `<small style="display:block;color:#b42318;font-weight:800">NOT SHARED · THIS BROWSER ONLY</small>` : ""}</div>
+                <div style="display:flex;gap:6px;">${x.src === "pending" ? `<button class="btn sm" style="padding:4px 8px;font-size:12px;" data-sync="${esc(x.id)}">Sync</button>` : ""}<button class="btn sm" style="padding:4px 8px;font-size:12px;" data-ed="${esc(x.id)}">Edit</button><button class="btn sm w" style="padding:4px 8px;font-size:12px;" data-dl="${esc(x.id)}">Delete</button></div>
+            </div>`).join("");
+        }
+        function bindAdminEntryActions() {
+            $$('[data-ed]').forEach(b => b.onclick = () => { editing = LOCAL.find(x => x.id === b.dataset.ed); renderAdmin(); });
+            $$('[data-dl]').forEach(b => b.onclick = async () => {
+                const delId = b.dataset.dl;
+                try {
+                    await StorageService.deleteEntry(delId);
+                    LOCAL = StorageService.getEntries();
+                    DATA.entries = LOCAL;
+                } catch (err) {
+                    toast("Supabase delete failed: " + (err instanceof Error ? err.message : String(err)));
+                    return;
+                }
+                renderAdmin();
+                render();
+                toast("Deleted from the shared board.");
+            });
+            $$('[data-sync]').forEach(b => b.onclick = async () => {
+                const pending = LOCAL.find(x => x.id === b.dataset.sync);
+                if (!pending) return;
+                try {
+                    LOCAL = await StorageService.addEntry({ ...pending, src: "manual" });
+                    DATA.entries = LOCAL;
+                    renderAdmin();
+                    render();
+                    toast("Entry synced to Supabase.");
+                } catch (err) {
+                    LOCAL = StorageService.getEntries();
+                    refreshAdminEntryList();
+                    toast("Sync failed: " + (err instanceof Error ? err.message : String(err)));
+                }
+            });
+        }
+        function refreshAdminEntryList() {
+            const list = $("#adminEntriesList");
+            if (!list) return;
+            list.innerHTML = adminEntryMarkup();
+            const entriesTab = $('[data-tab="entries"]');
+            if (entriesTab) entriesTab.textContent = `Entries (${LOCAL.length})`;
+            bindAdminEntryActions();
+        }
         function openFounderConsole() {
             if (!unlocked) {
+                adminOpen = false;
                 $("#mb").innerHTML = `<h2>Founder Console</h2>
                 <p style="color:var(--mut);margin:0 0 16px;">Passcode is verified securely against Supabase. No password is ever stored in code or URLs.</p>
                 <label for="pw">Supabase Passcode</label>
@@ -676,12 +793,14 @@ ${CFG.pay ? `<div class="note">You’ll continue to a separate payment page. Thi
                     btn.textContent = "Unlock Console";
                     if (ok) {
                         unlocked = true;
+                        try { sessionStorage.setItem(ADMIN_SESSION_KEY, "1"); } catch (e) { }
                         snd("fan");
+                        await refreshAdminData();
                         renderAdmin();
                         toast("Welcome, Founder.");
                     } else {
                         snd("sad");
-                        toast("Incorrect passcode stored in Supabase.");
+                        toast("Incorrect passcode.");
                         $("#pw").value = "";
                         $("#pw").focus();
                     }
@@ -690,14 +809,15 @@ ${CFG.pay ? `<div class="note">You’ll continue to a separate payment page. Thi
                 setTimeout(() => $("#pw")?.focus(), 120);
                 return;
             }
-            renderAdmin();
+            refreshAdminData().finally(() => renderAdmin());
         }
 
         function renderAdmin() {
             if (!unlocked) return openFounderConsole();
+            adminOpen = true;
             $("#md").classList.add("on");
             let h = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                <h2 style="margin:0;">Founder Console</h2>
+                <div><h2 style="margin:0;">Founder Console</h2><small id="adminDbStatus" style="font-weight:800"></small></div>
                 <button class="chip" id="adCl">Close</button>
             </div>
             <div class="tabs" style="margin-bottom:14px;">`;
@@ -717,12 +837,8 @@ ${CFG.pay ? `<div class="note">You’ll continue to a separate payment page. Thi
                     <label style="display:flex;align-items:center;margin:8px 0;"><input type="checkbox" id="e6" ${E.anon ? "checked" : ""}> Anonymous</label>
                     <p style="display:flex;gap:8px;"><button class="btn sm" id="esv">Save entry</button>${editing ? `<button class="btn sm w" id="ecn">Cancel</button>` : ""}</p>
                 </div>
-                <div style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">` +
-                LOCAL.map(x => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border:1.5px solid var(--ink);border-radius:10px;background:#fff;">
-                    <div style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><b>${esc(x.name)}</b> - ${money(x.amt)} <small style="color:var(--mut);">(${new Date(x.t).toLocaleDateString()})</small></div>
-                    <div style="display:flex;gap:6px;"><button class="btn sm" style="padding:4px 8px;font-size:12px;" data-ed="${x.id}">Edit</button><button class="btn sm w" style="padding:4px 8px;font-size:12px;" data-dl="${x.id}">Delete</button></div>
-                </div>`).join("") + `</div>
-                <p style="margin-top:12px;display:flex;gap:8px;"><button class="chip" id="cla">Clear local entries</button><button class="chip" id="csv">Export CSV</button></p>
+                <div id="adminEntriesList" style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">${adminEntryMarkup()}</div>
+                <p style="margin-top:12px;display:flex;gap:8px;"><button class="chip" id="cla">Clear local previews / pending</button><button class="chip" id="csv">Export CSV</button></p>
                 <div id="csvo"></div>`;
             }
 
@@ -746,8 +862,10 @@ ${CFG.pay ? `<div class="note">You’ll continue to a separate payment page. Thi
             }
 
             $("#mb").innerHTML = h;
+            updateAdminDbStatus();
             $("#adCl").onclick = close_;
             $$("[data-tab]").forEach(b => b.onclick = () => { atab = b.dataset.tab; editing = null; renderAdmin(); });
+            if (atab === "entries") bindAdminEntryActions();
             const on = (i, f) => { const el = $("#" + i); if (el) el.onclick = f; };
 
             on("esv", async () => {
@@ -755,57 +873,72 @@ ${CFG.pay ? `<div class="note">You’ll continue to a separate payment page. Thi
                 if (!n || !(a > 0)) return toast("Name and positive amount are required.");
                 const o = { name: n, url: safeUrl($("#e2").value) || $("#e2").value.trim(), amt: a, desc: $("#e4").value.trim(), t: Date.now(), anon: $("#e6").checked, src: "manual" };
                 const newM = { id: (editing && editing.id) ? editing.id : "m" + Date.now(), img: "", ...o };
-                if (editing && editing.id) {
-                    const idx = LOCAL.findIndex(x => x.id === editing.id);
-                    if (idx !== -1) LOCAL[idx] = newM;
-                    await StorageService.updateEntry(editing.id, newM);
-                } else {
-                    LOCAL.unshift(newM);
-                    await StorageService.addEntry(newM);
+                try {
+                    if (editing && editing.id) {
+                        await StorageService.updateEntry(editing.id, newM);
+                    } else {
+                        await StorageService.addEntry(newM);
+                    }
+                } catch (err) {
+                    LOCAL = StorageService.getEntries();
+                    refreshAdminEntryList();
+                    toast("Supabase save failed: " + (err instanceof Error ? err.message : String(err)));
+                    return;
                 }
+                LOCAL = StorageService.getEntries();
+                DATA.entries = LOCAL;
                 editing = null;
-                saveLocal();
                 renderAdmin();
                 render();
-                toast("Saved to Supabase.");
+                toast("Saved to the shared Supabase board.");
             });
 
             on("ecn", () => { editing = null; renderAdmin(); });
-            $$("[data-ed]").forEach(b => b.onclick = () => { editing = LOCAL.find(x => x.id === b.dataset.ed); renderAdmin(); });
-            $$("[data-dl]").forEach(b => b.onclick = async () => {
-                const delId = b.dataset.dl;
-                LOCAL = LOCAL.filter(x => x.id !== delId);
-                await StorageService.deleteEntry(delId);
-                saveLocal();
-                renderAdmin();
-                render();
-                toast("Deleted.");
-            });
-
-            on("cla", () => { if (confirm("Clear local entries?")) { LOCAL = []; saveLocal(); renderAdmin(); render(); } });
+            on("cla", () => { if (confirm("Clear only this browser’s preview and unsynced entries? Shared Supabase entries will remain.")) { LOCAL = LOCAL.filter(x => x.src !== "preview" && x.src !== "pending"); saveLocal(); renderAdmin(); render(); } });
             on("csv", () => { $("#csvo").innerHTML = `<textarea style="min-height:100px;margin-top:8px;">${esc("name,url,amount,date,source\n" + LOCAL.map(x => [x.name, x.url, x.amt, new Date(x.t).toISOString(), x.src].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(",")).join("\n"))}</textarea>`; });
-            on("ssv", () => {
-                CFG.pay = $("#s1").value.trim();
-                CFG.tz = $("#s2").value.trim() || "Asia/Kolkata";
-                CFG.tag = $("#s3").value;
-                CFG.btn = $("#s4").value.trim() || DEF.btn;
-                CFG.sub = $("#s5").value;
+            on("ssv", async () => {
+                const next = {
+                    ...CFG,
+                    pay: $("#s1").value.trim(),
+                    tz: $("#s2").value.trim() || "Asia/Kolkata",
+                    tag: $("#s3").value,
+                    btn: $("#s4").value.trim() || DEF.btn,
+                    sub: $("#s5").value
+                };
+                const keys = ["pay", "tz", "tag", "btn", "sub", "heroHead", "heroAccent", "cur", "anonAllowed", "roastEnabled", "soundsEnabled"];
+                const shared = Object.fromEntries(keys.filter(key => Object.prototype.hasOwnProperty.call(next, key)).map(key => [key, next[key]]));
+                if (Array.isArray(next.lines)) shared.lines = next.lines;
+                if (Array.isArray(next.dodge)) shared.dodge = next.dodge;
+                if (!await SupabaseService.savePublicSiteConfig(shared)) {
+                    toast("Shared settings were not saved: " + (SupabaseService.lastErrorMessage || "Supabase rejected the write."));
+                    return;
+                }
+                Object.assign(CFG, next);
                 saveCfg();
                 render();
-                toast("Settings saved.");
+                toast("Settings saved to Supabase for all browsers.");
             });
-            on("bim", () => {
+            on("bim", async () => {
                 try {
                     const j = JSON.parse($("#b2").value);
-                    if (j.cfg) Object.assign(CFG, j.cfg);
-                    if (Array.isArray(j.entries)) LOCAL = j.entries;
-                    saveCfg();
-                    saveLocal();
+                    if (j.cfg) {
+                        const keys = ["pay", "tz", "tag", "btn", "sub", "heroHead", "heroAccent", "cur", "anonAllowed", "roastEnabled", "soundsEnabled"];
+                        const shared = Object.fromEntries(keys.filter(key => Object.prototype.hasOwnProperty.call(j.cfg, key)).map(key => [key, j.cfg[key]]));
+                        if (Array.isArray(j.cfg.lines)) shared.lines = j.cfg.lines;
+                        if (Array.isArray(j.cfg.dodge)) shared.dodge = j.cfg.dodge;
+                        if (!await SupabaseService.savePublicSiteConfig(shared)) throw new Error(SupabaseService.lastErrorMessage || "Could not save shared settings.");
+                        Object.assign(CFG, j.cfg);
+                        saveCfg();
+                    }
+                    if (Array.isArray(j.entries)) {
+                        for (const entry of j.entries) await StorageService.addEntry({ ...entry, src: "manual" });
+                        LOCAL = StorageService.getEntries();
+                    }
                     renderAdmin();
                     render();
-                    toast("Imported.");
+                    toast("Backup imported to Supabase.");
                 } catch (e) {
-                    toast("Invalid JSON format.");
+                    toast("Import failed: " + (e instanceof Error ? e.message : "Invalid JSON format."));
                 }
             });
         }
@@ -988,20 +1121,61 @@ ${CFG.pay ? `<div class="note">You’ll continue to a separate payment page. Thi
         }
         showLine();
         setInterval(showLine, 3800);
-        Promise.all([SupabaseService.getPublicSiteConfig(), SupabaseService.getPublicBlocklist(), SupabaseService.getPublicDeletedEntryIds()]).then(([remoteConfig, blocked, deletedIds]) => {
-            const allowed = ["pay", "tz", "tag", "btn", "sub", "heroHead", "heroAccent", "cur", "anonAllowed", "roastEnabled", "soundsEnabled"];
+        const checkoutReturn = new URLSearchParams(location.search);
+        const returnedOrderId = checkoutReturn.get("order_id");
+        if (checkoutReturn.get("checkout") === "return" && returnedOrderId) {
+            history.replaceState(null, "", location.pathname + location.hash);
+            (async () => {
+                for (let attempt = 0; attempt < 60; attempt++) {
+                    try {
+                        const response = await fetch(`${SUPABASE_URL}/functions/v1/dodo-checkout-status`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+                            body: JSON.stringify({ order_id: returnedOrderId })
+                        });
+                        if (response.ok && (await response.json()).status === "paid") {
+                            const entries = await StorageService.syncFromSupabase();
+                            LOCAL = entries;
+                            DATA.entries = entries;
+                            render();
+                            toast("Payment confirmed. Your board spot is live!");
+                            return;
+                        }
+                    } catch (err) {
+                        console.warn("Waiting for payment confirmation:", err);
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                toast("Payment received. The board is still waiting for Dodo’s confirmation; refresh in a moment.");
+            })();
+        }
+        const SHARED_CONFIG_KEYS = ["pay", "tz", "tag", "btn", "sub", "heroHead", "heroAccent", "cur", "anonAllowed", "roastEnabled", "soundsEnabled"];
+        async function refreshSharedSiteState() {
+            const oldConfig = JSON.stringify(CFG);
+            const oldBlocklist = JSON.stringify(REMOTE_BLOCKLIST);
+            const oldDeletedIds = JSON.stringify(REMOTE_DELETED_IDS);
+            const [remoteConfig, blocked, deletedIds] = await Promise.all([
+                SupabaseService.getPublicSiteConfig(),
+                SupabaseService.getPublicBlocklist(),
+                SupabaseService.getPublicDeletedEntryIds()
+            ]);
             if (remoteConfig) {
-                for (const key of allowed) if (Object.prototype.hasOwnProperty.call(remoteConfig, key)) CFG[key] = remoteConfig[key];
+                for (const key of SHARED_CONFIG_KEYS) if (Object.prototype.hasOwnProperty.call(remoteConfig, key)) CFG[key] = remoteConfig[key];
                 if (Array.isArray(remoteConfig.lines)) CFG.lines = remoteConfig.lines.filter(v => typeof v === "string");
                 if (Array.isArray(remoteConfig.dodge)) CFG.dodge = remoteConfig.dodge.filter(v => typeof v === "string");
+                applySiteConfig();
             }
             REMOTE_BLOCKLIST = blocked;
             REMOTE_DELETED_IDS = deletedIds;
-            applySiteConfig();
-            if (CFG.roastEnabled === false && location.pathname === "/get-roasted") routeTo("home", true);
-            render();
-            showLine();
-        }).catch(err => console.warn("Site settings fallback to defaults:", err));
+            const changed = oldConfig !== JSON.stringify(CFG) || oldBlocklist !== JSON.stringify(blocked) || oldDeletedIds !== JSON.stringify(deletedIds);
+            if (changed) {
+                if (CFG.roastEnabled === false && location.pathname === "/get-roasted") routeTo("home", true);
+                render();
+                showLine();
+            }
+            return changed;
+        }
+        refreshSharedSiteState().catch(err => console.warn("Site settings fallback to defaults:", err));
     
 // Supabase Backend Sync
 (async () => {
@@ -1011,6 +1185,7 @@ ${CFG.pay ? `<div class="note">You’ll continue to a separate payment page. Thi
             LOCAL = remote;
             DATA.entries = remote;
             render();
+            if (adminOpen && atab === "entries") refreshAdminEntryList();
         }
     } catch (err) {
         console.warn('Initial Supabase sync fallback:', err);
@@ -1026,8 +1201,38 @@ ${CFG.pay ? `<div class="note">You’ll continue to a separate payment page. Thi
             DATA.entries = updated;
             REMOTE_DELETED_IDS = deletedIds;
             render();
+            refreshSharedSiteState().catch(err => console.warn('Shared site settings refresh failed:', err));
+            if (adminOpen && atab === "entries") refreshAdminEntryList();
         });
     } catch (err) {
         console.warn('Supabase realtime subscription fallback:', err);
     }
 })();
+
+// Realtime requires the Supabase table to be in the project's publication. Poll
+// as a lightweight fallback so open pages still converge when realtime is off.
+setInterval(async () => {
+    if (document.visibilityState !== 'visible') return;
+    try {
+        const [updated, deletedIds] = await Promise.all([
+            StorageService.syncFromSupabase(),
+            SupabaseService.getPublicDeletedEntryIds()
+        ]);
+        const entriesChanged = JSON.stringify(updated) !== JSON.stringify(LOCAL);
+        const deletedChanged = JSON.stringify(deletedIds) !== JSON.stringify(REMOTE_DELETED_IDS);
+        REMOTE_DELETED_IDS = deletedIds;
+        if (entriesChanged) {
+            LOCAL = updated;
+            DATA.entries = updated;
+        }
+        if (entriesChanged || deletedChanged) {
+            render();
+            if (adminOpen && atab === 'entries') refreshAdminEntryList();
+        }
+        await refreshSharedSiteState();
+        if (adminOpen) updateAdminDbStatus();
+    } catch (err) {
+        console.warn('Periodic Supabase refresh failed:', err);
+        if (adminOpen) updateAdminDbStatus();
+    }
+}, 20000);

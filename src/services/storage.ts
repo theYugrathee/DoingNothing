@@ -101,10 +101,13 @@ export class StorageService {
         if (!map.has(key)) map.set(key, r);
       }
 
-      // Keep preview-only submissions in this browser without ever syncing them.
-      for (const preview of this.getEntries().filter((entry) => entry.src === 'preview')) {
-        const key = preview.id || (preview.name.trim().toLowerCase() + '_' + preview.amt);
-        if (!map.has(key)) map.set(key, preview);
+      // Keep previews and unsynced admin edits local. Never silently discard
+      // pending work when Supabase is reachable again.
+      for (const cached of this.getEntries()) {
+        const isLegacyPending = cached.src === 'manual' && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cached.id);
+        if (cached.src !== 'preview' && cached.src !== 'pending' && !isLegacyPending) continue;
+        const key = cached.id || (cached.name.trim().toLowerCase() + '_' + cached.amt);
+        if (!map.has(key)) map.set(key, { ...cached, src: cached.src === 'preview' ? 'preview' : 'pending' });
       }
 
       // Supabase is authoritative for live entries; only browser-local previews
@@ -117,53 +120,51 @@ export class StorageService {
   }
 
   public static async addEntry(entry: LeaderboardEntry): Promise<LeaderboardEntry[]> {
-    const list = this.getEntries();
-    const existingIndex = list.findIndex((e) => e.id === entry.id);
-    if (existingIndex >= 0) {
-      list[existingIndex] = entry;
-    } else {
-      list.unshift(entry);
+    const previousId = entry.id;
+    const existing = this.getEntries();
+    if (!await SupabaseService.insertEntry(entry)) {
+      const pending = { ...entry, src: 'pending' as const };
+      const list = existing.filter((item) => item.id !== previousId && item.id !== pending.id);
+      list.unshift(pending);
+      this.saveEntries(list);
+      throw new Error(SupabaseService.lastErrorMessage || 'Supabase did not accept the entry.');
     }
+    entry.src = 'live';
+    const list = existing.filter((item) => item.id !== previousId && item.id !== entry.id);
+    list.unshift(entry);
     this.saveEntries(list);
-
-    // Persist to Supabase
-    try {
-      const synced = await SupabaseService.insertEntry(entry);
-      // insertEntry may replace a temporary browser ID with the database ID;
-      // persist that ID so later admin deletions also filter the local copy.
-      if (synced) this.saveEntries(list);
-    } catch (err) {
-      console.warn('Supabase remote insert fallback:', err);
-    }
-
-    return list;
+    return this.syncFromSupabase();
   }
 
   public static async deleteEntry(id: string): Promise<LeaderboardEntry[]> {
-    let list = this.getEntries();
-    list = list.filter((x) => x.id !== id);
-    this.saveEntries(list);
-
-    SupabaseService.deleteEntry(id).catch((err) => {
-      console.warn('Supabase remote delete error:', err);
-    });
-
-    return list;
+    const list = this.getEntries();
+    const existing = list.find((entry) => entry.id === id);
+    if (existing?.src !== 'preview' && !await SupabaseService.deleteEntry(id)) {
+      throw new Error(SupabaseService.lastErrorMessage || 'Supabase did not delete the entry.');
+    }
+    const cleaned = list.filter((x) => x.id !== id);
+    this.saveEntries(cleaned);
+    return cleaned;
   }
 
   public static async updateEntry(id: string, updates: Partial<LeaderboardEntry>): Promise<LeaderboardEntry[]> {
     const list = this.getEntries();
-    const idx = list.findIndex((x) => x.id === id);
-    if (idx !== -1) {
-      list[idx] = { ...list[idx], ...updates };
-      this.saveEntries(list);
+    const existing = list.find((entry) => entry.id === id);
+    if (existing?.src === 'preview') {
+      const localOnly = list.map((entry) => entry.id === id ? { ...entry, ...updates } : entry);
+      this.saveEntries(localOnly);
+      return localOnly;
     }
-
-    SupabaseService.updateEntry(id, updates).catch((err) => {
-      console.warn('Supabase remote update error:', err);
-    });
-
-    return list;
+    const updatedEntry = { ...existing, ...updates, id } as LeaderboardEntry;
+    if (existing?.src === 'pending' || (existing?.src === 'manual' && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))) {
+      return this.addEntry({ ...updatedEntry, src: 'manual' });
+    }
+    if (!await SupabaseService.updateEntry(id, updates)) {
+      throw new Error(SupabaseService.lastErrorMessage || 'Supabase did not update the entry.');
+    }
+    const updated: LeaderboardEntry[] = list.map((entry) => entry.id === id ? { ...entry, ...updates, src: 'live' as const } : entry);
+    this.saveEntries(updated);
+    return updated;
   }
 
   public static getBestStillness(): number {

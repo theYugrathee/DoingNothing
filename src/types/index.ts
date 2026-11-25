@@ -23,7 +23,7 @@ export interface LeaderboardEntry {
   img: string;
   anon: boolean;
   t: number; // Unix timestamp in ms
-  src?: 'preview' | 'manual' | 'seed' | 'live';
+  src?: 'preview' | 'manual' | 'pending' | 'seed' | 'live';
   gateway?: PaymentGateway;
   currency?: Currency;
 }

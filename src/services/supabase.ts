@@ -7,6 +7,7 @@ export const SUPABASE_ANON_KEY = 'sb_publishable_zdRs9UjpAC1oVUQvzSGiXA_kVScRgOp
 export class SupabaseService {
   private static client: SupabaseClient | null = null;
   public static isConnected: boolean = false;
+  public static lastErrorMessage: string = '';
 
   public static getClient(): SupabaseClient {
     if (!this.client) {
@@ -32,6 +33,7 @@ export class SupabaseService {
 
       if (!patronsError) {
         this.isConnected = true;
+        this.lastErrorMessage = '';
         return {
           ok: true,
           message: `Connected to Supabase! Table 'patrons' is active with ${patronsData?.length ?? 0} sample row(s).`
@@ -46,6 +48,7 @@ export class SupabaseService {
 
       if (!entriesError) {
         this.isConnected = true;
+        this.lastErrorMessage = '';
         return {
           ok: true,
           message: `Connected to Supabase! Table 'entries' is active with ${entriesData?.length ?? 0} sample row(s).`
@@ -53,18 +56,24 @@ export class SupabaseService {
       }
 
       if (patronsError.code === '42501' || entriesError.code === '42501') {
+        this.isConnected = false;
+        this.lastErrorMessage = patronsError.message || entriesError.message;
         return {
           ok: false,
           message: `Supabase Error 42501: Permission denied for table. Please run the SQL Grant permissions in your Supabase SQL Editor.`
         };
       }
 
+      this.isConnected = false;
+      this.lastErrorMessage = patronsError.message || entriesError.message;
       return {
         ok: false,
         message: `Supabase status: ${patronsError.message || entriesError.message}`
       };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
+      this.isConnected = false;
+      this.lastErrorMessage = msg;
       return {
         ok: false,
         message: `Connection failed: ${msg}`
@@ -75,15 +84,35 @@ export class SupabaseService {
   public static async fetchEntries(): Promise<LeaderboardEntry[] | null> {
     try {
       const client = this.getClient();
+      const [patronsResult, entriesResult] = await Promise.all([
+        client.from('patrons').select('*').order('created_at', { ascending: false }),
+        client.from('entries').select('*').order('t', { ascending: false })
+      ]);
+      const { data: patronsData, error: patronsError } = patronsResult;
+      const { data: entriesData, error: entriesError } = entriesResult;
+      const merged = new Map<string, LeaderboardEntry>();
 
-      // 1. Try 'patrons' table
-      const { data: patronsData, error: patronsError } = await client
-        .from('patrons')
-        .select('*')
-        .order('created_at', { ascending: false });
+      if (!entriesError && entriesData) {
+        for (const row of entriesData) {
+          const entry: LeaderboardEntry = {
+            id: String(row.id || ''),
+            name: row.name || 'Anonymous Supporter',
+            url: row.url || '',
+            amt: Number(row.amt ?? row.amount ?? 0),
+            desc: row.desc ?? row.message ?? '',
+            img: row.img ?? row.logo_url ?? '',
+            anon: Boolean(row.anon),
+            t: Number(row.t) || Date.now(),
+            src: 'live'
+          };
+          const key = entry.id || `${entry.name.trim().toLowerCase()}_${entry.amt}_${entry.t}`;
+          merged.set(key, entry);
+        }
+      }
 
-      if (!patronsError && patronsData && patronsData.length > 0) {
-        return patronsData.filter((row) => row.is_approved !== false && row.category !== '__ADMIN_AUTH__').map((row) => ({
+      if (!patronsError && patronsData) {
+        for (const row of patronsData.filter((item) => item.is_approved !== false && item.category !== '__ADMIN_AUTH__')) {
+          const entry: LeaderboardEntry = {
           id: String(row.id),
           name: row.name || 'Anonymous Supporter',
           url: row.url || '',
@@ -93,36 +122,27 @@ export class SupabaseService {
           anon: Boolean(!row.name || row.name === 'Anonymous legend' || row.anon),
           t: row.created_at ? new Date(row.created_at).getTime() : (Number(row.t) || Date.now()),
           src: 'live'
-        }));
+          };
+          const key = entry.id || `${entry.name.trim().toLowerCase()}_${entry.amt}_${entry.t}`;
+          // If a record exists in both schemas, prefer the patrons representation.
+          merged.set(key, entry);
+        }
       }
 
-      // 2. Try 'entries' table fallback
-      const { data: entriesData, error: entriesError } = await client
-        .from('entries')
-        .select('*')
-        .order('t', { ascending: false });
-
-      if (!entriesError && entriesData && entriesData.length > 0) {
-        return entriesData.map((row) => ({
-          id: String(row.id),
-          name: row.name,
-          url: row.url || '',
-          amt: Number(row.amt),
-          desc: row.desc || '',
-          img: row.img || '',
-          anon: Boolean(row.anon),
-          t: Number(row.t) || Date.now(),
-          src: 'live'
-        }));
+      // One healthy table is enough; a successful empty result still clears
+      // stale cached entries. Only return null if both reads failed.
+      if (patronsError && entriesError) {
+        this.isConnected = false;
+        this.lastErrorMessage = `${patronsError.message}; ${entriesError.message}`;
+        return null;
       }
-
-      // A successful empty query is different from a network failure: callers
-      // need an empty list to clear deleted rows from their local cache.
-      if (!entriesError || !patronsError) return [];
-
-      return null;
+      this.isConnected = true;
+      this.lastErrorMessage = '';
+      return Array.from(merged.values()).sort((a, b) => b.t - a.t);
     } catch (err) {
       console.warn('Failed to fetch from Supabase:', err);
+      this.isConnected = false;
+      this.lastErrorMessage = err instanceof Error ? err.message : String(err);
       return null;
     }
   }
@@ -140,6 +160,23 @@ export class SupabaseService {
     } catch (err) {
       console.warn('Failed to fetch public site config:', err);
       return null;
+    }
+  }
+
+  public static async savePublicSiteConfig(config: Record<string, unknown>): Promise<boolean> {
+    try {
+      const { error } = await this.getClient()
+        .from('admin_settings')
+        .upsert({ key: 'site_config', value: JSON.stringify(config) }, { onConflict: 'key' });
+      if (error) {
+        this.lastErrorMessage = error.message;
+        return false;
+      }
+      this.lastErrorMessage = '';
+      return true;
+    } catch (err) {
+      this.lastErrorMessage = err instanceof Error ? err.message : String(err);
+      return false;
     }
   }
 
@@ -178,11 +215,19 @@ export class SupabaseService {
   public static async insertEntry(entry: LeaderboardEntry): Promise<boolean> {
     try {
       const client = this.getClient();
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(entry.id)) {
+        entry.id = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? crypto.randomUUID()
+          : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+              const r = Math.random() * 16 | 0;
+              return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+      }
 
-      // 1. Try inserting into 'patrons' table
       const patronPayload: Record<string, unknown> = {
-        name: entry.name,
-        url: entry.url || '',
+        id: entry.id,
+        name: entry.anon ? 'Anonymous legend' : entry.name,
+        url: entry.anon ? '' : (entry.url || ''),
         logo_url: entry.img || '',
         amount: entry.amt,
         message: entry.desc || '',
@@ -191,43 +236,39 @@ export class SupabaseService {
         is_approved: true
       };
 
-      // Only pass id if it matches a valid UUID
-      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(entry.id)) {
-        patronPayload.id = entry.id;
-      }
-
-      const { data: patronResult, error: patronError } = await client
+      const { error: patronError } = await client
         .from('patrons')
-        .insert([patronPayload])
-        .select();
+        .upsert(patronPayload, { onConflict: 'id' });
 
       if (!patronError) {
-        if (patronResult && patronResult[0] && patronResult[0].id) {
-          entry.id = String(patronResult[0].id);
-        }
+        this.lastErrorMessage = '';
+        this.isConnected = true;
         return true;
       }
 
-      console.warn('Patrons table insert note:', patronError.message);
-
-      // 2. Try inserting into 'entries' table as fallback
-      const { error: entriesError } = await client.from('entries').insert([
-        {
-          id: entry.id,
-          name: entry.name,
-          url: entry.url,
-          amt: entry.amt,
-          desc: entry.desc,
-          img: entry.img,
-          anon: entry.anon,
-          t: entry.t,
-          src: entry.src || 'live'
-        }
-      ]);
-
-      return !entriesError;
+      const { error: entriesError } = await client.from('entries').upsert({
+        id: entry.id,
+        name: entry.anon ? 'Anonymous legend' : entry.name,
+        url: entry.anon ? '' : entry.url,
+        amt: entry.amt,
+        desc: entry.desc,
+        img: entry.img,
+        anon: entry.anon,
+        t: entry.t,
+        src: 'live'
+      }, { onConflict: 'id' });
+      if (!entriesError) {
+        this.lastErrorMessage = '';
+        this.isConnected = true;
+        return true;
+      }
+      this.lastErrorMessage = `patrons: ${patronError.message}; entries: ${entriesError.message}`;
+      this.isConnected = false;
+      return false;
     } catch (err) {
       console.warn('Supabase insert exception:', err);
+      this.lastErrorMessage = err instanceof Error ? err.message : String(err);
+      this.isConnected = false;
       return false;
     }
   }
@@ -235,11 +276,16 @@ export class SupabaseService {
   public static async deleteEntry(id: string): Promise<boolean> {
     try {
       const client = this.getClient();
-      // Try both tables
       const res1 = await client.from('patrons').delete().eq('id', id);
       const res2 = await client.from('entries').delete().eq('id', id);
-      return !res1.error || !res2.error;
-    } catch {
+      if (!res1.error || !res2.error) {
+        this.lastErrorMessage = '';
+        return true;
+      }
+      this.lastErrorMessage = `patrons: ${res1.error.message}; entries: ${res2.error.message}`;
+      return false;
+    } catch (err) {
+      this.lastErrorMessage = err instanceof Error ? err.message : String(err);
       return false;
     }
   }
@@ -254,10 +300,28 @@ export class SupabaseService {
       if (updates.amt !== undefined) patronUpdates.amount = updates.amt;
       if (updates.desc !== undefined) patronUpdates.message = updates.desc;
 
+      if (updates.anon !== undefined) {
+        patronUpdates.name = updates.anon ? 'Anonymous legend' : updates.name;
+        patronUpdates.url = updates.anon ? '' : updates.url;
+      }
       const res1 = await client.from('patrons').update(patronUpdates).eq('id', id);
-      const res2 = await client.from('entries').update(updates).eq('id', id);
-      return !res1.error || !res2.error;
-    } catch {
+      const entriesUpdates: Record<string, unknown> = {};
+      if (updates.name !== undefined) entriesUpdates.name = updates.anon ? 'Anonymous legend' : updates.name;
+      if (updates.url !== undefined || updates.anon !== undefined) entriesUpdates.url = updates.anon ? '' : updates.url;
+      if (updates.amt !== undefined) entriesUpdates.amt = updates.amt;
+      if (updates.desc !== undefined) entriesUpdates.desc = updates.desc;
+      if (updates.img !== undefined) entriesUpdates.img = updates.img;
+      if (updates.anon !== undefined) entriesUpdates.anon = updates.anon;
+      if (updates.t !== undefined) entriesUpdates.t = updates.t;
+      const res2 = await client.from('entries').update(entriesUpdates).eq('id', id);
+      if (!res1.error || !res2.error) {
+        this.lastErrorMessage = '';
+        return true;
+      }
+      this.lastErrorMessage = `patrons: ${res1.error.message}; entries: ${res2.error.message}`;
+      return false;
+    } catch (err) {
+      this.lastErrorMessage = err instanceof Error ? err.message : String(err);
       return false;
     }
   }

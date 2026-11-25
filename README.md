@@ -95,27 +95,52 @@ npm run preview
 
 ---
 
-## 🔌 Connecting Live Services (Future Roadmap)
+## 💳 Dodo Payments: automatic leaderboard fulfillment
 
-### 1. Live Payments (Stripe / Razorpay)
-- **Stripe Payment Links (No-Code):**
-  Create a Payment Link in your [Stripe Dashboard](https://dashboard.stripe.com/payment-links), then open the **Admin Console** (`#admin`) on the site and paste your link into **Live Payment Gateway Link**.
-- **Stripe Checkout API / Webhooks:**
-  The `PaymentService` in `src/services/payments.ts` is typed and ready to call your `/api/checkout` endpoint when you deploy a server or serverless backend.
+Live checkout uses a server-created Dodo checkout session and a signed `payment.succeeded` webhook. The browser never receives the Dodo API key or Supabase service-role key. Supabase Realtime distributes the confirmed row to open boards; the returning checkout page checks confirmation once per second.
 
-### 2. Authentication
-- **Clerk / Supabase Auth:**
-  Add Google/GitHub login or passwordless magic links so patrons can edit their profile, bio, or links post-contribution.
+### One-time setup
 
-### 3. Real-Time Stats & Multi-User Database
-- **Supabase (PostgreSQL) or Firebase:**
-  Replace `StorageService` in `src/services/storage.ts` with a Supabase client (`supabase.from('entries')`). All connected clients worldwide will update instantaneously via WebSockets!
+1. In Dodo, create a **one-time USD product** with **Pay What You Want** enabled and a $1 minimum. Copy its product ID.
+2. In Supabase, run `supabase/migrations/20261125000000_dodo_autolist.sql` in the SQL Editor.
+3. From this repository, deploy the Edge Functions:
+
+   ```bash
+   supabase login
+   supabase functions deploy dodo-create-checkout --project-ref upnbvommgourlstrilsa
+   supabase functions deploy dodo-checkout-status --project-ref upnbvommgourlstrilsa
+   supabase functions deploy dodo-webhook --project-ref upnbvommgourlstrilsa
+   ```
+
+4. Add the server secrets (never add these to Vite, GitHub Pages files, or the browser):
+
+   ```bash
+   supabase secrets set DODO_PAYMENTS_API_KEY="your-dodo-api-key" DODO_PRODUCT_ID="your-pwyw-product-id" DODO_ENVIRONMENT="live_mode" --project-ref upnbvommgourlstrilsa
+   ```
+
+   Supabase supplies `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` inside Edge Functions. For Dodo test mode, use a test API key and set `DODO_ENVIRONMENT="test_mode"`.
+
+5. In Dodo **Developer → Webhooks**, add:
+
+   ```text
+   https://upnbvommgourlstrilsa.supabase.co/functions/v1/dodo-webhook
+   ```
+
+   Subscribe to `payment.succeeded`, then save the signing secret in Supabase:
+
+   ```bash
+   supabase secrets set DODO_PAYMENTS_WEBHOOK_KEY="your-dodo-webhook-signing-secret" --project-ref upnbvommgourlstrilsa
+   ```
+
+6. Keep a non-empty checkout URL in the admin payment setting to enable live checkout. The old static URL is used only if the checkout Edge Function has not been deployed; static links cannot attach this form’s details, so they cannot auto-create the matching board entry.
+
+Automatic fulfillment waits for Dodo’s signed webhook, never the browser redirect. Webhook delivery and network latency vary, so the app cannot promise a strict one-second end-to-end guarantee; it publishes immediately after confirmation and refreshes the returning page every second while waiting.
 
 ---
 
 ## 🚀 Deployment
 
-- **GitHub Pages:** Included `.github/workflows/ci.yml` runs type-checking and deploys the `dist/` directory automatically whenever you push to `main`.
+- **GitHub Pages:** Included `.github/workflows/ci.yml` runs type-checking and deploys the `dist/` directory automatically whenever you push to `main`. Supabase migrations and Edge Functions are deployed separately as described above.
 - **Vercel or Netlify:** Import the repository into [Vercel](https://vercel.com) or [Netlify](https://netlify.com). It will run `npm run build` and deploy to global CDN edge nodes automatically.
 
 ---

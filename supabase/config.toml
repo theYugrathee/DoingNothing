@@ -1,0 +1,10 @@
+project_id = "upnbvommgourlstrilsa"
+
+[functions.dodo-create-checkout]
+verify_jwt = false
+
+[functions.dodo-webhook]
+verify_jwt = false
+
+[functions.dodo-checkout-status]
+verify_jwt = false

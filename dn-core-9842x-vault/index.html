@@ -1141,6 +1141,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const SUPABASE_URL = 'https://upnbvommgourlstrilsa.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_zdRs9UjpAC1oVUQvzSGiXA_kVScRgOp';
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const ADMIN_SESSION_KEY = 'dn_vault_unlocked_v1';
 
 // ==================== STATE ====================
 let ALL_ENTRIES = [];
@@ -1306,6 +1307,7 @@ $('lockBtn').onclick = async () => {
   if (ok) {
     $('lockScreen').style.display = 'none';
     $('adminShell').classList.add('visible');
+    try { sessionStorage.setItem(ADMIN_SESSION_KEY, '1'); } catch {}
     init();
   } else {
     $('lockErr').textContent = '❌ Incorrect passcode. Try again.';
@@ -1314,7 +1316,7 @@ $('lockBtn').onclick = async () => {
   }
 };
 $('lockPass').onkeydown = e => { if (e.key === 'Enter') $('lockBtn').click(); };
-$('lockOutBtn').onclick = () => { location.reload(); };
+$('lockOutBtn').onclick = () => { try { sessionStorage.removeItem(ADMIN_SESSION_KEY); } catch {} location.reload(); };
 
 async function verifyPasscode(entered) {
   try {
@@ -1388,6 +1390,24 @@ async function init() {
     }).subscribe();
 }
 
+// Keep the console signed in across refreshes in this tab and poll as a
+// fallback when Supabase Realtime is not enabled for one of the tables.
+try {
+  if (sessionStorage.getItem(ADMIN_SESSION_KEY) === '1') {
+    $('lockScreen').style.display = 'none';
+    $('adminShell').classList.add('visible');
+    init();
+  }
+} catch {}
+setInterval(async () => {
+  if (!$('adminShell').classList.contains('visible') || document.visibilityState !== 'visible') return;
+  const loaded = await fetchAll();
+  updateSyncStatus(loaded ? 'Live ✓' : 'Connection issue', loaded ? '#0E9F6E' : '#E8412C');
+  $('topbarMeta').textContent = `${ALL_ENTRIES.length} entries · updated ${new Date().toLocaleTimeString()}`;
+  renderDashboard();
+  renderCurrentSection();
+}, 20000);
+
 function updateSyncStatus(msg, color) {
   const el = $('syncStatus');
   el.textContent = '⬤ ' + msg;
@@ -1427,7 +1447,12 @@ async function fetchAll() {
       console.error('Both Supabase entry queries failed:', patronsResult.error, legacyResult.error);
       return false;
     }
-    ALL_ENTRIES = combined.sort((a, b) => b.t - a.t);
+    const deduped = new Map();
+    for (const entry of combined) {
+      const previous = deduped.get(entry.id);
+      if (!previous || entry._table === 'patrons') deduped.set(entry.id, entry);
+    }
+    ALL_ENTRIES = [...deduped.values()].sort((a, b) => b.t - a.t);
     return true;
   } catch (e) {
     console.warn('fetch error', e);
@@ -2024,6 +2049,8 @@ $('forceSyncBtn').onclick = async () => {
     log.textContent += `✅ Done. ${ALL_ENTRIES.length} entries loaded at ${new Date().toLocaleTimeString()}\n`;
     updateSyncStatus('Live ✓', '#0E9F6E');
     $('topbarMeta').textContent = `${ALL_ENTRIES.length} entries · synced ${new Date().toLocaleTimeString()}`;
+    renderDashboard();
+    renderCurrentSection();
     toast('Sync complete!', 'success');
   } catch (e) {
     log.textContent += '❌ Error: ' + e.message;
