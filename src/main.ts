@@ -24,7 +24,8 @@ declare global {
         if (["Buy me", "Tip the nap department", "Help me dodge work", "My couch says get a job"].includes(CFG.btn)) CFG.btn = DEF.btn;
         if (["and get on today’s board", "Support the site. Get your name on today’s board.", "Your tip keeps this silly site going—and gets you on the board.", "I told it to mind its business. Your tip keeps this site going and gets you on the board."].includes(CFG.sub)) CFG.sub = DEF.sub;
         const saveCfg = () => { try { localStorage.setItem("idn_cfg", JSON.stringify(CFG)) } catch (e) { } };
-        const DATA: { entries: LeaderboardEntry[] } = { entries: StorageService.getEntries() };  // verified entries from your backend: {id,name,url,amt,desc,img,t}
+        StorageService.removeLocalPreviewEntries();
+        const DATA: { entries: LeaderboardEntry[] } = { entries: [] };  // public leaderboard entries come only from Supabase
         // =====================================================================================================================
         const $ = (s: string): any => document.querySelector(s);
         const $$ = (s: string): any[] => [...document.querySelectorAll(s)];
@@ -150,8 +151,9 @@ declare global {
             return k ? SOCIAL_MAP[k] : null;
         };
         const soc = (u: string) => { const s = getSocialInfo(u); return s ? [s.name, s.bg] : null; };
-        // entries (src: preview | sample | manual). Visitors see preview/sample only in preview mode; manual entries (real payments you recorded) always show.
+        // Local rows are retained only for admin recovery. The public leaderboard reads Supabase rows only.
         let LOCAL: LeaderboardEntry[] = StorageService.getEntries();
+        let liveBoardStatus: "loading" | "live" | "error" = "loading";
         let REMOTE_BLOCKLIST: string[] = [];
         let REMOTE_DELETED_IDS: string[] = [];
         const saveLocal = () => { StorageService.saveEntries(LOCAL); };
@@ -165,7 +167,7 @@ declare global {
         const all = () => {
             const seen = new Set<string>();
             const list: LeaderboardEntry[] = [];
-            const pool = [...LOCAL, ...(DATA.entries || [])];
+            const pool = DATA.entries || [];
             for (const item of pool) {
                 if (!item || item.src === "pending" || REMOTE_DELETED_IDS.includes(String(item.id)) || REMOTE_DELETED_IDS.includes(deletedEntryKey(item)) || entryIsBlocked(item)) continue;
                 const idKey = item.id ? "id:" + item.id : "";
@@ -481,7 +483,11 @@ declare global {
             $("#lastPaid").innerHTML = lastEntry
                 ? `<span class="live-dot"></span>Last paid ${ago(lastEntry.t) === "now" ? "just now" : ago(lastEntry.t) + " ago"}`
                 : '<span class="live-dot idle"></span>No payments yet';
-            $("#pvBar").innerHTML = CFG.pay ? "" : `<p class="hint" style="margin-bottom:12px"><b>Preview mode:</b> no real payments are connected. Entries shown here stay in this browser.</p>`;
+            $("#pvBar").innerHTML = liveBoardStatus === "error"
+                ? `<p class="hint" style="margin-bottom:12px"><b>Live leaderboard is temporarily unavailable.</b> The board will show Supabase entries when the connection returns.</p>`
+                : !CFG.pay
+                    ? `<p class="hint" style="margin-bottom:12px"><b>Payments are not configured.</b> The leaderboard only shows shared Supabase entries.</p>`
+                    : "";
 
             // Update sliding switch active UI
             const sw = $("#lbSwitch");
@@ -598,8 +604,8 @@ ${CFG.anonAllowed === false ? "" : `<label style="display:flex;align-items:cente
 <label for="f3">How much do you want to pay? (USD)</label><input id="f3" type="number" min="1" step="1" inputmode="numeric" placeholder="Any amount, $1 or more"><div class="chips" id="qa"></div>
 <label for="f4">Short description or message <span id="wc" class="hint" style="display:inline">0 / 500 words</span></label><textarea id="f4" placeholder="What are you building? Or just say hi."></textarea>
 <div class="public-entry-consent"><label for="publicConsent"><input type="checkbox" id="publicConsent"><span>I agree to the <a href="/terms" data-route="terms">Terms</a> and <a href="/rules" data-route="rules">Board Rules</a>, have read the <a href="/privacy" data-route="privacy">Privacy Notice</a>, and consent to this listing being stored and shown publicly with its amount, message and entry time. Anonymous hides my name and link only. I confirm I’m 18 or older, or my parent/guardian has approved this listing and will complete checkout, and I have permission to submit its name, link and message.</span></label></div>
-${CFG.pay ? `<div class="note">Dodo Payments securely processes checkout. Your board entry is added automatically after Dodo confirms the payment.</div>` : `<div class="note"><b>Preview mode.</b> No money will move. Your entry only shows in this browser, so you can see how the board looks.</div>`}
-<p style="display:flex;gap:10px;margin-top:16px"><button class="btn" id="go" style="flex:1;text-align:center">${CFG.pay ? "Continue to secure checkout" : "Add to board (preview)"}</button><button class="btn w" id="cl">Cancel</button></p>`;
+${CFG.pay ? `<div class="note">Dodo Payments securely processes checkout. Your board entry is added automatically after Dodo confirms the payment.</div>` : `<div class="note"><b>Checkout is unavailable.</b> Only confirmed Supabase entries appear on the leaderboard.</div>`}
+<p style="display:flex;gap:10px;margin-top:16px"><button class="btn" id="go" style="flex:1;text-align:center" ${CFG.pay ? "" : "disabled"}>${CFG.pay ? "Continue to secure checkout" : "Checkout unavailable"}</button><button class="btn w" id="cl">Cancel</button></p>`;
             $("#md").classList.add("on"); $("#cl").onclick = close_;
             if ($("#an")) $("#an").onchange = () => { $("#idf").style.display = $("#an").checked ? "none" : "block" };
             $("#qa").innerHTML = [1, 5, 10, 25, 50].map(a => `<button class="chip" data-a="${a}">$${a}</button>`).join(""); $("#qa").onclick = e => { const c = e.target.closest("[data-a]"); if (c) $("#f3").value = c.dataset.a };
@@ -633,6 +639,7 @@ ${CFG.pay ? `<div class="note">Dodo Payments securely processes checkout. Your b
 
             $("#go").onclick = async () => {
                 const anon = Boolean($("#an")?.checked), n = anon ? "Anonymous legend" : $("#f1").value.trim(), u = anon ? "" : $("#f2").value.trim(), a = Math.round((+$("#f3").value) * 100) / 100, d = $("#f4").value.trim();
+                if (!CFG.pay) return toast("Checkout is unavailable. Only confirmed Supabase entries appear on the board.");
                 if (!$("#publicConsent").checked) return toast("Please agree to the terms and confirm you’re allowed to submit this listing.");
                 if (!n) return toast("Add your name or product name, or tick “Pay anonymously”."); if (u && !safeUrl(u) && u[0] !== "@") return toast("That link doesn’t look valid. Use https://…"); if (!(a >= 1)) return toast("Enter an amount of $1 or more."); if (wc() > 500) return toast("That’s over 500 words.");
                 if (CFG.pay) {
@@ -666,16 +673,6 @@ ${CFG.pay ? `<div class="note">Dodo Payments securely processes checkout. Your b
                         return toast("Could not start checkout: " + (err instanceof Error ? err.message : String(err)));
                     }
                 }
-                const newEntry: LeaderboardEntry = { id: "p" + Date.now(), name: n, url: safeUrl(u) || u, amt: a, desc: d, img: anon ? "" : img, anon, t: Date.now(), src: CFG.pay ? "live" : "preview" };
-                LOCAL.unshift(newEntry);
-                saveLocal();
-                render();
-                snd("horn");
-                if (window.charReact) window.charReact("happy");
-                close_();
-                render();
-                toast(CFG.pay ? "Added to the board!" : "Preview only: added to the board. No money moved.");
-                location.hash = "home";
             }
         }
         $("#fund").onclick = () => openFund();
@@ -710,8 +707,7 @@ ${CFG.pay ? `<div class="note">Dodo Payments securely processes checkout. Your b
                 const remote = await StorageService.syncFromSupabase();
                 if (remote !== null) {
                     LOCAL = remote;
-                    DATA.entries = remote;
-                    render();
+                    await refreshLiveLeaderboard();
                 }
             } catch (err) {
                 console.warn("Admin entry refresh failed:", err);
@@ -740,13 +736,12 @@ ${CFG.pay ? `<div class="note">Dodo Payments securely processes checkout. Your b
                 try {
                     await StorageService.deleteEntry(delId);
                     LOCAL = StorageService.getEntries();
-                    DATA.entries = LOCAL;
                 } catch (err) {
                     toast("Supabase delete failed: " + (err instanceof Error ? err.message : String(err)));
                     return;
                 }
                 renderAdmin();
-                render();
+                await refreshLiveLeaderboard();
                 toast("Deleted from the shared board.");
             });
             $$('[data-sync]').forEach(b => b.onclick = async () => {
@@ -754,9 +749,8 @@ ${CFG.pay ? `<div class="note">Dodo Payments securely processes checkout. Your b
                 if (!pending) return;
                 try {
                     LOCAL = await StorageService.addEntry({ ...pending, src: "manual" });
-                    DATA.entries = LOCAL;
                     renderAdmin();
-                    render();
+                    await refreshLiveLeaderboard();
                     toast("Entry synced to Supabase.");
                 } catch (err) {
                     LOCAL = StorageService.getEntries();
@@ -886,10 +880,9 @@ ${CFG.pay ? `<div class="note">Dodo Payments securely processes checkout. Your b
                     return;
                 }
                 LOCAL = StorageService.getEntries();
-                DATA.entries = LOCAL;
                 editing = null;
                 renderAdmin();
-                render();
+                await refreshLiveLeaderboard();
                 toast("Saved to the shared Supabase board.");
             });
 
@@ -1134,10 +1127,7 @@ ${CFG.pay ? `<div class="note">Dodo Payments securely processes checkout. Your b
                             body: JSON.stringify({ order_id: returnedOrderId })
                         });
                         if (response.ok && (await response.json()).status === "paid") {
-                            const entries = await StorageService.syncFromSupabase();
-                            LOCAL = entries;
-                            DATA.entries = entries;
-                            render();
+                            await refreshLiveLeaderboard();
                             toast("Payment confirmed. Your board spot is live!");
                             return;
                         }
@@ -1177,32 +1167,56 @@ ${CFG.pay ? `<div class="note">Dodo Payments securely processes checkout. Your b
         }
         refreshSharedSiteState().catch(err => console.warn("Site settings fallback to defaults:", err));
     
-// Supabase Backend Sync
-(async () => {
+// Public leaderboard reads only the live Supabase result. Browser storage is
+// never used as a public fallback when the database is unreachable.
+async function refreshLiveLeaderboard() {
+    const previousStatus = liveBoardStatus;
     try {
-        const remote = await StorageService.syncFromSupabase();
-        if (remote !== null) {
-            LOCAL = remote;
-            DATA.entries = remote;
-            render();
-            if (adminOpen && atab === "entries") refreshAdminEntryList();
+        const remote = await SupabaseService.fetchEntries();
+        if (remote === null) {
+            liveBoardStatus = "error";
+            if (previousStatus !== liveBoardStatus) render();
+            if (adminOpen) updateAdminDbStatus();
+            return false;
         }
+        const cleaned = remote.filter(entry =>
+            entry.src === "live" &&
+            entry.src !== "seed" &&
+            !String(entry.id).startsWith("seed-") &&
+            entry.name !== "Alex Dev Studios" &&
+            entry.name !== "PixelPulse SaaS" &&
+            entry.name !== "@sarah_designs" &&
+            entry.name !== "Chai & Chill Club"
+        );
+        const changed = JSON.stringify(cleaned) !== JSON.stringify(DATA.entries);
+        DATA.entries = cleaned;
+        liveBoardStatus = "live";
+        if (adminOpen) {
+            LOCAL = await StorageService.syncFromSupabase();
+            if (atab === "entries") refreshAdminEntryList();
+        }
+        if (changed || previousStatus !== liveBoardStatus) render();
+        if (adminOpen) updateAdminDbStatus();
+        return true;
     } catch (err) {
-        console.warn('Initial Supabase sync fallback:', err);
+        console.warn("Live Supabase leaderboard refresh failed:", err);
+        liveBoardStatus = "error";
+        if (previousStatus !== liveBoardStatus) render();
+        if (adminOpen) updateAdminDbStatus();
+        return false;
     }
+}
+
+(async () => {
+    await refreshLiveLeaderboard();
 
     try {
         SupabaseService.subscribeToEntries(async () => {
-            const [updated, deletedIds] = await Promise.all([
-                StorageService.syncFromSupabase(),
-                SupabaseService.getPublicDeletedEntryIds()
-            ]);
-            LOCAL = updated;
-            DATA.entries = updated;
+            const deletedIds = await SupabaseService.getPublicDeletedEntryIds();
             REMOTE_DELETED_IDS = deletedIds;
+            await refreshLiveLeaderboard();
             render();
             refreshSharedSiteState().catch(err => console.warn('Shared site settings refresh failed:', err));
-            if (adminOpen && atab === "entries") refreshAdminEntryList();
         });
     } catch (err) {
         console.warn('Supabase realtime subscription fallback:', err);
@@ -1214,20 +1228,14 @@ ${CFG.pay ? `<div class="note">Dodo Payments securely processes checkout. Your b
 setInterval(async () => {
     if (document.visibilityState !== 'visible') return;
     try {
-        const [updated, deletedIds] = await Promise.all([
-            StorageService.syncFromSupabase(),
-            SupabaseService.getPublicDeletedEntryIds()
+        const [deletedIds] = await Promise.all([
+            SupabaseService.getPublicDeletedEntryIds(),
+            refreshLiveLeaderboard()
         ]);
-        const entriesChanged = JSON.stringify(updated) !== JSON.stringify(LOCAL);
         const deletedChanged = JSON.stringify(deletedIds) !== JSON.stringify(REMOTE_DELETED_IDS);
         REMOTE_DELETED_IDS = deletedIds;
-        if (entriesChanged) {
-            LOCAL = updated;
-            DATA.entries = updated;
-        }
-        if (entriesChanged || deletedChanged) {
+        if (deletedChanged) {
             render();
-            if (adminOpen && atab === 'entries') refreshAdminEntryList();
         }
         await refreshSharedSiteState();
         if (adminOpen) updateAdminDbStatus();

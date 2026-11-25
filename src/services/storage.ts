@@ -80,6 +80,19 @@ export class StorageService {
     }
   }
 
+  public static removeLocalPreviewEntries(): void {
+    const remaining = this.getEntries().filter((entry) =>
+      entry.src !== 'preview' &&
+      entry.src !== 'seed' &&
+      !String(entry.id).startsWith('seed-') &&
+      entry.name !== 'Alex Dev Studios' &&
+      entry.name !== 'PixelPulse SaaS' &&
+      entry.name !== '@sarah_designs' &&
+      entry.name !== 'Chai & Chill Club'
+    );
+    this.saveEntries(remaining);
+  }
+
   public static async syncFromSupabase(): Promise<LeaderboardEntry[]> {
     const remote = await SupabaseService.fetchEntries();
     if (remote !== null) {
