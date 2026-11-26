@@ -29,10 +29,10 @@ Deno.serve(async (request) => {
   if (origin && !allowedOrigins.has(origin)) return json({ error: "Origin not allowed." }, 403, origin);
 
   const dodoApiKey = Deno.env.get("DODO_PAYMENTS_API_KEY");
-  const productId = Deno.env.get("DODO_PRODUCT_ID");
+  const defaultProductId = Deno.env.get("DODO_PRODUCT_ID");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!dodoApiKey || !productId || !supabaseUrl || !serviceKey) {
+  if (!dodoApiKey || !supabaseUrl || !serviceKey) {
     return json({ error: "Dodo checkout is not fully configured on the server." }, 503, origin);
   }
 
@@ -43,6 +43,11 @@ Deno.serve(async (request) => {
     return json({ error: "Invalid request." }, 400, origin);
   }
   const amount = Number(body.amount);
+  const zeroPriceProductId = "pdt_0NslUry5wSHj5nA86Ywpw";
+  const targetProductId = (amount === 0) ? zeroPriceProductId : (defaultProductId || zeroPriceProductId);
+  if (!targetProductId) {
+    return json({ error: "Product ID is missing on the server." }, 503, origin);
+  }
   const name = String(body.name ?? "").trim().slice(0, 60);
   const url = String(body.url ?? "").trim().slice(0, 140);
   const message = String(body.desc ?? "").trim().slice(0, 5000);
@@ -80,12 +85,20 @@ Deno.serve(async (request) => {
     return json({ error: "Could not prepare this payment. Please try again." }, 500, origin);
   }
 
+  const cartItem: Record<string, unknown> = {
+    product_id: targetProductId,
+    quantity: 1,
+  };
+  if (amount > 0) {
+    cartItem.amount = Math.round(amount * 100);
+  }
+
   const environment = Deno.env.get("DODO_ENVIRONMENT") === "test_mode" ? "test" : "live";
   const dodoResponse = await fetch(`https://${environment}.dodopayments.com/checkouts`, {
     method: "POST",
     headers: { Authorization: `Bearer ${dodoApiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      product_cart: [{ product_id: productId, quantity: 1, amount: Math.round(amount * 100) }],
+      product_cart: [cartItem],
       billing_currency: "USD",
       return_url: `${origin || "https://doingnothing.lol"}/?checkout=return&order_id=${orderId}`,
       metadata: { order_id: orderId },
