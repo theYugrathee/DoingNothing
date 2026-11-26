@@ -43,8 +43,8 @@ Deno.serve(async (request) => {
     return json({ error: "Invalid request." }, 400, origin);
   }
   const amount = Number(body.amount);
-  const zeroPriceProductId = "pdt_0NslUry5wSHj5nA86Ywpw";
-  const targetProductId = (amount === 0) ? zeroPriceProductId : (defaultProductId || zeroPriceProductId);
+  const realProductId = "pdt_0NsYNxU9GTMZ5B1Obh5rm";
+  const targetProductId = defaultProductId || realProductId;
   if (!targetProductId) {
     return json({ error: "Product ID is missing on the server." }, 503, origin);
   }
@@ -54,8 +54,8 @@ Deno.serve(async (request) => {
   const anonymous = body.anon === true;
   const logoUrl = String(body.img ?? "").trim().slice(0, 500);
   if (body.consent !== true) return json({ error: "Consent is required." }, 400, origin);
-  if (!Number.isFinite(amount) || amount < 0 || amount > 100000) {
-    return json({ error: "Amount must be between $0 and $100,000." }, 400, origin);
+  if (!Number.isFinite(amount) || amount < 1 || amount > 100000) {
+    return json({ error: "Amount must be between $1 and $100,000." }, 400, origin);
   }
   if (!anonymous && !name) return json({ error: "Name is required." }, 400, origin);
   if (url && !url.startsWith("@")) {
@@ -88,10 +88,8 @@ Deno.serve(async (request) => {
   const cartItem: Record<string, unknown> = {
     product_id: targetProductId,
     quantity: 1,
+    amount: Math.round(amount * 100),
   };
-  if (amount > 0) {
-    cartItem.amount = Math.round(amount * 100);
-  }
 
   const environment = Deno.env.get("DODO_ENVIRONMENT") === "test_mode" ? "test" : "live";
   const dodoResponse = await fetch(`https://${environment}.dodopayments.com/checkouts`, {
