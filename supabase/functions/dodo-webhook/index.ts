@@ -6,7 +6,10 @@ Deno.serve(async (request) => {
   const secret = Deno.env.get("DODO_PAYMENTS_WEBHOOK_KEY");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!secret || !supabaseUrl || !serviceKey) return new Response("Webhook is not configured", { status: 503 });
+  if (!secret || !supabaseUrl || !serviceKey) {
+    console.error("Missing webhook environment variables (DODO_PAYMENTS_WEBHOOK_KEY, SUPABASE_URL, or SUPABASE_SERVICE_ROLE_KEY).");
+    return new Response("Webhook is not configured on the server", { status: 503 });
+  }
 
   const rawBody = await request.text();
   try {
@@ -15,7 +18,8 @@ Deno.serve(async (request) => {
       "webhook-signature": request.headers.get("webhook-signature") ?? "",
       "webhook-timestamp": request.headers.get("webhook-timestamp") ?? "",
     });
-  } catch {
+  } catch (err) {
+    console.warn("Webhook signature verification failed:", err);
     return new Response("Invalid signature", { status: 400 });
   }
 
@@ -25,68 +29,84 @@ Deno.serve(async (request) => {
   } catch {
     return new Response("Invalid payload", { status: 400 });
   }
-  if (event.type !== "payment.succeeded") return new Response("ok", { status: 200 });
+
+  // Handle Dodo test pings or non-payment events gracefully
+  if (event.type !== "payment.succeeded") {
+    console.log(`Received event type: ${event.type} — acknowledging with 200 OK.`);
+    return new Response("ok", { status: 200 });
+  }
 
   const data = event.data ?? {};
   const paymentId = String(data.payment_id ?? data.id ?? "").trim();
   const orderId = String(data.metadata?.order_id ?? "").trim();
-  if (!paymentId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId)) {
-    console.error("Dodo success event is missing payment/order identifiers.");
-    return new Response("Missing order metadata", { status: 400 });
+
+  if (!paymentId) {
+    console.warn("Payment succeeded event received without payment_id. Acknowledging.");
+    return new Response("ok (no payment_id)", { status: 200 });
   }
 
   const client = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
-  const { data: order, error: orderError } = await client
-    .from("payment_orders")
-    .select("*")
-    .eq("id", orderId)
-    .maybeSingle();
-  if (orderError) {
-    console.error("Could not load Dodo order:", orderError.message);
-    return new Response("Temporary order lookup failure", { status: 500 });
-  }
-  if (!order) return new Response("Order not found", { status: 404 });
 
-  const { data: alreadyListed, error: lookupError } = await client
+  // 1. Check idempotency: if this payment was already added to patrons, don't duplicate
+  const { data: alreadyListed } = await client
     .from("patrons")
     .select("id")
     .eq("payment_id", paymentId)
     .maybeSingle();
-  if (lookupError) {
-    console.error("Could not check payment idempotency:", lookupError.message);
-    return new Response("Temporary payment lookup failure", { status: 500 });
-  }
+
   if (alreadyListed) {
-    await client.from("payment_orders").update({ status: "paid", payment_id: paymentId, paid_at: new Date().toISOString() }).eq("id", orderId);
-    return new Response("ok", { status: 200 });
+    console.log(`Payment ${paymentId} already processed. Skipping duplicate insert.`);
+    if (orderId) {
+      await client.from("payment_orders").update({ status: "paid", payment_id: paymentId, paid_at: new Date().toISOString() }).eq("id", orderId);
+    }
+    return new Response("ok (already processed)", { status: 200 });
   }
 
+  // 2. Look up the staged order
+  let order: any = null;
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId)) {
+    const { data: orderData } = await client
+      .from("payment_orders")
+      .select("*")
+      .eq("id", orderId)
+      .maybeSingle();
+    order = orderData;
+  }
+
+  // 3. Insert confirmed patron into the public leaderboard table
   const paidEntry = {
-    id: order.id,
     payment_id: paymentId,
-    name: order.name,
-    url: order.url,
-    logo_url: order.logo_url,
-    amount: order.amount,
-    message: order.message,
+    name: order?.name || data.customer?.name || "Generous Supporter",
+    url: order?.url || "",
+    logo_url: order?.logo_url || "",
+    amount: order?.amount || Math.max(1, (Number(data.total_amount ?? data.amount ?? 100)) / 100),
+    message: order?.message || "Supporter contribution",
     category: "Supporter",
     is_today: true,
     is_approved: true,
     created_at: new Date().toISOString(),
   };
-  const { error: entryError } = await client.from("patrons").upsert(paidEntry, { onConflict: "id" });
+
+  if (order?.id) {
+    (paidEntry as any).id = order.id;
+  }
+
+  const { error: entryError } = await client.from("patrons").upsert(paidEntry, { onConflict: "payment_id" });
   if (entryError) {
-    console.error("Could not publish paid entry:", entryError.message);
+    console.error("Could not publish paid entry to patrons:", entryError.message);
     return new Response("Could not publish paid entry", { status: 500 });
   }
-  const { error: orderUpdateError } = await client.from("payment_orders").update({
-    status: "paid",
-    payment_id: paymentId,
-    paid_at: new Date().toISOString(),
-  }).eq("id", orderId);
-  if (orderUpdateError) {
-    console.error("Could not mark Dodo order paid:", orderUpdateError.message);
-    return new Response("Could not finalize paid order", { status: 500 });
+
+  console.log(`Successfully listed patron: ${paidEntry.name} ($${paidEntry.amount}) for payment ${paymentId}`);
+
+  // 4. Update the order status if it was staged
+  if (orderId) {
+    await client.from("payment_orders").update({
+      status: "paid",
+      payment_id: paymentId,
+      paid_at: new Date().toISOString(),
+    }).eq("id", orderId);
   }
+
   return new Response("ok", { status: 200 });
 });
