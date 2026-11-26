@@ -333,19 +333,28 @@ export class SupabaseService {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'patrons' },
-        () => callback()
+        (payload) => {
+          console.log('Realtime change in patrons:', payload.eventType);
+          callback();
+        }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'entries' },
-        () => callback()
+        (payload) => {
+          console.log('Realtime change in entries:', payload.eventType);
+          callback();
+        }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'admin_settings' },
         () => callback()
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (err) console.warn('Supabase Realtime subscription error:', err);
+        else console.log('Supabase Realtime status:', status);
+      });
 
     return () => {
       client.removeChannel(channel);

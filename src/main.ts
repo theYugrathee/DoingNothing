@@ -1120,6 +1120,7 @@ ${CFG.pay ? `<div class="note">Dodo Payments securely processes checkout. Your b
         if (checkoutReturn.get("checkout") === "return" && returnedOrderId) {
             history.replaceState(null, "", location.pathname + location.hash);
             (async () => {
+                toast("Confirming your checkout with Dodo Payments…");
                 for (let attempt = 0; attempt < 60; attempt++) {
                     try {
                         const response = await fetch(`${SUPABASE_URL}/functions/v1/dodo-checkout-status`, {
@@ -1129,7 +1130,9 @@ ${CFG.pay ? `<div class="note">Dodo Payments securely processes checkout. Your b
                         });
                         if (response.ok && (await response.json()).status === "paid") {
                             await refreshLiveLeaderboard();
-                            toast("Payment confirmed. Your board spot is live!");
+                            render();
+                            snd("kaching");
+                            toast("🎉 Payment verified! Your product is live on the leaderboard!");
                             return;
                         }
                     } catch (err) {
@@ -1244,4 +1247,4 @@ setInterval(async () => {
         console.warn('Periodic Supabase refresh failed:', err);
         if (adminOpen) updateAdminDbStatus();
     }
-}, 20000);
+}, 4000);
