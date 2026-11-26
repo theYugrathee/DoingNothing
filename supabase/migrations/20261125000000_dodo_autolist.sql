@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS public.payment_orders (
   id UUID PRIMARY KEY,
   name TEXT NOT NULL,
   url TEXT NOT NULL DEFAULT '',
-  amount NUMERIC(10, 2) NOT NULL CHECK (amount >= 1),
+  amount NUMERIC(10, 2) NOT NULL CHECK (amount >= 0),
   message TEXT NOT NULL DEFAULT '',
   logo_url TEXT NOT NULL DEFAULT '',
   is_anonymous BOOLEAN NOT NULL DEFAULT false,
@@ -34,6 +34,13 @@ CREATE TABLE IF NOT EXISTS public.payment_orders (
 ALTER TABLE public.payment_orders ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.payment_orders FROM anon, authenticated;
 GRANT ALL ON TABLE public.payment_orders TO service_role;
+
+-- Allow 0 or greater for test/free checkouts
+ALTER TABLE public.payment_orders DROP CONSTRAINT IF EXISTS payment_orders_amount_check;
+ALTER TABLE public.payment_orders ADD CONSTRAINT payment_orders_amount_check CHECK (amount >= 0);
+
+ALTER TABLE public.patrons DROP CONSTRAINT IF EXISTS patrons_amount_check;
+ALTER TABLE public.patrons ADD CONSTRAINT patrons_amount_check CHECK (amount >= 0);
 
 -- Payment confirmations update patrons immediately; this table is already
 -- added by the existing setup script, but ensure the publication is present.

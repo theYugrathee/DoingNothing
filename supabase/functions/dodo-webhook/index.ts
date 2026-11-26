@@ -79,7 +79,7 @@ Deno.serve(async (request) => {
     name: order?.name || data.customer?.name || "Generous Supporter",
     url: order?.url || "",
     logo_url: order?.logo_url || "",
-    amount: order?.amount || Math.max(1, (Number(data.total_amount ?? data.amount ?? 100)) / 100),
+    amount: typeof order?.amount === "number" ? order.amount : Math.max(0, (Number(data.total_amount ?? data.amount ?? 0)) / 100),
     message: order?.message || "Supporter contribution",
     category: "Supporter",
     is_today: true,
