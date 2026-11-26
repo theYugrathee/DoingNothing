@@ -54,8 +54,8 @@ Deno.serve(async (request) => {
   const anonymous = body.anon === true;
   const logoUrl = String(body.img ?? "").trim().slice(0, 500);
   if (body.consent !== true) return json({ error: "Consent is required." }, 400, origin);
-  if (!Number.isFinite(amount) || amount < 1 || amount > 100000) {
-    return json({ error: "Amount must be between $1 and $100,000." }, 400, origin);
+  if (!Number.isFinite(amount) || amount < 1 || amount > 3000) {
+    return json({ error: "Amount must be between $1 and $3,000 per contribution." }, 400, origin);
   }
   if (!anonymous && !name) return json({ error: "Name is required." }, 400, origin);
   if (url && !url.startsWith("@")) {
