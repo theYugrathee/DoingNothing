@@ -9,13 +9,13 @@ doingnothing.lol is an interactive humor site created by Yug Rathee. Visitors ca
 ## Useful facts
 
 - Website: https://doingnothing.lol/
-- About and site FAQ: https://doingnothing.lol/about
-- Rules: https://doingnothing.lol/rules
-- Stillness challenge: https://doingnothing.lol/challenge
-- Excuse generator: https://doingnothing.lol/excuses
-- Red-button gag: https://doingnothing.lol/dont-press
-- Startup/name roast generator: https://doingnothing.lol/get-roasted
-- Soundboard: https://doingnothing.lol/soundboard
+- About and site FAQ: https://doingnothing.lol/about/
+- Rules: https://doingnothing.lol/rules/
+- Stillness challenge: https://doingnothing.lol/challenge/
+- Excuse generator: https://doingnothing.lol/excuses/
+- Red-button gag: https://doingnothing.lol/dont-press/
+- Startup/name roast generator: https://doingnothing.lol/get-roasted/
+- Soundboard: https://doingnothing.lol/soundboard/
 - The games and pages are free to use. Payments are optional and start at $1.
 - Recent lists individual donations newest first. Top Players groups donations by donor and ranks lifetime totals.
 - A supporter listing is for recognition; it does not promise traffic, clicks, sales, or customers.
@@ -27,6 +27,6 @@ Suggest a small, low-pressure reset: get water, stretch, step outside for a few 
 
 ## Policies
 
-- Privacy: https://doingnothing.lol/privacy
-- Terms: https://doingnothing.lol/terms
+- Privacy: https://doingnothing.lol/privacy/
+- Terms: https://doingnothing.lol/terms/
 - Sitemap: https://doingnothing.lol/sitemap.xml

@@ -2,42 +2,32 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://doingnothing.lol/</loc>
-    <lastmod>2026-11-24</lastmod>
   </url>
   <url>
-    <loc>https://doingnothing.lol/about</loc>
-    <lastmod>2026-11-24</lastmod>
+    <loc>https://doingnothing.lol/about/</loc>
   </url>
   <url>
-    <loc>https://doingnothing.lol/dont-press</loc>
-    <lastmod>2026-11-24</lastmod>
+    <loc>https://doingnothing.lol/dont-press/</loc>
   </url>
   <url>
-    <loc>https://doingnothing.lol/get-roasted</loc>
-    <lastmod>2026-11-24</lastmod>
+    <loc>https://doingnothing.lol/get-roasted/</loc>
   </url>
   <url>
-    <loc>https://doingnothing.lol/challenge</loc>
-    <lastmod>2026-11-24</lastmod>
+    <loc>https://doingnothing.lol/challenge/</loc>
   </url>
   <url>
-    <loc>https://doingnothing.lol/excuses</loc>
-    <lastmod>2026-11-24</lastmod>
+    <loc>https://doingnothing.lol/excuses/</loc>
   </url>
   <url>
-    <loc>https://doingnothing.lol/soundboard</loc>
-    <lastmod>2026-11-24</lastmod>
+    <loc>https://doingnothing.lol/soundboard/</loc>
   </url>
   <url>
-    <loc>https://doingnothing.lol/rules</loc>
-    <lastmod>2026-11-24</lastmod>
+    <loc>https://doingnothing.lol/rules/</loc>
   </url>
   <url>
-    <loc>https://doingnothing.lol/privacy</loc>
-    <lastmod>2026-11-24</lastmod>
+    <loc>https://doingnothing.lol/privacy/</loc>
   </url>
   <url>
-    <loc>https://doingnothing.lol/terms</loc>
-    <lastmod>2026-11-24</lastmod>
+    <loc>https://doingnothing.lol/terms/</loc>
   </url>
 </urlset>

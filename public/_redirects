@@ -1,2 +1,11 @@
 # Cloudflare Pages Redirects
 /hall-of-fame /?tab=top 301
+/about /about/ 301
+/dont-press /dont-press/ 301
+/get-roasted /get-roasted/ 301
+/challenge /challenge/ 301
+/excuses /excuses/ 301
+/soundboard /soundboard/ 301
+/rules /rules/ 301
+/privacy /privacy/ 301
+/terms /terms/ 301

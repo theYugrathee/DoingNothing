@@ -283,15 +283,15 @@ declare global {
         };
         const PAGE_URLS = {
             home: "/",
-            red: "/dont-press",
-            roast: "/get-roasted",
-            challenge: "/challenge",
-            excuses: "/excuses",
-            soundboard: "/soundboard",
-            about: "/about",
-            rules: "/rules",
-            privacy: "/privacy",
-            terms: "/terms"
+            red: "/dont-press/",
+            roast: "/get-roasted/",
+            challenge: "/challenge/",
+            excuses: "/excuses/",
+            soundboard: "/soundboard/",
+            about: "/about/",
+            rules: "/rules/",
+            privacy: "/privacy/",
+            terms: "/terms/"
         };
         const PAGE_SEO = {
             home: ["Doing Nothing – Procrastination Games & Stillness Challenge", "Doing nothing today? Take a playful break with the stillness challenge, excuse machine, and big red button. Meet the live supporter board at doingnothing.lol."],
